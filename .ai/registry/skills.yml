@@ -1,0 +1,105 @@
+# Skill registry. Runtime agents must read this file before choosing a skill.
+# Machine-facing metadata is English. Vietnamese fields are user-facing only.
+
+skills:
+  - id: source-code-handover
+    skill_path: .ai/skills/source-code-handover/SKILL.md
+    workflow_id: make-new-dev-docs
+    user_description_vi: "Tạo tài liệu bàn giao source code cho developer mới."
+    status: active
+
+  - id: routing-ai-task
+    skill_path: .ai/skills/routing-ai-task/SKILL.md
+    workflow_id: null
+    user_description_vi: "Chọn đúng skill/workflow trước khi làm việc."
+    status: active
+
+  - id: developing-backend-feature-tdd
+    skill_path: .ai/skills/developing-backend-feature-tdd/SKILL.md
+    workflow_id: developing-backend-feature-tdd
+    user_description_vi: "Tạo endpoint/tính năng backend theo hướng brainstorm, contract và TDD-first."
+    status: active
+
+  - id: analyzing-api-endpoint
+    skill_path: .ai/skills/analyzing-api-endpoint/SKILL.md
+    workflow_id: null
+    user_description_vi: "Phân tích endpoint API đã tồn tại."
+    status: active
+
+  - id: writing-backend-tests-first
+    skill_path: .ai/skills/writing-backend-tests-first/SKILL.md
+    workflow_id: null
+    user_description_vi: "Viết test backend trước production code."
+    status: support
+
+  - id: generating-backend-tests
+    skill_path: .ai/skills/generating-backend-tests/SKILL.md
+    workflow_id: null
+    user_description_vi: "Sinh hoặc cập nhật test backend cho phạm vi đã xác định."
+    status: support
+
+  - id: generating-api-test-assets
+    skill_path: .ai/skills/generating-api-test-assets/SKILL.md
+    workflow_id: null
+    user_description_vi: "Tạo curl/Postman/SQL verify cho API."
+    status: support
+
+  - id: reviewing-git-diff
+    skill_path: .ai/skills/reviewing-git-diff/SKILL.md
+    workflow_id: null
+    user_description_vi: "Review diff hiện tại trước khi commit."
+    status: active
+
+  - id: writing-vietnamese-commit-message
+    skill_path: .ai/skills/writing-vietnamese-commit-message/SKILL.md
+    workflow_id: null
+    user_description_vi: "Viết commit message tiếng Việt dựa trên diff và test."
+    status: active
+
+  - id: refactoring-backend-safely
+    skill_path: .ai/skills/refactoring-backend-safely/SKILL.md
+    workflow_id: null
+    user_description_vi: "Refactor backend an toàn, có kiểm soát phạm vi."
+    status: active
+
+  - id: debugging-backend-issue
+    skill_path: .ai/skills/debugging-backend-issue/SKILL.md
+    workflow_id: null
+    user_description_vi: "Điều tra và sửa lỗi backend theo hướng evidence-first."
+    status: active
+
+  - id: reviewing-sql-migration
+    skill_path: .ai/skills/reviewing-sql-migration/SKILL.md
+    workflow_id: null
+    user_description_vi: "Review migration/schema change trước khi chạy."
+    status: support
+
+  - id: analyzing-background-jobs
+    skill_path: .ai/skills/analyzing-background-jobs/SKILL.md
+    workflow_id: null
+    user_description_vi: "Phân tích job nền, scheduler, queue hoặc worker."
+    status: active
+
+  - id: docs-merge-handbook
+    skill_path: .ai/skills/docs-merge-handbook/SKILL.md
+    workflow_id: docs-merge-handbook
+    user_description_vi: "Tổng hợp các bản nháp tài liệu thành handbook cuối."
+    status: active
+
+  - id: creating-apis
+    skill_path: .ai/skills/creating-apis/SKILL.md
+    workflow_id: creating-apis
+    user_description_vi: "Duy trì hoặc chỉnh API/endpoint/route đã tồn tại."
+    status: active
+
+  - id: using-superpowers
+    skill_path: .ai/skills/using-superpowers/SKILL.md
+    workflow_id: null
+    user_description_vi: "Chuẩn nền để agent làm việc theo phương pháp Superpowers."
+    status: support
+
+  - id: skill-detector
+    skill_path: .ai/skills/skill-detector/SKILL.md
+    workflow_id: null
+    user_description_vi: "Nhận diện skill phù hợp từ yêu cầu người dùng."
+    status: support

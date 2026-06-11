@@ -1,0 +1,26 @@
+# Adapter registry.
+
+adapters:
+  - id: bootstrap-once
+    path: .ai/BOOTSTRAP_ONCE.md
+    user_description_vi: "Prompt khởi tạo một lần để agent đọc và áp dụng framework `.ai`."
+
+  - id: codex
+    path: .ai/adapters/codex.md
+    user_description_vi: "Hướng dẫn chạy framework này trên Codex."
+
+  - id: cursor
+    path: .ai/adapters/cursor.md
+    user_description_vi: "Hướng dẫn chạy framework này trên Cursor."
+
+  - id: cline
+    path: .ai/adapters/cline.md
+    user_description_vi: "Hướng dẫn chạy framework này trên Cline."
+
+  - id: cline-rollout-plan
+    path: .ai/adapters/cline-rollout-plan.md
+    user_description_vi: "Plan chạy thử framework `.ai` trên Cline."
+
+  - id: claude
+    path: .ai/adapters/claude.md
+    user_description_vi: "Hướng dẫn chạy framework này trên Claude."

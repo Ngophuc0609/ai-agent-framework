@@ -1,0 +1,37 @@
+# Workflow registry. Keep workflow instructions in English.
+
+workflows:
+  - id: make-new-dev-docs
+    path: .ai/workflows/make-new-dev-docs.md
+    skill_id: source-code-handover
+    user_description_vi: "Workflow tạo tài liệu bàn giao source code."
+    default_output_namespace: docs
+    status: active
+
+  - id: make-new-dev-docs-model-routing
+    path: .ai/workflows/make-new-dev-docs-model-routing.md
+    skill_id: source-code-handover
+    user_description_vi: "Phần mở rộng chọn model/tier cho workflow tạo tài liệu."
+    default_output_namespace: docs
+    status: active
+
+  - id: docs-merge-handbook
+    path: .ai/skills/skill-docs-merge-to-single-handbook.md
+    skill_id: docs-merge-handbook
+    user_description_vi: "Workflow tổng hợp handbook cuối từ các draft."
+    default_output_namespace: docs
+    status: active
+
+  - id: developing-backend-feature-tdd
+    path: .ai/workflows/developing-backend-feature-tdd.md
+    skill_id: developing-backend-feature-tdd
+    user_description_vi: "Workflow tạo endpoint/tính năng backend theo TDD-first."
+    default_output_namespace: backend-feature-tdd
+    status: active
+
+  - id: creating-apis
+    path: .ai/workflows/creating-apis.md
+    skill_id: creating-apis
+    user_description_vi: "Workflow duy trì hoặc chỉnh API đã tồn tại."
+    default_output_namespace: api-changes
+    status: active

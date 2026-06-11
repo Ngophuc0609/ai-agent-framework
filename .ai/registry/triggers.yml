@@ -1,0 +1,135 @@
+# Trigger registry. Runtime agents must resolve user requests through this file.
+# English trigger phrases are machine-facing examples.
+# Vietnamese trigger phrases are intentional user-facing aliases.
+
+triggers:
+  - workflow_id: make-new-dev-docs
+    skill_id: source-code-handover
+    trigger_phrases_en:
+      - create handover documentation
+      - create onboarding docs
+      - document the source code
+      - generate source handover docs
+    trigger_phrases_vi:
+      - tạo tài liệu
+      - làm tài liệu
+      - làm tài liệu cho người mới
+      - tạo tài liệu cho người mới
+      - chạy skill tài liệu
+      - chạy skill source handover
+      - làm docs bàn giao
+      - tạo tài liệu tổng hợp
+
+  - workflow_id: make-new-dev-docs-model-routing
+    skill_id: source-code-handover
+    trigger_phrases_en:
+      - create budget onboarding docs
+      - create balanced onboarding docs
+      - create high accuracy handover docs
+    trigger_phrases_vi:
+      - làm tài liệu cho người mới bản tiết kiệm
+      - làm tài liệu cho người mới bản cân bằng
+      - làm tài liệu cho người mới bản chính xác cao
+      - review kỹ source để bàn giao production
+
+  - workflow_id: docs-merge-handbook
+    skill_id: docs-merge-handbook
+    trigger_phrases_en:
+      - merge docs into handbook
+      - create final handbook
+      - review final documentation
+    trigger_phrases_vi:
+      - tổng hợp handbook
+      - tạo tài liệu tổng hợp từ docs
+      - review lại docs bằng model mạnh
+      - kiểm tra lại tài liệu cuối
+
+  - workflow_id: null
+    skill_id: analyzing-api-endpoint
+    trigger_phrases_en:
+      - analyze existing api
+      - document existing endpoint
+      - inspect api route
+    trigger_phrases_vi:
+      - phân tích api hiện có
+      - phân tích endpoint hiện có
+
+  - workflow_id: creating-apis
+    skill_id: creating-apis
+    trigger_phrases_en:
+      - update existing api
+      - change existing endpoint
+      - maintain existing api route
+    trigger_phrases_vi:
+      - sửa api hiện có
+      - chỉnh endpoint hiện có
+
+  - workflow_id: developing-backend-feature-tdd
+    skill_id: developing-backend-feature-tdd
+    trigger_phrases_en:
+      - create new api
+      - add new api
+      - create endpoint
+      - add endpoint
+      - create new backend feature
+      - add backend feature
+      - create feature
+      - add business flow
+      - add service method
+      - add webhook
+      - add callback
+      - add background job
+    trigger_phrases_vi:
+      - tạo api mới
+      - thêm api mới
+      - tạo endpoint mới
+      - thêm endpoint
+      - tạo route mới
+      - thêm route api
+      - tạo controller action
+      - tạo tính năng mới
+      - thêm tính năng mới
+      - thêm flow mới
+      - tạo webhook
+      - thêm webhook
+      - tạo job mới
+
+  - workflow_id: null
+    skill_id: reviewing-git-diff
+    trigger_phrases_en:
+      - review current diff
+      - review git diff
+      - review changes before commit
+    trigger_phrases_vi:
+      - review diff hiện tại
+      - review trước commit
+      - kiểm tra diff trước commit
+
+  - workflow_id: null
+    skill_id: writing-vietnamese-commit-message
+    trigger_phrases_en:
+      - write commit message
+      - write vietnamese commit message
+    trigger_phrases_vi:
+      - viết commit message
+      - viết commit message tiếng việt
+
+  - workflow_id: null
+    skill_id: debugging-backend-issue
+    trigger_phrases_en:
+      - debug backend issue
+      - fix backend bug
+      - investigate backend error
+    trigger_phrases_vi:
+      - debug lỗi backend
+      - sửa lỗi backend
+      - điều tra lỗi backend
+
+  - workflow_id: null
+    skill_id: refactoring-backend-safely
+    trigger_phrases_en:
+      - refactor backend safely
+      - refactor backend code
+    trigger_phrases_vi:
+      - refactor backend
+      - refactor code backend
