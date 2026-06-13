@@ -41,6 +41,17 @@ Do not route new endpoint or new feature requests directly to `analyzing-api-end
 |---|---|
 | Create new backend feature or endpoint | `developing-backend-feature-tdd` |
 | Analyze existing API endpoint | `analyzing-api-endpoint` |
+| Review security risks | `security-review` |
+| Analyze auth or permissions | `analyzing-auth-permissions` |
+| Review OpenAPI or API documentation contract | `reviewing-openapi-contract` |
+| Analyze database query performance | `database-query-analysis` |
+| Troubleshoot CI/CD or deployment failure | `ci-cd-troubleshooting` |
+| Audit skill package security | `skill-security-audit` |
+| Maintain skill/workflow/trigger registries | `skill-registry-maintenance` |
+| Review prompt injection or tool misuse risks | `prompt-injection-review` |
+| Plan or review MCP integration | `mcp-integration-planning` |
+| Evaluate agent skill or workflow behavior | `agent-workflow-evaluation` |
+| Generate release notes or changelog | `release-notes-generation` |
 | Generate tests for an existing target | `generating-backend-tests` |
 | Write failing backend tests first | `writing-backend-tests-first` |
 | Generate curl/Postman/API verification assets | `generating-api-test-assets` |

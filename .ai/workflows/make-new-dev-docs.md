@@ -43,6 +43,28 @@ Preferred runtime namespace for new runs:
 10. Store confirmed durable findings back to memory when available.
 11. Respond to the user in Vietnamese.
 
+## Mandatory Agent Output Gate
+
+Before generating final documentation, verify that these outputs exist or are explicitly marked not applicable in `.ai/handoff/STATUS.md`:
+
+- Agent 1: `draft-docs/01_SOURCE_AND_LOCAL_SETUP.md` or `.ai/runs/source-code-handover/<run_id>/findings/agent-01/`
+- Agent 2: `draft-docs/02_DATABASE_AND_AUTH.md` or `.ai/runs/source-code-handover/<run_id>/findings/agent-02/`
+- Agent 3: `draft-docs/03_API_AND_POSTMAN.md` or `.ai/runs/source-code-handover/<run_id>/findings/agent-03/`
+- Agent 4: `draft-docs/04_BUSINESS_AND_FRONTEND.md` or `.ai/runs/source-code-handover/<run_id>/findings/agent-04/`
+- Agent 5: `draft-docs/05_OPERATIONS.md` or `.ai/runs/source-code-handover/<run_id>/findings/agent-05/`
+- Agent 6: `draft-docs/06_COORDINATOR_REVIEW.md` or `.ai/runs/source-code-handover/<run_id>/findings/agent-06/`
+
+Agent 7 must read Agent 1-6 outputs before writing `docs/PROJECT_HANDOVER_FULL.md`.
+
+If the runtime cannot spawn real sub-agents, it must run Agent 1-7 sequentially in the same session and record `single-runtime-sequential-fallback`.
+
+The final chat response must list:
+
+- Execution mode.
+- Agent outputs created or marked not applicable.
+- Final docs created.
+- Validation result.
+
 ## Agents
 
 ### Agent 1: Source And Local Setup
@@ -145,3 +167,5 @@ Use:
 - `Blocked`
 
 Do not mark `Ready` when CodeGraph, memory retrieval, critical source evidence, or final review was skipped without a safe reason.
+
+Do not mark `Ready` when required agent outputs were skipped, merged implicitly, or replaced by a direct final handbook.

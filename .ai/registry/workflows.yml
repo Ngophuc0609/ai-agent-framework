@@ -16,7 +16,7 @@ workflows:
     status: active
 
   - id: docs-merge-handbook
-    path: .ai/skills/skill-docs-merge-to-single-handbook.md
+    path: .ai/workflows/docs-merge-handbook.md
     skill_id: docs-merge-handbook
     user_description_vi: "Workflow tổng hợp handbook cuối từ các draft."
     default_output_namespace: docs
@@ -29,9 +29,9 @@ workflows:
     default_output_namespace: backend-feature-tdd
     status: active
 
-  - id: creating-apis
-    path: .ai/workflows/creating-apis.md
-    skill_id: creating-apis
+  - id: maintaining-existing-apis
+    path: .ai/workflows/maintaining-existing-apis.md
+    skill_id: maintaining-existing-apis
     user_description_vi: "Workflow duy trì hoặc chỉnh API đã tồn tại."
     default_output_namespace: api-changes
     status: active

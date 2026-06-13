@@ -59,7 +59,7 @@ tạo api mới để lấy danh sách quiz game
 
 Expected behavior:
 
-- Cline does not route to `creating-apis`.
+- Cline does not route to `maintaining-existing-apis`.
 - Cline routes to `developing-backend-feature-tdd`.
 - Cline asks at most one concise Vietnamese clarification question if the contract is missing.
 - Cline does not implement until brainstorm, contract, and test plan exist.
@@ -74,7 +74,7 @@ phân tích endpoint hiện có /api/v1/health
 
 Expected behavior:
 
-- Cline routes to `analyzing-api-endpoint` or `creating-apis` for existing API work.
+- Cline routes to `analyzing-api-endpoint` or `maintaining-existing-apis` for existing API work.
 - Cline uses memory and `docs/PROJECT_CONTEXT.md` first.
 - Cline reads only route/controller/service files relevant to that endpoint.
 

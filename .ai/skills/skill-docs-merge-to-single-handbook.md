@@ -1,5 +1,11 @@
 # Legacy Reference: Merge Docs To Single Handbook
 
+## Reference Status
+
+This file is a legacy reference only. Do not register it as a standalone skill or workflow.
+
+The active workflow path is `.ai/workflows/docs-merge-handbook.md`. Load this file only when that workflow or `.ai/skills/docs-merge-handbook/SKILL.md` needs expanded merge guidance.
+
 ## Vietnamese User Summary
 
 File này là reference legacy cho skill tổng hợp handbook cuối.

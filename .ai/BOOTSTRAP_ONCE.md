@@ -27,6 +27,7 @@ Required bootstrap steps:
    - `.ai/registry/skills.yml`
    - `.ai/registry/workflows.yml`
    - `.ai/registry/adapters.yml`
+   - `.ai/registry/tool-bootstrap.json`
 4. Read the core rules:
    - `.ai/rules/00-global-rules.md`
    - `.ai/rules/03-safety-rules.md`
@@ -54,13 +55,20 @@ Required bootstrap steps:
 9. For source-code analysis, debugging, refactoring, documentation, or API implementation:
    - Run CodeGraph preflight first when the tool is available.
    - If CodeGraph is unavailable and automatic setup fails, stop and ask the user whether to continue without CodeGraph or use another tool.
-10. For memory:
+10. For workflows that list required agents:
+   - Do not skip directly to the final artifact.
+   - Run each listed agent spec.
+   - Use delegated/sub-agent execution only when the user explicitly requested multi-agent/delegated/parallel work and the current runtime supports it.
+   - If delegated agents are unavailable, run every agent sequentially in the current session.
+   - Write each agent's required output or mark it not applicable with evidence.
+   - Record the execution mode in handoff status.
+11. For memory:
    - Retrieve memory before editing or documenting a module.
    - Use project namespace.
    - Store only verified durable facts.
    - Do not store secrets, tokens, passwords, private keys, temporary logs, unverified guesses, large raw source code, or full stack traces.
    - If memory conflicts with current source code, trust current source code and update memory.
-11. For efficiency and cost:
+12. For efficiency and cost:
    - Do not read the whole repository unless explicitly required.
    - Search memory and read project summary docs first.
    - Prefer `docs/PROJECT_CONTEXT.md`, `docs/FINDINGS.md`, and `docs/DECISIONS.md` before deep source reads.
@@ -68,14 +76,14 @@ Required bootstrap steps:
    - Use git diff for review/commit tasks.
    - Use small/cheap models for discovery, classification, formatting, checklist generation, and simple summaries.
    - Use stronger models only for difficult debugging, business logic, security-sensitive review, architecture, migration, or multi-file refactoring.
-12. For review before commit:
+13. For review before commit:
    - Use git diff first.
    - Review only changed files and direct dependencies.
    - Warn if a new endpoint or feature has no tests, failing tests, test plan, or executable regression check.
-13. Keep filesystem access scoped to the current project folder only.
-14. Do not expose secrets in chat, docs, memory, vectors, or handoff files.
-15. Use English for internal operational instructions and generated rule/skill/workflow artifacts.
-16. Respond to the user in Vietnamese unless the user explicitly requests another language.
+14. Keep filesystem access scoped to the current project folder only.
+15. Do not expose secrets in chat, docs, memory, vectors, or handoff files.
+16. Use English for internal operational instructions and generated rule/skill/workflow artifacts.
+17. Respond to the user in Vietnamese unless the user explicitly requests another language.
 
 After reading these files, reply in Vietnamese with:
 

@@ -1,4 +1,4 @@
-# Creating APIs Workflow
+# Maintaining Existing APIs Workflow
 
 ## Vietnamese User Summary
 
@@ -6,20 +6,20 @@ Workflow này dùng cho API đã có sẵn. Tạo endpoint/API mới phải dùn
 
 ## Skill
 
-Use `.ai/skills/creating-apis/SKILL.md`.
+Use `.ai/skills/maintaining-existing-apis/SKILL.md`.
 
 ## Allowed Write Paths
 
 - Source files required by the API change.
 - Test files required by the API change.
 - Existing API documentation files when the repository already maintains them.
-- `.ai/runs/creating-apis/<run_id>/`
+- `.ai/runs/maintaining-existing-apis/<run_id>/`
 
 ## Execution
 
 1. Resolve the request through `.ai/registry/triggers.yml`.
 2. If the request is for a new endpoint or new API feature, route to `developing-backend-feature-tdd`.
-3. Read the `creating-apis` skill.
+3. Read the `maintaining-existing-apis` skill.
 4. Check git status.
 5. Run CodeGraph preflight.
 6. Retrieve project/API memory.

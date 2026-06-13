@@ -28,7 +28,7 @@ When executing work, agents must think, plan, document internal steps, and write
 
 ```text
 .ai/
-  registry/       # Skill, workflow, trigger, and adapter registry.
+  registry/       # Skill, workflow, trigger, adapter, and tool bootstrap registry.
   rules/          # Shared rules and extension rules.
   skills/         # Superpowers-style skills.
   agents/         # Agent specs.
@@ -38,6 +38,18 @@ When executing work, agents must think, plan, document internal steps, and write
   handoff/        # Shared handoff files for active multi-agent runs.
   runs/           # Runtime state, namespaced by skillflow/run id.
 ```
+
+## Skill Categories
+
+Skills are grouped by runtime role:
+
+- Primary user-facing skills: active skills that can be selected directly from user intent through `.ai/registry/triggers.yml`.
+- Support skills: helper skills used by primary skills or selected directly only when explicit triggers exist.
+- Legacy references: long-form guidance files that are loaded only when a skill or workflow references them. They are not standalone skills.
+
+The trigger registry is the routing source of truth. If a user-facing skill should be callable from natural language, add trigger aliases in `.ai/registry/triggers.yml`.
+
+Tool bootstrap commands live in `.ai/registry/tool-bootstrap.json` and are used by `ai-agent-sync` when syncing this framework into another repository.
 
 ## Add A New Skillflow
 

@@ -26,6 +26,72 @@ skills:
     user_description_vi: "Phân tích endpoint API đã tồn tại."
     status: active
 
+  - id: security-review
+    skill_path: .ai/skills/security-review/SKILL.md
+    workflow_id: null
+    user_description_vi: "Review rủi ro bảo mật backend/API, auth, validation, secrets, config và dependency."
+    status: active
+
+  - id: analyzing-auth-permissions
+    skill_path: .ai/skills/analyzing-auth-permissions/SKILL.md
+    workflow_id: null
+    user_description_vi: "Phân tích auth, session/token, role, permission và ownership checks."
+    status: active
+
+  - id: reviewing-openapi-contract
+    skill_path: .ai/skills/reviewing-openapi-contract/SKILL.md
+    workflow_id: null
+    user_description_vi: "Đối chiếu OpenAPI/Swagger/Postman/API docs với source code."
+    status: active
+
+  - id: database-query-analysis
+    skill_path: .ai/skills/database-query-analysis/SKILL.md
+    workflow_id: null
+    user_description_vi: "Phân tích query database, N+1, index, transaction và rủi ro performance."
+    status: active
+
+  - id: ci-cd-troubleshooting
+    skill_path: .ai/skills/ci-cd-troubleshooting/SKILL.md
+    workflow_id: null
+    user_description_vi: "Điều tra lỗi CI/CD, build, test trên CI, deploy và container build."
+    status: active
+
+  - id: skill-security-audit
+    skill_path: .ai/skills/skill-security-audit/SKILL.md
+    workflow_id: null
+    user_description_vi: "Audit bảo mật skill, SKILL.md, registry, workflow và script đi kèm."
+    status: active
+
+  - id: skill-registry-maintenance
+    skill_path: .ai/skills/skill-registry-maintenance/SKILL.md
+    workflow_id: null
+    user_description_vi: "Bảo trì registry skill/workflow/trigger và kiểm tra consistency."
+    status: active
+
+  - id: prompt-injection-review
+    skill_path: .ai/skills/prompt-injection-review/SKILL.md
+    workflow_id: null
+    user_description_vi: "Review rủi ro prompt injection trong agent workflow, tool use, web/email/docs/RAG."
+    status: active
+
+  - id: mcp-integration-planning
+    skill_path: .ai/skills/mcp-integration-planning/SKILL.md
+    workflow_id: null
+    user_description_vi: "Lập plan hoặc review tích hợp MCP, quyền tools/resources, auth và sandbox."
+    status: active
+
+  - id: agent-workflow-evaluation
+    skill_path: .ai/skills/agent-workflow-evaluation/SKILL.md
+    workflow_id: null
+    user_description_vi: "Thiết kế hoặc review eval/regression cho skill, workflow và routing agent."
+    status: active
+
+  - id: release-notes-generation
+    skill_path: .ai/skills/release-notes-generation/SKILL.md
+    workflow_id: null
+    user_description_vi: "Tạo release notes, changelog, upgrade notes hoặc deployment summary."
+    status: active
+
   - id: writing-backend-tests-first
     skill_path: .ai/skills/writing-backend-tests-first/SKILL.md
     workflow_id: null
@@ -86,9 +152,9 @@ skills:
     user_description_vi: "Tổng hợp các bản nháp tài liệu thành handbook cuối."
     status: active
 
-  - id: creating-apis
-    skill_path: .ai/skills/creating-apis/SKILL.md
-    workflow_id: creating-apis
+  - id: maintaining-existing-apis
+    skill_path: .ai/skills/maintaining-existing-apis/SKILL.md
+    workflow_id: maintaining-existing-apis
     user_description_vi: "Duy trì hoặc chỉnh API/endpoint/route đã tồn tại."
     status: active
 

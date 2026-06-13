@@ -1,0 +1,691 @@
+#!/usr/bin/env python3
+"""
+Sync the shared .ai framework from this repository into another repository.
+
+Default source:
+  <this-framework-repo>/.ai
+
+Default target:
+  current working directory
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shlex
+import shutil
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+
+TOOL_DEFINITIONS = {
+    "codegraph": {
+        "markers": [
+            "CodeGraph",
+            "codegraph",
+            "10-codegraph-first-rules.md",
+        ],
+        "commands": [
+            "codegraph",
+            "codegraph-mcp",
+            "codegraph-cli",
+            "codegraph-daemon",
+        ],
+        "project_markers": [
+            ".ai/runtime/tool-state/codegraph.initialized",
+            ".codegraph",
+            ".codegraph-index",
+            ".codegraph_db",
+            ".codegraph-cache",
+            "codegraph",
+        ],
+        "install_env": "AI_CODEGRAPH_INSTALL_COMMAND",
+        "init_env": "AI_CODEGRAPH_INIT_COMMAND",
+        "default_init_args": {
+            "codegraph": ["init"],
+            "codegraph-cli": ["init"],
+        },
+        "install_hint": (
+            "Set AI_CODEGRAPH_INSTALL_COMMAND to the install command for your "
+            "chosen CodeGraph implementation."
+        ),
+        "init_hint": (
+            "Set AI_CODEGRAPH_INIT_COMMAND to the project initialization command "
+            "for your chosen CodeGraph implementation. CodeGraph MCP can also "
+            "index the workspace when the MCP server starts."
+        ),
+    },
+    "mcp-memory": {
+        "markers": [
+            "MCP Memory",
+            "12-memory-policy-rules.md",
+        ],
+        "commands": [],
+        "project_markers": [],
+        "install_env": "AI_MCP_MEMORY_INSTALL_COMMAND",
+        "init_env": "AI_MCP_MEMORY_INIT_COMMAND",
+        "default_init_args": {},
+        "install_hint": (
+            "MCP Memory is usually configured in the AI tool, not detected as a "
+            "single shell command. Set AI_MCP_MEMORY_INSTALL_COMMAND if your setup "
+            "has an install command."
+        ),
+        "init_hint": (
+            "Set AI_MCP_MEMORY_INIT_COMMAND if your MCP Memory setup needs a "
+            "per-repository bootstrap command."
+        ),
+    },
+    "mcp-filesystem": {
+        "markers": [
+            "MCP Filesystem",
+            "MCP Filesystem.",
+        ],
+        "commands": [],
+        "project_markers": [],
+        "install_env": "AI_MCP_FILESYSTEM_INSTALL_COMMAND",
+        "init_env": "AI_MCP_FILESYSTEM_INIT_COMMAND",
+        "default_init_args": {},
+        "install_hint": (
+            "MCP Filesystem is usually configured in the AI tool. Set "
+            "AI_MCP_FILESYSTEM_INSTALL_COMMAND if your setup has an install command."
+        ),
+        "init_hint": (
+            "Set AI_MCP_FILESYSTEM_INIT_COMMAND if your MCP Filesystem setup needs "
+            "a per-repository bootstrap command."
+        ),
+    },
+    "mcp-git": {
+        "markers": [
+            "MCP Git",
+            "MCP Git.",
+        ],
+        "commands": [],
+        "project_markers": [],
+        "install_env": "AI_MCP_GIT_INSTALL_COMMAND",
+        "init_env": "AI_MCP_GIT_INIT_COMMAND",
+        "default_init_args": {},
+        "install_hint": (
+            "MCP Git is usually configured in the AI tool. Set "
+            "AI_MCP_GIT_INSTALL_COMMAND if your setup has an install command."
+        ),
+        "init_hint": (
+            "Set AI_MCP_GIT_INIT_COMMAND if your MCP Git setup needs a "
+            "per-repository bootstrap command."
+        ),
+    },
+}
+
+
+def resolve_path(path: str | Path) -> Path:
+    return Path(path).expanduser().resolve()
+
+
+def same_path(left: Path, right: Path) -> bool:
+    try:
+        return left.samefile(right)
+    except FileNotFoundError:
+        return left == right
+
+
+def copy_tree_merge(source: Path, target: Path) -> None:
+    for item in source.iterdir():
+        destination = target / item.name
+        if item.is_dir() and not item.is_symlink():
+            destination.mkdir(parents=True, exist_ok=True)
+            copy_tree_merge(item, destination)
+            continue
+
+        if destination.exists() or destination.is_symlink():
+            if destination.is_dir() and not destination.is_symlink():
+                shutil.rmtree(destination)
+            else:
+                destination.unlink()
+
+        if item.is_symlink():
+            destination.symlink_to(os.readlink(item))
+        else:
+            shutil.copy2(item, destination)
+
+
+def backup_existing(target_ai: Path) -> Path | None:
+    if not target_ai.exists() and not target_ai.is_symlink():
+        return None
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup_path = target_ai.parent / f".ai.backup.{stamp}"
+
+    if target_ai.is_symlink() or target_ai.is_file():
+        if target_ai.is_symlink():
+            backup_path.symlink_to(os.readlink(target_ai))
+        else:
+            shutil.copy2(target_ai, backup_path)
+        return backup_path
+
+    shutil.copytree(target_ai, backup_path, symlinks=True)
+    return backup_path
+
+
+def mirror_sync(source_ai: Path, target_ai: Path, backup: bool) -> Path | None:
+    backup_path = backup_existing(target_ai) if backup else None
+    tmp_target = target_ai.parent / f".ai.sync-tmp.{os.getpid()}"
+
+    if tmp_target.exists() or tmp_target.is_symlink():
+        if tmp_target.is_dir() and not tmp_target.is_symlink():
+            shutil.rmtree(tmp_target)
+        else:
+            tmp_target.unlink()
+
+    shutil.copytree(source_ai, tmp_target, symlinks=True)
+
+    if target_ai.exists() or target_ai.is_symlink():
+        if target_ai.is_dir() and not target_ai.is_symlink():
+            shutil.rmtree(target_ai)
+        else:
+            target_ai.unlink()
+
+    tmp_target.rename(target_ai)
+    return backup_path
+
+
+def read_text_if_exists(path: Path) -> str:
+    if not path.exists() or not path.is_file():
+        return ""
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
+def files_for_tool_scope(ai_dir: Path, scope: str) -> list[Path]:
+    if scope == "all":
+        roots = [
+            ai_dir / "README.md",
+            ai_dir / "BOOTSTRAP_ONCE.md",
+            ai_dir / "skills",
+            ai_dir / "workflows",
+            ai_dir / "rules",
+            ai_dir / "agents",
+            ai_dir / "adapters",
+        ]
+        files: list[Path] = []
+        for root in roots:
+            if root.is_file():
+                files.append(root)
+            elif root.is_dir():
+                files.extend(sorted(root.rglob("*.md")))
+        return files
+
+    files = [
+        ai_dir / "skills" / scope / "SKILL.md",
+        ai_dir / "workflows" / f"{scope}.md",
+    ]
+    return [path for path in files if path.exists()]
+
+
+def required_tools_for_scope(ai_dir: Path, scope: str) -> list[str]:
+    files = files_for_tool_scope(ai_dir, scope)
+    combined_text = "\n".join(read_text_if_exists(path) for path in files)
+
+    required = []
+    for tool_id, definition in TOOL_DEFINITIONS.items():
+        if any(marker in combined_text for marker in definition["markers"]):
+            required.append(tool_id)
+    return required
+
+
+def load_tool_config(ai_dir: Path) -> dict:
+    config_path = ai_dir / "registry" / "tool-bootstrap.json"
+    if not config_path.exists():
+        return {}
+    try:
+        return json.loads(config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        print(f"Invalid tool bootstrap config: {config_path}: {exc}", file=sys.stderr)
+        return {}
+
+
+def configured_value(config: dict, tool_id: str, key: str, env_name: str) -> str:
+    env_value = os.environ.get(env_name, "").strip()
+    if env_value:
+        return env_value
+    value = config.get(tool_id, {}).get(key, "")
+    if isinstance(value, str):
+        return value.strip()
+    return ""
+
+
+def command_available(commands: list[str]) -> str | None:
+    for command in commands:
+        found = shutil.which(command)
+        if found:
+            return found
+    return None
+
+
+def prompt_yes_no(question: str) -> bool:
+    if not sys.stdin.isatty():
+        return False
+    answer = input(f"{question} [y/N] ").strip().lower()
+    return answer in {"y", "yes"}
+
+
+def run_install_command(tool_id: str, command: str, dry_run: bool) -> int:
+    print(f"Install command for {tool_id}: {command}")
+    if dry_run:
+        print("Dry run: install command was not executed.")
+        return 0
+
+    completed = subprocess.run(command, shell=True, check=False)
+    return completed.returncode
+
+
+def project_has_tool_state(repo_path: Path, markers: list[str]) -> bool:
+    if not markers:
+        return True
+    return any((repo_path / marker).exists() for marker in markers)
+
+
+def build_default_init_command(tool_id: str, command_path: str, definition: dict) -> str | None:
+    command_name = Path(command_path).name
+    args = definition["default_init_args"].get(command_name)
+    if not args:
+        print(f"No default repo init command is known for {tool_id} command: {command_name}")
+        print(f"Hint: {definition['init_hint']}")
+        return None
+    return " ".join([command_path, *args])
+
+
+def expand_command_template(command: str, repo_path: Path) -> str:
+    repo_tool_args = json.dumps({"path": str(repo_path)})
+    return (
+        command
+        .replace("{repo}", shlex.quote(str(repo_path)))
+        .replace("{repo_json}", json.dumps(str(repo_path)))
+        .replace("{repo_tool_args}", shlex.quote(repo_tool_args))
+    )
+
+
+def run_project_command(tool_id: str, command: str, repo_path: Path, dry_run: bool) -> int:
+    command = expand_command_template(command, repo_path)
+    print(f"Repo init command for {tool_id}: {command}")
+    print(f"Repo cwd: {repo_path}")
+    if dry_run:
+        print("Dry run: repo init command was not executed.")
+        return 0
+
+    completed = subprocess.run(command, cwd=repo_path, shell=True, check=False)
+    return completed.returncode
+
+
+def write_tool_state_marker(repo_path: Path, tool_id: str, dry_run: bool) -> None:
+    marker_path = repo_path / ".ai" / "runtime" / "tool-state" / f"{tool_id}.initialized"
+    if dry_run:
+        print(f"Would write tool state marker: {marker_path}")
+        return
+
+    marker_path.parent.mkdir(parents=True, exist_ok=True)
+    marker_path.write_text(datetime.now().isoformat() + "\n", encoding="utf-8")
+    print(f"Wrote tool state marker: {marker_path}")
+
+
+def mcp_server_config(tool_id: str, command_path: str, repo_path: Path) -> dict | None:
+    command_name = Path(command_path).name
+    if tool_id == "codegraph":
+        return {
+            "command": command_name,
+            "args": ["--workspace", str(repo_path)],
+        }
+    if tool_id == "mcp-memory":
+        return {
+            "command": command_name,
+            "args": [],
+        }
+    if tool_id == "mcp-filesystem":
+        return {
+            "command": command_name,
+            "args": [str(repo_path)],
+        }
+    if tool_id == "mcp-git":
+        return {
+            "command": command_name,
+            "args": [],
+        }
+    return None
+
+
+def write_mcp_runtime_config(repo_path: Path, servers: dict, dry_run: bool) -> None:
+    if not servers:
+        return
+
+    output_path = repo_path / ".ai" / "runtime" / "mcp-servers.json"
+    payload = {
+        "mcpServers": servers,
+    }
+
+    if dry_run:
+        print(f"Would write MCP runtime config: {output_path}")
+        return
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"Wrote MCP runtime config: {output_path}")
+
+
+def check_and_install_tools(
+    ai_dir: Path,
+    repo_path: Path,
+    scope: str,
+    selected_tools: list[str] | None,
+    install: bool,
+    init: bool,
+    assume_yes: bool,
+    dry_run: bool,
+) -> int:
+    required_tools = required_tools_for_scope(ai_dir, scope)
+    tool_config = load_tool_config(ai_dir)
+    if selected_tools:
+        required_tools = [tool_id for tool_id in required_tools if tool_id in selected_tools]
+
+    if not required_tools:
+        if selected_tools:
+            selected = ", ".join(selected_tools)
+            print(f"No selected tool requirements detected for scope: {scope} ({selected})")
+        else:
+            print(f"No tool requirements detected for scope: {scope}")
+        return 0
+
+    print(f"Tool scope: {scope}")
+    print("Detected required tools:")
+    for tool_id in required_tools:
+        print(f"- {tool_id}")
+
+    exit_code = 0
+    mcp_servers = {}
+    for tool_id in required_tools:
+        definition = TOOL_DEFINITIONS[tool_id]
+        commands = definition["commands"]
+        configured_commands = tool_config.get(tool_id, {}).get("commands")
+        if isinstance(configured_commands, list):
+            commands = [str(command) for command in configured_commands]
+
+        installed_path = command_available(commands)
+
+        if installed_path:
+            print(f"OK {tool_id}: {installed_path}")
+        else:
+            command_label = ", ".join(commands) if commands else "no default CLI command"
+            print(f"Missing {tool_id}: {command_label}")
+
+            if not install:
+                print(f"Hint: {definition['install_hint']}")
+                exit_code = 1
+                continue
+
+            install_env = definition["install_env"]
+            install_command = configured_value(tool_config, tool_id, "install_command", install_env)
+            if not install_command:
+                print(f"Cannot auto-install {tool_id}: {install_env} is not set.")
+                print(f"Hint: {definition['install_hint']}")
+                exit_code = 1
+                continue
+
+            if not assume_yes and not prompt_yes_no(f"Install {tool_id} now?"):
+                print(f"Skipped installing {tool_id}.")
+                exit_code = 1
+                continue
+
+            result = run_install_command(tool_id, install_command, dry_run)
+            if result != 0:
+                print(f"Install failed for {tool_id} with exit code {result}.", file=sys.stderr)
+                exit_code = result
+                continue
+            if dry_run:
+                continue
+
+            installed_path = command_available(commands)
+            if commands and not installed_path:
+                print(f"Install completed, but {tool_id} command is still not in PATH.")
+                exit_code = 1
+                continue
+            if installed_path:
+                print(f"OK {tool_id}: {installed_path}")
+            else:
+                print(f"Install completed for {tool_id}.")
+
+        if not init:
+            if installed_path:
+                config = mcp_server_config(tool_id, installed_path, repo_path)
+                if config:
+                    mcp_servers[tool_id] = config
+            continue
+
+        markers = definition["project_markers"]
+        if project_has_tool_state(repo_path, markers):
+            if markers:
+                print(f"OK {tool_id}: repo state already exists.")
+            if installed_path:
+                config = mcp_server_config(tool_id, installed_path, repo_path)
+                if config:
+                    mcp_servers[tool_id] = config
+            continue
+
+        init_env = definition["init_env"]
+        init_command = configured_value(tool_config, tool_id, "init_command", init_env)
+        if not init_command and installed_path:
+            init_command = build_default_init_command(tool_id, installed_path, definition) or ""
+
+        if not init_command:
+            print(f"Repo init skipped for {tool_id}: {init_env} is not set and no default init command is known.")
+            print(f"Hint: {definition['init_hint']}")
+            if installed_path:
+                config = mcp_server_config(tool_id, installed_path, repo_path)
+                if config:
+                    mcp_servers[tool_id] = config
+            continue
+
+        if not assume_yes and not prompt_yes_no(f"Initialize {tool_id} in {repo_path}?"):
+            print(f"Skipped initializing {tool_id}.")
+            exit_code = 1
+            continue
+
+        result = run_project_command(tool_id, init_command, repo_path, dry_run)
+        if result != 0:
+            print(f"Repo init failed for {tool_id} with exit code {result}.", file=sys.stderr)
+            exit_code = result
+            continue
+
+        write_tool_state_marker(repo_path, tool_id, dry_run)
+        if not dry_run and not project_has_tool_state(repo_path, markers):
+            marker_label = ", ".join(markers)
+            print(f"Repo init completed, but no expected marker was found: {marker_label}")
+            exit_code = 1
+        if installed_path:
+            config = mcp_server_config(tool_id, installed_path, repo_path)
+            if config:
+                mcp_servers[tool_id] = config
+
+    write_mcp_runtime_config(repo_path, mcp_servers, dry_run)
+    return exit_code
+
+
+def parse_args() -> argparse.Namespace:
+    script_path = resolve_path(__file__)
+    default_source = script_path.parent.parent / ".ai"
+
+    parser = argparse.ArgumentParser(
+        description="Sync the shared .ai agent framework into a repository.",
+    )
+    parser.add_argument(
+        "repo",
+        nargs="?",
+        default=".",
+        help="Target repository path. Defaults to the current directory.",
+    )
+    parser.add_argument(
+        "--source",
+        default=str(default_source),
+        help="Source .ai directory. Defaults to this framework repo's .ai.",
+    )
+    parser.add_argument(
+        "--no-delete",
+        action="store_true",
+        help="Merge files into target .ai instead of replacing it completely.",
+    )
+    parser.add_argument(
+        "--no-backup",
+        action="store_true",
+        help="Do not create .ai.backup.<timestamp> before replacing target .ai.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print what would happen without writing files.",
+    )
+    parser.add_argument(
+        "--check-tools",
+        nargs="?",
+        const="all",
+        metavar="SCOPE",
+        help=(
+            "Check required tools for all skills or a specific skill id. "
+            "Example: --check-tools maintaining-existing-apis"
+        ),
+    )
+    parser.add_argument(
+        "--install-tools",
+        nargs="?",
+        const="all",
+        metavar="SCOPE",
+        help=(
+            "Check and install missing tools for all skills or a specific skill id. "
+            "Install commands are read from environment variables."
+        ),
+    )
+    parser.add_argument(
+        "--no-tools",
+        action="store_true",
+        help="Only sync .ai; skip automatic tool install and repo initialization.",
+    )
+    parser.add_argument(
+        "--no-tool-init",
+        action="store_true",
+        help="Install missing tools but skip per-repository initialization.",
+    )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Run configured tool install commands without interactive confirmation.",
+    )
+    parser.add_argument(
+        "--tool",
+        action="append",
+        choices=sorted(TOOL_DEFINITIONS),
+        help=(
+            "Limit --check-tools or --install-tools to one tool. "
+            "Can be repeated. Example: --tool codegraph"
+        ),
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    source_ai = resolve_path(args.source)
+    repo_path = resolve_path(args.repo)
+    target_ai = repo_path / ".ai"
+
+    if not source_ai.exists() or not source_ai.is_dir():
+        print(f"Source .ai directory does not exist: {source_ai}", file=sys.stderr)
+        return 2
+
+    if not repo_path.exists() or not repo_path.is_dir():
+        print(f"Target repository directory does not exist: {repo_path}", file=sys.stderr)
+        return 2
+
+    auto_tools = not args.no_tools and not args.check_tools and not args.install_tools
+    tool_scope = args.install_tools or args.check_tools or ("all" if auto_tools else None)
+    should_install_tools = bool(args.install_tools or auto_tools)
+    should_init_tools = should_install_tools and not args.no_tool_init
+    assume_yes = args.yes or auto_tools
+    if tool_scope and same_path(source_ai, target_ai):
+        return check_and_install_tools(
+            source_ai,
+            repo_path,
+            tool_scope,
+            selected_tools=args.tool,
+            install=should_install_tools,
+            init=should_init_tools,
+            assume_yes=assume_yes,
+            dry_run=args.dry_run,
+        )
+
+    if same_path(source_ai, target_ai):
+        print(f"Source and target are the same .ai directory: {source_ai}")
+        print("Nothing to sync.")
+        return 0
+
+    mode = "merge" if args.no_delete else "mirror"
+    backup_enabled = not args.no_backup and not args.no_delete
+
+    print(f"Source: {source_ai}")
+    print(f"Target: {target_ai}")
+    print(f"Mode:   {mode}")
+
+    if args.dry_run:
+        if backup_enabled and (target_ai.exists() or target_ai.is_symlink()):
+            print("Would create backup: .ai.backup.<timestamp>")
+        if args.no_delete:
+            print("Would copy source files into target .ai without deleting extra target files.")
+        else:
+            print("Would replace target .ai with an exact copy of source .ai.")
+        if tool_scope:
+            return check_and_install_tools(
+                source_ai,
+                repo_path,
+                tool_scope,
+                selected_tools=args.tool,
+                install=should_install_tools,
+                init=should_init_tools,
+                assume_yes=assume_yes,
+                dry_run=True,
+            )
+        return 0
+
+    if args.no_delete:
+        target_ai.mkdir(parents=True, exist_ok=True)
+        copy_tree_merge(source_ai, target_ai)
+        print("Synced .ai by merging source files into target.")
+        if tool_scope:
+            return check_and_install_tools(
+                target_ai,
+                repo_path,
+                tool_scope,
+                selected_tools=args.tool,
+                install=should_install_tools,
+                init=should_init_tools,
+                assume_yes=assume_yes,
+                dry_run=args.dry_run,
+            )
+        return 0
+
+    backup_path = mirror_sync(source_ai, target_ai, backup_enabled)
+    if backup_path:
+        print(f"Backup: {backup_path}")
+    print("Synced .ai as an exact mirror of the source framework.")
+    if tool_scope:
+        return check_and_install_tools(
+            target_ai,
+            repo_path,
+            tool_scope,
+            selected_tools=args.tool,
+            install=should_install_tools,
+            init=should_init_tools,
+            assume_yes=assume_yes,
+            dry_run=args.dry_run,
+        )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

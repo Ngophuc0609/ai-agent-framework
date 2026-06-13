@@ -1,0 +1,33 @@
+{
+  "codegraph": {
+    "commands": [
+      "codegraph",
+      "codegraph-mcp",
+      "codegraph-cli",
+      "codegraph-daemon"
+    ],
+    "install_command": "npm install -g @astudioplus/codegraph-mcp",
+    "init_command": "codegraph-mcp --workspace {repo} --graph-only --run-tool codegraph_index_directory --tool-args {repo_tool_args}"
+  },
+  "mcp-memory": {
+    "commands": [
+      "mcp-server-memory"
+    ],
+    "install_command": "npm install -g @modelcontextprotocol/server-memory",
+    "init_command": ""
+  },
+  "mcp-filesystem": {
+    "commands": [
+      "mcp-server-filesystem"
+    ],
+    "install_command": "npm install -g @modelcontextprotocol/server-filesystem",
+    "init_command": ""
+  },
+  "mcp-git": {
+    "commands": [
+      "git-mcp-server"
+    ],
+    "install_command": "npm install -g @cyanheads/git-mcp-server",
+    "init_command": ""
+  }
+}

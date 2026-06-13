@@ -54,8 +54,200 @@ triggers:
       - phân tích api hiện có
       - phân tích endpoint hiện có
 
-  - workflow_id: creating-apis
-    skill_id: creating-apis
+  - workflow_id: null
+    skill_id: security-review
+    trigger_phrases_en:
+      - security review
+      - review security
+      - check backend security
+      - inspect secrets exposure
+      - review api security
+    trigger_phrases_vi:
+      - review bảo mật
+      - kiểm tra bảo mật
+      - kiểm tra security
+      - review security
+      - kiểm tra lộ secrets
+
+  - workflow_id: null
+    skill_id: analyzing-auth-permissions
+    trigger_phrases_en:
+      - analyze auth permissions
+      - inspect authentication flow
+      - inspect authorization flow
+      - analyze rbac
+      - review ownership checks
+    trigger_phrases_vi:
+      - phân tích auth
+      - phân tích phân quyền
+      - kiểm tra permission
+      - phân tích rbac
+      - kiểm tra ownership
+
+  - workflow_id: null
+    skill_id: reviewing-openapi-contract
+    trigger_phrases_en:
+      - review openapi contract
+      - compare swagger with code
+      - review api documentation contract
+      - validate postman collection
+      - check api docs mismatch
+    trigger_phrases_vi:
+      - review openapi
+      - kiểm tra swagger
+      - đối chiếu api docs
+      - kiểm tra postman
+      - kiểm tra lệch contract api
+
+  - workflow_id: null
+    skill_id: database-query-analysis
+    trigger_phrases_en:
+      - analyze database query
+      - investigate slow query
+      - check n plus one
+      - review query performance
+      - analyze transaction locking
+    trigger_phrases_vi:
+      - phân tích query
+      - phân tích query database
+      - kiểm tra query chậm
+      - kiểm tra n+1
+      - phân tích transaction
+
+  - workflow_id: null
+    skill_id: ci-cd-troubleshooting
+    trigger_phrases_en:
+      - troubleshoot ci
+      - fix ci failure
+      - investigate pipeline failure
+      - debug deployment failure
+      - fix docker build failure
+    trigger_phrases_vi:
+      - debug ci
+      - sửa lỗi ci
+      - điều tra lỗi pipeline
+      - debug deploy
+      - sửa lỗi docker build
+
+  - workflow_id: null
+    skill_id: skill-security-audit
+    trigger_phrases_en:
+      - audit agent skill security
+      - review skill security
+      - audit skill package
+      - check skill prompt injection
+      - review skill supply chain risk
+    trigger_phrases_vi:
+      - audit bảo mật skill
+      - review bảo mật skill
+      - kiểm tra skill độc hại
+      - kiểm tra prompt injection trong skill
+      - audit skill ai
+
+  - workflow_id: null
+    skill_id: skill-registry-maintenance
+    trigger_phrases_en:
+      - validate skill registry
+      - maintain skill registry
+      - fix trigger registry
+      - check workflow registry
+      - repair skill metadata
+    trigger_phrases_vi:
+      - kiểm tra registry skill
+      - bảo trì registry skill
+      - sửa trigger registry
+      - kiểm tra workflow registry
+      - validate registry skill
+
+  - workflow_id: null
+    skill_id: prompt-injection-review
+    trigger_phrases_en:
+      - prompt injection review
+      - review indirect prompt injection
+      - check agent injection risk
+      - review rag prompt injection
+      - review tool misuse risk
+    trigger_phrases_vi:
+      - review prompt injection
+      - kiểm tra prompt injection
+      - kiểm tra indirect prompt injection
+      - review rủi ro tool misuse
+      - kiểm tra injection trong rag
+
+  - workflow_id: null
+    skill_id: mcp-integration-planning
+    trigger_phrases_en:
+      - plan mcp integration
+      - review mcp server
+      - design mcp tools
+      - document mcp integration
+      - check mcp permissions
+    trigger_phrases_vi:
+      - lập plan mcp
+      - review mcp server
+      - thiết kế mcp tools
+      - tài liệu tích hợp mcp
+      - kiểm tra quyền mcp
+
+  - workflow_id: null
+    skill_id: agent-workflow-evaluation
+    trigger_phrases_en:
+      - evaluate agent workflow
+      - create skill eval
+      - test skill routing
+      - build agent regression suite
+      - review workflow evaluation
+    trigger_phrases_vi:
+      - eval workflow agent
+      - tạo eval skill
+      - kiểm tra routing skill
+      - tạo regression cho agent
+      - đánh giá workflow ai
+
+  - workflow_id: null
+    skill_id: release-notes-generation
+    trigger_phrases_en:
+      - generate release notes
+      - write changelog
+      - create upgrade notes
+      - summarize release changes
+      - write deployment summary
+    trigger_phrases_vi:
+      - tạo release notes
+      - viết changelog
+      - tạo ghi chú nâng cấp
+      - tóm tắt thay đổi release
+      - viết deployment summary
+
+  - workflow_id: null
+    skill_id: routing-ai-task
+    trigger_phrases_en:
+      - route ai task
+      - choose task workflow
+      - decide task skill
+      - classify user request
+    trigger_phrases_vi:
+      - định tuyến task ai
+      - phân loại yêu cầu
+      - chọn workflow xử lý
+      - chọn skill xử lý
+
+  - workflow_id: null
+    skill_id: analyzing-background-jobs
+    trigger_phrases_en:
+      - analyze background job
+      - inspect scheduler
+      - document worker
+      - analyze queue processing
+    trigger_phrases_vi:
+      - phân tích job nền
+      - phân tích scheduler
+      - phân tích worker
+      - phân tích queue
+      - tài liệu job nền
+
+  - workflow_id: maintaining-existing-apis
+    skill_id: maintaining-existing-apis
     trigger_phrases_en:
       - update existing api
       - change existing endpoint
@@ -63,6 +255,45 @@ triggers:
     trigger_phrases_vi:
       - sửa api hiện có
       - chỉnh endpoint hiện có
+
+  - workflow_id: null
+    skill_id: generating-backend-tests
+    trigger_phrases_en:
+      - generate backend tests
+      - add backend tests
+      - update backend tests
+      - create service tests
+    trigger_phrases_vi:
+      - sinh test backend
+      - tạo test backend
+      - thêm test backend
+      - cập nhật test backend
+
+  - workflow_id: null
+    skill_id: writing-backend-tests-first
+    trigger_phrases_en:
+      - write backend tests first
+      - write failing backend tests
+      - create tests before implementation
+      - add regression test first
+    trigger_phrases_vi:
+      - viết test trước
+      - viết test backend trước
+      - tạo test fail trước
+      - thêm regression test trước
+
+  - workflow_id: null
+    skill_id: generating-api-test-assets
+    trigger_phrases_en:
+      - generate api test assets
+      - create curl examples
+      - create postman requests
+      - generate sql verification
+    trigger_phrases_vi:
+      - tạo curl kiểm thử api
+      - tạo postman kiểm thử api
+      - tạo sql verify
+      - tạo tài sản test api
 
   - workflow_id: developing-backend-feature-tdd
     skill_id: developing-backend-feature-tdd
@@ -106,6 +337,19 @@ triggers:
       - kiểm tra diff trước commit
 
   - workflow_id: null
+    skill_id: reviewing-sql-migration
+    trigger_phrases_en:
+      - review sql migration
+      - review database migration
+      - review schema change
+      - inspect migration rollback
+    trigger_phrases_vi:
+      - review migration
+      - review sql migration
+      - kiểm tra migration
+      - kiểm tra thay đổi schema
+
+  - workflow_id: null
     skill_id: writing-vietnamese-commit-message
     trigger_phrases_en:
       - write commit message
@@ -133,3 +377,16 @@ triggers:
     trigger_phrases_vi:
       - refactor backend
       - refactor code backend
+
+  - workflow_id: null
+    skill_id: skill-detector
+    trigger_phrases_en:
+      - detect skill
+      - choose skill
+      - select workflow
+      - identify matching skill
+    trigger_phrases_vi:
+      - chọn skill
+      - xác định skill
+      - chọn workflow
+      - nhận diện skill phù hợp

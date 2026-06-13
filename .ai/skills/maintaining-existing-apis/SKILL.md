@@ -1,13 +1,13 @@
 ---
-name: creating-apis
+name: maintaining-existing-apis
 description: Use when maintaining or changing existing API endpoints, routes, handlers, gateway routes, request/response contracts, API documentation, or API tests; for new endpoints or new API features, use developing-backend-feature-tdd instead
 ---
 
-# Creating APIs
+# Maintaining Existing APIs
 
 ## Vietnamese User Summary
 
-Skill này dùng cho API đã có sẵn. Nếu bạn yêu cầu tạo endpoint/API mới, agent phải chuyển sang `developing-backend-feature-tdd`.
+Skill này duy trì hoặc chỉnh API đã có sẵn. Nếu bạn yêu cầu tạo endpoint/API mới, agent phải chuyển sang `developing-backend-feature-tdd`.
 
 ## REQUIRED BACKGROUND
 

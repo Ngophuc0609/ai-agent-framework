@@ -1,5 +1,11 @@
 # Legacy Reference: Source Code Handover Documentation
 
+## Reference Status
+
+This file is a legacy reference only. Do not register it as a standalone skill or workflow.
+
+Load this file only when `.ai/skills/source-code-handover/SKILL.md` or a source-code handover workflow needs expanded agent guidance.
+
 ## Vietnamese User Summary
 
 File này là reference legacy chi tiết cho skill tạo tài liệu bàn giao source code.
