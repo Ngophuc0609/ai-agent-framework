@@ -51,6 +51,7 @@ Do not route new endpoint or new feature requests directly to `analyzing-api-end
 | Review prompt injection or tool misuse risks | `prompt-injection-review` |
 | Plan or review MCP integration | `mcp-integration-planning` |
 | Evaluate agent skill or workflow behavior | `agent-workflow-evaluation` |
+| Standardize multi-agent framework, rules, skills, or adapters | `standardizing-ai-agent-framework` |
 | Generate release notes or changelog | `release-notes-generation` |
 | Generate tests for an existing target | `generating-backend-tests` |
 | Write failing backend tests first | `writing-backend-tests-first` |

@@ -64,18 +64,21 @@ TOOL_DEFINITIONS = {
             "MCP Memory",
             "12-memory-policy-rules.md",
         ],
-        "commands": [],
-        "project_markers": [],
+        "commands": [
+            "mcp-server-memory",
+        ],
+        "project_markers": [
+            ".ai/runtime/memory/memory.jsonl",
+        ],
         "install_env": "AI_MCP_MEMORY_INSTALL_COMMAND",
         "init_env": "AI_MCP_MEMORY_INIT_COMMAND",
         "default_init_args": {},
         "install_hint": (
-            "MCP Memory is usually configured in the AI tool, not detected as a "
-            "single shell command. Set AI_MCP_MEMORY_INSTALL_COMMAND if your setup "
-            "has an install command."
+            "Install @modelcontextprotocol/server-memory or set "
+            "AI_MCP_MEMORY_INSTALL_COMMAND if your setup has a custom install command."
         ),
         "init_hint": (
-            "Set AI_MCP_MEMORY_INIT_COMMAND if your MCP Memory setup needs a "
+            "Set AI_MCP_MEMORY_INIT_COMMAND if your MCP Memory setup needs a custom "
             "per-repository bootstrap command."
         ),
     },
@@ -118,6 +121,33 @@ TOOL_DEFINITIONS = {
         ),
     },
 }
+
+ADAPTER_AGENT_ALIASES = {
+    "agent": "agents",
+    "agents": "agents",
+    "ag": "antigravity",
+    "agy": "antigravity",
+    "anti": "antigravity",
+    "aantigravity": "antigravity",
+    "antigravity": "antigravity",
+    "gemini": "antigravity",
+    "claude": "claude",
+    "clause": "claude",
+    "cline": "cline",
+    "codex": "codex",
+    "copilot": "copilot",
+    "github-copilot": "copilot",
+    "gh-copilot": "copilot",
+    "cursor": "cursor",
+}
+
+
+def adapter_agent_alias(value: str) -> str | None:
+    if any(separator in value for separator in ("/", "\\")):
+        return None
+    if value in {".", ".."}:
+        return None
+    return ADAPTER_AGENT_ALIASES.get(value.lower())
 
 
 def resolve_path(path: str | Path) -> Path:
@@ -318,6 +348,32 @@ def run_project_command(tool_id: str, command: str, repo_path: Path, dry_run: bo
     return completed.returncode
 
 
+def run_adapter_sync(
+    repo_path: Path,
+    adapter_agents: list[str] | None,
+    force: bool,
+    dry_run: bool,
+) -> int:
+    script_path = resolve_path(__file__)
+    adapter_script = script_path.parent / "ai-agent-adapter-sync"
+    if not adapter_script.exists():
+        print(f"Adapter sync script does not exist: {adapter_script}", file=sys.stderr)
+        return 1
+
+    command = [str(adapter_script), str(repo_path)]
+    for agent in adapter_agents or []:
+        command.extend(["--agent", agent])
+    if force:
+        command.append("--force")
+    if dry_run:
+        command.append("--dry-run")
+
+    print(f"Adapter sync command: {' '.join(shlex.quote(part) for part in command)}")
+    sys.stdout.flush()
+    completed = subprocess.run(command, cwd=repo_path, check=False)
+    return completed.returncode
+
+
 def write_tool_state_marker(repo_path: Path, tool_id: str, dry_run: bool) -> None:
     marker_path = repo_path / ".ai" / "runtime" / "tool-state" / f"{tool_id}.initialized"
     if dry_run:
@@ -340,6 +396,9 @@ def mcp_server_config(tool_id: str, command_path: str, repo_path: Path) -> dict 
         return {
             "command": command_name,
             "args": [],
+            "env": {
+                "MEMORY_FILE_PATH": str(repo_path / ".ai" / "runtime" / "memory" / "memory.jsonl"),
+            },
         }
     if tool_id == "mcp-filesystem":
         return {
@@ -520,7 +579,10 @@ def parse_args() -> argparse.Namespace:
         "repo",
         nargs="?",
         default=".",
-        help="Target repository path. Defaults to the current directory.",
+        help=(
+            "Target repository path, or an agent shortcut such as cline, codex, "
+            "cursor, copilot, claude, or agy. Defaults to the current directory."
+        ),
     )
     parser.add_argument(
         "--source",
@@ -586,11 +648,41 @@ def parse_args() -> argparse.Namespace:
             "Can be repeated. Example: --tool codegraph"
         ),
     )
+    parser.add_argument(
+        "--generate-adapters",
+        action="store_true",
+        help="Generate native agent instruction files after syncing .ai.",
+    )
+    parser.add_argument(
+        "--adapter-agent",
+        action="append",
+        choices=[
+            "agents",
+            "antigravity",
+            "claude",
+            "cline",
+            "codex",
+            "copilot",
+            "cursor",
+        ],
+        help="Limit --generate-adapters to one agent target. Can be repeated.",
+    )
+    parser.add_argument(
+        "--force-adapters",
+        action="store_true",
+        help="Allow generated adapter files to overwrite existing user-authored instruction files.",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    shortcut_agent = adapter_agent_alias(args.repo)
+    if shortcut_agent:
+        args.repo = "."
+        args.generate_adapters = True
+        args.adapter_agent = [shortcut_agent]
+
     source_ai = resolve_path(args.source)
     repo_path = resolve_path(args.repo)
     target_ai = repo_path / ".ai"
@@ -609,7 +701,7 @@ def main() -> int:
     should_init_tools = should_install_tools and not args.no_tool_init
     assume_yes = args.yes or auto_tools
     if tool_scope and same_path(source_ai, target_ai):
-        return check_and_install_tools(
+        exit_code = check_and_install_tools(
             source_ai,
             repo_path,
             tool_scope,
@@ -619,10 +711,16 @@ def main() -> int:
             assume_yes=assume_yes,
             dry_run=args.dry_run,
         )
+        if args.generate_adapters:
+            adapter_exit = run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, args.dry_run)
+            exit_code = exit_code or adapter_exit
+        return exit_code
 
     if same_path(source_ai, target_ai):
         print(f"Source and target are the same .ai directory: {source_ai}")
         print("Nothing to sync.")
+        if args.generate_adapters:
+            return run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, args.dry_run)
         return 0
 
     mode = "merge" if args.no_delete else "mirror"
@@ -640,7 +738,7 @@ def main() -> int:
         else:
             print("Would replace target .ai with an exact copy of source .ai.")
         if tool_scope:
-            return check_and_install_tools(
+            exit_code = check_and_install_tools(
                 source_ai,
                 repo_path,
                 tool_scope,
@@ -650,14 +748,27 @@ def main() -> int:
                 assume_yes=assume_yes,
                 dry_run=True,
             )
+            if args.generate_adapters:
+                if target_ai.exists():
+                    adapter_exit = run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, True)
+                    exit_code = exit_code or adapter_exit
+                else:
+                    print("Would run adapter sync after .ai is synced.")
+            return exit_code
+        if args.generate_adapters:
+            if target_ai.exists():
+                return run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, True)
+            print("Would run adapter sync after .ai is synced.")
+            return 0
         return 0
 
     if args.no_delete:
         target_ai.mkdir(parents=True, exist_ok=True)
         copy_tree_merge(source_ai, target_ai)
         print("Synced .ai by merging source files into target.")
+        exit_code = 0
         if tool_scope:
-            return check_and_install_tools(
+            exit_code = check_and_install_tools(
                 target_ai,
                 repo_path,
                 tool_scope,
@@ -667,14 +778,18 @@ def main() -> int:
                 assume_yes=assume_yes,
                 dry_run=args.dry_run,
             )
-        return 0
+        if args.generate_adapters:
+            adapter_exit = run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, args.dry_run)
+            exit_code = exit_code or adapter_exit
+        return exit_code
 
     backup_path = mirror_sync(source_ai, target_ai, backup_enabled)
     if backup_path:
         print(f"Backup: {backup_path}")
     print("Synced .ai as an exact mirror of the source framework.")
+    exit_code = 0
     if tool_scope:
-        return check_and_install_tools(
+        exit_code = check_and_install_tools(
             target_ai,
             repo_path,
             tool_scope,
@@ -684,7 +799,10 @@ def main() -> int:
             assume_yes=assume_yes,
             dry_run=args.dry_run,
         )
-    return 0
+    if args.generate_adapters:
+        adapter_exit = run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, args.dry_run)
+        exit_code = exit_code or adapter_exit
+    return exit_code
 
 
 if __name__ == "__main__":

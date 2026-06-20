@@ -35,3 +35,10 @@ workflows:
     user_description_vi: "Workflow duy trì hoặc chỉnh API đã tồn tại."
     default_output_namespace: api-changes
     status: active
+
+  - id: standardizing-ai-agent-framework
+    path: .ai/workflows/standardizing-ai-agent-framework.md
+    skill_id: standardizing-ai-agent-framework
+    user_description_vi: "Workflow chuẩn hóa .ai để sinh native rules và Agent Skills cho nhiều AI agent."
+    default_output_namespace: ai-agent-framework
+    status: active

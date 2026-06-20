@@ -169,3 +169,9 @@ skills:
     workflow_id: null
     user_description_vi: "Nhận diện skill phù hợp từ yêu cầu người dùng."
     status: support
+
+  - id: standardizing-ai-agent-framework
+    skill_path: .ai/skills/standardizing-ai-agent-framework/SKILL.md
+    workflow_id: standardizing-ai-agent-framework
+    user_description_vi: "Chuẩn hóa bộ .ai, rule, skill, workflow và adapter native cho nhiều AI agent."
+    status: active

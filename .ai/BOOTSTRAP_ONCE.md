@@ -28,7 +28,14 @@ Required bootstrap steps:
    - `.ai/registry/workflows.yml`
    - `.ai/registry/adapters.yml`
    - `.ai/registry/tool-bootstrap.json`
-4. Read the core rules:
+4. Before doing any coding, documentation, debugging, review, refactor, commit, or analysis task, initialize required MCP/tool runtime when it is not already initialized:
+   - Command created on: `2026-06-20`
+   - Run: `ai-agent-sync --install-tools --yes`
+   - This must create or verify `.ai/runtime/memory/memory.jsonl` for MCP Memory.
+   - This must write or verify `.ai/runtime/mcp-servers.json` with an `mcp-memory` server using `MEMORY_FILE_PATH` scoped to the current repository.
+   - If `ai-agent-sync` is not in `PATH`, run `bin/ai-agent-sync --install-tools --yes` from the repository root.
+   - If automatic initialization fails, record the limitation and ask the user before continuing with weaker memory fallback.
+5. Read the core rules:
    - `.ai/rules/00-global-rules.md`
    - `.ai/rules/03-safety-rules.md`
    - `.ai/rules/04-one-command-trigger.md`
@@ -38,12 +45,12 @@ Required bootstrap steps:
    - `.ai/rules/12-memory-policy-rules.md`
    - `.ai/rules/13-efficiency-cost-policy-rules.md`
    - `.ai/rules/14-tdd-first-feature-rules.md`
-5. Treat `.ai/registry/triggers.yml` as the source of truth for routing user requests.
-6. Use `.ai/skills/routing-ai-task/SKILL.md` when the correct specialized skill is not obvious.
-7. For any new backend endpoint, new API, new feature, new service behavior, new database-backed flow, webhook, callback, integration flow, or background job, route to:
+6. Treat `.ai/registry/triggers.yml` as the source of truth for routing user requests.
+7. Use `.ai/skills/routing-ai-task/SKILL.md` when the correct specialized skill is not obvious.
+8. For any new backend endpoint, new API, new feature, new service behavior, new database-backed flow, webhook, callback, integration flow, or background job, route to:
    - `.ai/skills/developing-backend-feature-tdd/SKILL.md`
    - `.ai/workflows/developing-backend-feature-tdd.md`
-8. Do not implement production code for a new feature until these exist:
+9. Do not implement production code for a new feature until these exist:
    - Brainstorm
    - API or behavior contract
    - Acceptance criteria
@@ -52,23 +59,24 @@ Required bootstrap steps:
    - Data impact
    - Auth/permission impact
    - Backward compatibility impact
-9. For source-code analysis, debugging, refactoring, documentation, or API implementation:
+10. For source-code analysis, debugging, refactoring, documentation, or API implementation:
    - Run CodeGraph preflight first when the tool is available.
    - If CodeGraph is unavailable and automatic setup fails, stop and ask the user whether to continue without CodeGraph or use another tool.
-10. For workflows that list required agents:
+11. For workflows that list required agents:
    - Do not skip directly to the final artifact.
    - Run each listed agent spec.
    - Use delegated/sub-agent execution only when the user explicitly requested multi-agent/delegated/parallel work and the current runtime supports it.
    - If delegated agents are unavailable, run every agent sequentially in the current session.
    - Write each agent's required output or mark it not applicable with evidence.
    - Record the execution mode in handoff status.
-11. For memory:
+12. For memory:
+   - Initialize MCP Memory before the first operation using the command from step 4 when `.ai/runtime/memory/memory.jsonl` or `.ai/runtime/mcp-servers.json` is missing.
    - Retrieve memory before editing or documenting a module.
    - Use project namespace.
    - Store only verified durable facts.
    - Do not store secrets, tokens, passwords, private keys, temporary logs, unverified guesses, large raw source code, or full stack traces.
    - If memory conflicts with current source code, trust current source code and update memory.
-12. For efficiency and cost:
+13. For efficiency and cost:
    - Do not read the whole repository unless explicitly required.
    - Search memory and read project summary docs first.
    - Prefer `docs/PROJECT_CONTEXT.md`, `docs/FINDINGS.md`, and `docs/DECISIONS.md` before deep source reads.
@@ -76,14 +84,14 @@ Required bootstrap steps:
    - Use git diff for review/commit tasks.
    - Use small/cheap models for discovery, classification, formatting, checklist generation, and simple summaries.
    - Use stronger models only for difficult debugging, business logic, security-sensitive review, architecture, migration, or multi-file refactoring.
-13. For review before commit:
+14. For review before commit:
    - Use git diff first.
    - Review only changed files and direct dependencies.
    - Warn if a new endpoint or feature has no tests, failing tests, test plan, or executable regression check.
-14. Keep filesystem access scoped to the current project folder only.
-15. Do not expose secrets in chat, docs, memory, vectors, or handoff files.
-16. Use English for internal operational instructions and generated rule/skill/workflow artifacts.
-17. Respond to the user in Vietnamese unless the user explicitly requests another language.
+15. Keep filesystem access scoped to the current project folder only.
+16. Do not expose secrets in chat, docs, memory, vectors, or handoff files.
+17. Use English for internal operational instructions and generated rule/skill/workflow artifacts.
+18. Respond to the user in Vietnamese unless the user explicitly requests another language.
 
 After reading these files, reply in Vietnamese with:
 

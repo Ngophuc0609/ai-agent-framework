@@ -15,6 +15,47 @@ ai-agent-sync
 By default, this syncs `.ai`, checks all required tools, installs missing tools, and runs repo-local initialization when an init command is configured.
 It also writes `.ai/runtime/mcp-servers.json` with MCP server commands scoped to the target repository.
 
+To sync `.ai`, initialize tools, and generate native instructions plus Agent Skills for one agent in the current repository, pass the agent shortcut as the first argument:
+
+```bash
+ai-agent-sync cline
+ai-agent-sync codex
+ai-agent-sync cursor
+ai-agent-sync copilot
+ai-agent-sync claude
+ai-agent-sync agy
+```
+
+`agy`, `ag`, `anti`, `antigravity`, `aantigravity`, and `gemini` all target Google Antigravity. `clause` is accepted as an alias for `claude`.
+
+If you need to sync into a repository path whose folder name is the same as an agent shortcut, pass an explicit path such as `./cline` or `/path/to/cline`.
+
+## Required Pre-Task MCP Memory Init
+
+Created on: `2026-06-20`.
+
+Agents must initialize MCP Memory before any coding, documentation, debugging, review, refactor, commit, or analysis task when the target repository does not already have `.ai/runtime/memory/memory.jsonl` and `.ai/runtime/mcp-servers.json`.
+
+Preferred command from the target repository root:
+
+```bash
+ai-agent-sync --install-tools --yes
+```
+
+Fallback when `ai-agent-sync` is not in `PATH`:
+
+```bash
+bin/ai-agent-sync --install-tools --yes
+```
+
+The default MCP Memory init command in `.ai/registry/tool-bootstrap.json` creates:
+
+```text
+.ai/runtime/memory/memory.jsonl
+```
+
+The generated MCP runtime config must include an `mcp-memory` server with `MEMORY_FILE_PATH` scoped to that repo-local file. This prevents agents from accidentally using the package-global memory file.
+
 Or pass a repository path:
 
 ```bash
@@ -57,6 +98,20 @@ Sync `.ai` and install missing tools for all skills:
 ai-agent-sync /path/to/target-repo --install-tools --yes
 ```
 
+Sync `.ai`, initialize tools, and generate native agent instruction files plus Agent Skills:
+
+```bash
+ai-agent-sync /path/to/target-repo --install-tools --yes --generate-adapters
+```
+
+Equivalent current-repo shortcut examples:
+
+```bash
+ai-agent-sync cline
+ai-agent-sync copilot
+ai-agent-sync agy
+```
+
 Sync `.ai` and install missing tools for one skill:
 
 ```bash
@@ -77,12 +132,17 @@ ai-agent-sync /path/to/target-repo --install-tools maintaining-existing-apis --t
 - If target `.ai` already exists, the command creates `.ai.backup.<timestamp>` before replacing it.
 - After sync, the command automatically bootstraps all detected required tools.
 - After successful tool detection/install, the command writes `.ai/runtime/mcp-servers.json`.
+- For MCP Memory, the command creates `.ai/runtime/memory/memory.jsonl` and configures `MEMORY_FILE_PATH` in `.ai/runtime/mcp-servers.json`.
+- Run `ai-agent-adapter-sync` after this command when you want native instruction files and Agent Skills for Codex, Cursor, Copilot, Claude, Cline, Antigravity, and cross-tool `AGENTS.md` consumers.
 - Use `--no-delete` when a repo intentionally keeps local-only files inside `.ai`.
 - Use `--no-tools` to skip automatic tool install and repo initialization.
 - Use `--no-tool-init` to install missing tools but skip repo-local initialization.
 - `--check-tools` scans skill/workflow/rule text and reports missing runtime tools.
 - `--install-tools` runs configured install commands for missing tools.
 - `--tool <id>` limits check/install to a specific tool. It can be repeated.
+- `--generate-adapters` runs `ai-agent-adapter-sync` after `.ai` sync/tool bootstrap, including native Agent Skills unless `ai-agent-adapter-sync --no-skills` is run separately.
+- `--adapter-agent <id>` limits generated native instruction files to one agent target. It can be repeated.
+- `--force-adapters` lets generated adapter files overwrite existing user-authored instruction files.
 
 ## Tool Install Configuration
 
@@ -144,7 +204,7 @@ Supported init command placeholders:
 Supported tool checks:
 
 - `codegraph`: checks `codegraph`, `codegraph-mcp`, `codegraph-cli`, or `codegraph-daemon` in `PATH`; installs default CodeGraph MCP when missing; initializes only when an init command is configured or a known CLI default exists.
-- `mcp-memory`: checks `mcp-server-memory`; installs default MCP Memory server when missing.
+- `mcp-memory`: checks `mcp-server-memory`; installs default MCP Memory server when missing; initializes repo-local memory at `.ai/runtime/memory/memory.jsonl`.
 - `mcp-filesystem`: checks `mcp-server-filesystem`; installs default MCP Filesystem server when missing.
 - `mcp-git`: checks `git-mcp-server`; installs default MCP Git server when missing.
 
@@ -168,6 +228,13 @@ This file contains MCP server commands for the synced repo. Example shape:
     "mcp-filesystem": {
       "command": "mcp-server-filesystem",
       "args": ["/path/to/repo"]
+    },
+    "mcp-memory": {
+      "command": "mcp-server-memory",
+      "args": [],
+      "env": {
+        "MEMORY_FILE_PATH": "/path/to/repo/.ai/runtime/memory/memory.jsonl"
+      }
     }
   }
 }

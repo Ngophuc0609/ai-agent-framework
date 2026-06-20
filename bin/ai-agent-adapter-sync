@@ -1,0 +1,349 @@
+#!/usr/bin/env python3
+"""
+Generate native instruction files for common AI coding agents from .ai/.
+
+Default target:
+  current working directory
+"""
+
+from __future__ import annotations
+
+import argparse
+from datetime import date
+from pathlib import Path
+
+
+GENERATED_MARKER = "<!-- generated-by: ai-agent-adapter-sync -->"
+DEFAULT_AGENTS = [
+    "agents",
+    "codex",
+    "cursor",
+    "copilot",
+    "claude",
+    "cline",
+    "antigravity",
+]
+
+CORE_FILES = [
+    ".ai/README.md",
+    ".ai/BOOTSTRAP_ONCE.md",
+    ".ai/registry/adapters.yml",
+    ".ai/registry/skills.yml",
+    ".ai/registry/workflows.yml",
+    ".ai/registry/triggers.yml",
+    ".ai/registry/tool-bootstrap.json",
+    ".ai/rules/00-global-rules.md",
+    ".ai/rules/01-documentation-skill.md",
+    ".ai/rules/02-multi-agent-rules.md",
+    ".ai/rules/03-safety-rules.md",
+    ".ai/rules/04-one-command-trigger.md",
+    ".ai/rules/05-workflow-execution-rules.md",
+    ".ai/rules/06-quality-gates.md",
+    ".ai/rules/07-agent-review-rules.md",
+    ".ai/rules/08-model-routing-rules.md",
+    ".ai/rules/09-model-trigger-rules.md",
+    ".ai/rules/10-codegraph-first-rules.md",
+    ".ai/rules/11-skillflow-extension-rules.md",
+    ".ai/rules/12-memory-policy-rules.md",
+    ".ai/rules/13-efficiency-cost-policy-rules.md",
+    ".ai/rules/14-tdd-first-feature-rules.md",
+]
+
+ADAPTER_FILES = {
+    "codex": [".ai/adapters/codex.md"],
+    "cursor": [".ai/adapters/cursor.md"],
+    "cline": [".ai/adapters/cline.md"],
+    "claude": [".ai/adapters/claude.md"],
+    "copilot": [".ai/adapters/copilot.md"],
+    "antigravity": [".ai/adapters/antigravity.md"],
+}
+
+SKILL_TARGET_DIRS = {
+    "agents": [".agents/skills"],
+    "codex": [".agents/skills"],
+    "cursor": [".agents/skills"],
+    "copilot": [".github/skills"],
+    "claude": [".claude/skills"],
+    "cline": [".cline/skills"],
+    "antigravity": [".agents/skills"],
+}
+
+
+def resolve_path(value: str | Path) -> Path:
+    return Path(value).expanduser().resolve()
+
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="replace").rstrip()
+
+
+def existing_generated(path: Path) -> bool:
+    if not path.exists() or not path.is_file():
+        return False
+    return GENERATED_MARKER in read_text(path)
+
+
+def write_generated(path: Path, content: str, force: bool, dry_run: bool) -> str:
+    if path.exists() and not force and not existing_generated(path):
+        return f"SKIP existing user file: {path}"
+
+    if dry_run:
+        action = "overwrite" if path.exists() else "create"
+        return f"DRY-RUN would {action}: {path}"
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content.rstrip() + "\n", encoding="utf-8")
+    return f"WROTE {path}"
+
+
+def available_files(repo: Path, paths: list[str]) -> list[str]:
+    return [path for path in paths if (repo / path).is_file()]
+
+
+def source_bundle(repo: Path, tool: str) -> str:
+    files = available_files(repo, CORE_FILES + ADAPTER_FILES.get(tool, []))
+    sections = []
+    for rel_path in files:
+        path = repo / rel_path
+        sections.append(
+            "\n".join(
+                [
+                    "",
+                    f"## Source File: `{rel_path}`",
+                    "",
+                    f"<!-- BEGIN SOURCE: {rel_path} -->",
+                    read_text(path),
+                    f"<!-- END SOURCE: {rel_path} -->",
+                    "",
+                ]
+            )
+        )
+    return "\n".join(sections).strip()
+
+
+def compact_header(tool: str, generated_on: str) -> str:
+    return "\n".join(
+        [
+            GENERATED_MARKER,
+            f"# .ai Framework Instructions for {tool}",
+            "",
+            f"Generated on: `{generated_on}`",
+            "Source of truth: `.ai/`",
+            "",
+            "## Required Startup",
+            "",
+            "Before any coding, documentation, debugging, review, refactor, commit, or analysis task:",
+            "",
+            "1. Verify `.ai/` exists in this repository.",
+            "2. Initialize runtime tools when `.ai/runtime/memory/memory.jsonl` or `.ai/runtime/mcp-servers.json` is missing:",
+            "",
+            "   ```bash",
+            "   ai-agent-sync --install-tools --yes",
+            "   ```",
+            "",
+            "   If `ai-agent-sync` is not in `PATH`, run:",
+            "",
+            "   ```bash",
+            "   bin/ai-agent-sync --install-tools --yes",
+            "   ```",
+            "",
+            "3. Follow `.ai/registry/triggers.yml` before choosing a skill or workflow.",
+            "4. Read the selected `SKILL.md` and workflow before acting.",
+            "5. Apply CodeGraph-first, MCP Memory-first, safety, quality gates, and TDD-first rules from `.ai/rules/`.",
+            "6. For new backend APIs/features/jobs/webhooks/integration flows, route to `developing-backend-feature-tdd` and define brainstorm, contract, acceptance criteria, and tests before production code.",
+            "7. For workflows listing required agents, create every required agent output or mark it not applicable with evidence before final synthesis.",
+            "8. Keep chat responses to the Vietnamese-speaking user in Vietnamese unless another language is requested.",
+            "",
+            "## Canonical Files To Read",
+            "",
+            "- `.ai/README.md`",
+            "- `.ai/BOOTSTRAP_ONCE.md`",
+            "- `.ai/registry/triggers.yml`",
+            "- `.ai/registry/skills.yml`",
+            "- `.ai/registry/workflows.yml`",
+            "- `.ai/registry/tool-bootstrap.json`",
+            "- `.ai/rules/00-global-rules.md`",
+            "- `.ai/rules/05-workflow-execution-rules.md`",
+            "- `.ai/rules/06-quality-gates.md`",
+            "- `.ai/rules/10-codegraph-first-rules.md`",
+            "- `.ai/rules/12-memory-policy-rules.md`",
+            "- `.ai/rules/13-efficiency-cost-policy-rules.md`",
+            "- `.ai/rules/14-tdd-first-feature-rules.md`",
+        ]
+    )
+
+
+def full_bundle(tool: str, repo: Path, generated_on: str) -> str:
+    return "\n\n".join(
+        [
+            compact_header(tool, generated_on),
+            "## Materialized .ai Rule Bundle",
+            "",
+            "This section is generated from `.ai/` so native agent rule systems can load the framework without a manual bootstrap prompt.",
+            source_bundle(repo, tool),
+        ]
+    )
+
+
+def insert_marker_after_frontmatter(content: str) -> str:
+    lines = content.rstrip().splitlines()
+    if lines and lines[0].strip() == "---":
+        for index in range(1, len(lines)):
+            if lines[index].strip() == "---":
+                next_index = index + 1
+                return "\n".join(
+                    lines[:next_index]
+                    + ["", GENERATED_MARKER, ""]
+                    + lines[next_index:]
+                )
+    return "\n".join([GENERATED_MARKER, "", content.rstrip()])
+
+
+def source_skill_dirs(repo: Path) -> list[Path]:
+    skills_dir = repo / ".ai" / "skills"
+    if not skills_dir.is_dir():
+        return []
+    return sorted(path.parent for path in skills_dir.glob("*/SKILL.md"))
+
+
+def target_skill_files(repo: Path, agent: str) -> list[tuple[Path, str]]:
+    targets: list[tuple[Path, str]] = []
+    target_dirs = SKILL_TARGET_DIRS.get(agent, [])
+    for skill_dir in source_skill_dirs(repo):
+        source_skill = skill_dir / "SKILL.md"
+        content = insert_marker_after_frontmatter(read_text(source_skill))
+        for target_dir in target_dirs:
+            targets.append((repo / target_dir / skill_dir.name / "SKILL.md", content))
+    return targets
+
+
+def cursor_mdc(title: str, body: str, always: bool) -> str:
+    return "\n".join(
+        [
+            "---",
+            f"description: {title}",
+            "globs: ",
+            f"alwaysApply: {'true' if always else 'false'}",
+            "---",
+            "",
+            body,
+        ]
+    )
+
+
+def copilot_instruction(body: str) -> str:
+    return "\n".join(
+        [
+            "---",
+            'applyTo: "**"',
+            "---",
+            "",
+            body,
+        ]
+    )
+
+
+def target_files(repo: Path, agent: str, generated_on: str) -> list[tuple[Path, str]]:
+    compact = compact_header(agent, generated_on)
+    bundle = full_bundle(agent, repo, generated_on)
+    targets: dict[str, list[tuple[str, str]]] = {
+        "agents": [
+            ("AGENTS.md", compact),
+        ],
+        "codex": [
+            ("AGENTS.md", compact),
+        ],
+        "cursor": [
+            (".cursor/rules/00-ai-framework.mdc", cursor_mdc("Always apply .ai framework routing and startup rules", compact, True)),
+            (".cursor/rules/99-ai-framework-bundle.mdc", cursor_mdc("Full .ai framework bundle for deep framework, registry, and rule work", bundle, False)),
+        ],
+        "copilot": [
+            (".github/copilot-instructions.md", compact),
+            (".github/instructions/ai-framework.instructions.md", copilot_instruction(bundle)),
+        ],
+        "claude": [
+            ("CLAUDE.md", compact),
+            (".claude/rules/00-ai-framework.md", bundle),
+        ],
+        "cline": [
+            (".clinerules/00-ai-framework.md", bundle),
+        ],
+        "antigravity": [
+            ("GEMINI.md", compact),
+            (".agent/rules/00-ai-framework.md", bundle),
+            (".agents/AGENTS.md", compact),
+        ],
+    }
+    return [(repo / path, content) for path, content in targets[agent]]
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate native AI-agent instruction files from .ai/.",
+    )
+    parser.add_argument(
+        "repo",
+        nargs="?",
+        default=".",
+        help="Target repository path. Defaults to the current directory.",
+    )
+    parser.add_argument(
+        "--agent",
+        action="append",
+        choices=sorted(DEFAULT_AGENTS),
+        help="Generate one adapter target. Can be repeated. Defaults to all.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing files even when they were not generated by this script.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print target files without writing.",
+    )
+    parser.add_argument(
+        "--no-skills",
+        action="store_true",
+        help="Only generate native rule/instruction files; skip native Agent Skills.",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    repo = resolve_path(args.repo)
+    ai_dir = repo / ".ai"
+    if not repo.is_dir():
+        print(f"Target repository does not exist: {repo}")
+        return 2
+    if not ai_dir.is_dir():
+        print(f"Missing .ai directory: {ai_dir}")
+        return 2
+
+    agents = args.agent or DEFAULT_AGENTS
+    generated_on = date.today().isoformat()
+    exit_code = 0
+    written_paths: set[Path] = set()
+
+    for agent in agents:
+        print(f"Agent adapter: {agent}")
+        generated_targets = target_files(repo, agent, generated_on)
+        if not args.no_skills:
+            generated_targets.extend(target_skill_files(repo, agent))
+
+        for path, content in generated_targets:
+            if path in written_paths:
+                print(f"- SKIP duplicate target already handled: {path}")
+                continue
+            result = write_generated(path, content, args.force, args.dry_run)
+            print(f"- {result}")
+            written_paths.add(path)
+            if result.startswith("SKIP"):
+                exit_code = 1
+    return exit_code
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

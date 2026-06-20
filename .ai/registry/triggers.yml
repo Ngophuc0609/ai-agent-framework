@@ -390,3 +390,20 @@ triggers:
       - xác định skill
       - chọn workflow
       - nhận diện skill phù hợp
+
+  - workflow_id: standardizing-ai-agent-framework
+    skill_id: standardizing-ai-agent-framework
+    trigger_phrases_en:
+      - standardize ai agent framework
+      - standardize agent skills
+      - create cross agent rules
+      - generate native agent adapters
+      - review agent framework structure
+    trigger_phrases_vi:
+      - chuẩn hóa ai agent
+      - chuẩn hóa bộ .ai
+      - chuẩn hóa skill flow
+      - tạo skill flow ai agent
+      - tạo rule cho nhiều agent
+      - sinh cấu trúc riêng cho từng agent
+      - phân tích cấu trúc và skill agent

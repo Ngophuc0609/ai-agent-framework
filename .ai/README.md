@@ -50,6 +50,8 @@ Skills are grouped by runtime role:
 The trigger registry is the routing source of truth. If a user-facing skill should be callable from natural language, add trigger aliases in `.ai/registry/triggers.yml`.
 
 Tool bootstrap commands live in `.ai/registry/tool-bootstrap.json` and are used by `ai-agent-sync` when syncing this framework into another repository.
+The MCP Memory bootstrap command was created on `2026-06-20`; agents must run `ai-agent-sync --install-tools --yes` before any work when `.ai/runtime/memory/memory.jsonl` or `.ai/runtime/mcp-servers.json` is missing.
+Native agent instruction files can be generated from `.ai/` with `ai-agent-adapter-sync`; see `docs/AI_AGENT_ADAPTER_SYNC.md`.
 
 ## Add A New Skillflow
 

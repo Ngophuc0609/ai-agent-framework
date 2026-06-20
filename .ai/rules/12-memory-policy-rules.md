@@ -14,12 +14,38 @@ Do not use memory as a temporary log, source-code cache, secret store, or place 
 
 For source reading, documentation, debugging, refactoring, and API creation:
 
-1. Retrieve memory.
-2. Scan current source code.
-3. Compare memory with code.
-4. Use code as the source of truth.
-5. Write or update docs/code.
-6. Store confirmed findings back to memory.
+1. Initialize MCP Memory before the first operation when runtime memory state is missing.
+2. Retrieve memory.
+3. Scan current source code.
+4. Compare memory with code.
+5. Use code as the source of truth.
+6. Write or update docs/code.
+7. Store confirmed findings back to memory.
+
+## MCP Memory Bootstrap
+
+The default MCP Memory bootstrap command was created on `2026-06-20`.
+
+Agents must run or verify this command before any coding, documentation, debugging, review, refactor, commit, or analysis task when `.ai/runtime/memory/memory.jsonl` or `.ai/runtime/mcp-servers.json` is missing:
+
+```bash
+ai-agent-sync --install-tools --yes
+```
+
+If `ai-agent-sync` is not in `PATH`, run this from the repository root:
+
+```bash
+bin/ai-agent-sync --install-tools --yes
+```
+
+The command must:
+
+- Install or verify `mcp-server-memory`.
+- Create or verify `.ai/runtime/memory/memory.jsonl`.
+- Write or verify `.ai/runtime/mcp-servers.json`.
+- Configure the `mcp-memory` server with `MEMORY_FILE_PATH` pointing to `.ai/runtime/memory/memory.jsonl` inside the current repository.
+
+If automatic initialization fails, record the limitation in run status and final response, then ask the user before continuing with repo-local docs as a weaker fallback.
 
 ## Before Starting
 

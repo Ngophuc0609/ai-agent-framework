@@ -24,3 +24,11 @@ adapters:
   - id: claude
     path: .ai/adapters/claude.md
     user_description_vi: "Hướng dẫn chạy framework này trên Claude."
+
+  - id: copilot
+    path: .ai/adapters/copilot.md
+    user_description_vi: "Hướng dẫn chạy framework này trên GitHub Copilot."
+
+  - id: antigravity
+    path: .ai/adapters/antigravity.md
+    user_description_vi: "Hướng dẫn chạy framework này trên Google Antigravity."

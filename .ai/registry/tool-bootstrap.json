@@ -10,11 +10,13 @@
     "init_command": "codegraph-mcp --workspace {repo} --graph-only --run-tool codegraph_index_directory --tool-args {repo_tool_args}"
   },
   "mcp-memory": {
+    "created_at": "2026-06-20",
+    "purpose": "Initialize repo-local MCP Memory storage before agents read, edit, document, debug, review, refactor, or commit.",
     "commands": [
       "mcp-server-memory"
     ],
     "install_command": "npm install -g @modelcontextprotocol/server-memory",
-    "init_command": ""
+    "init_command": "python3 -c 'from pathlib import Path; p=Path({repo_json}) / \".ai/runtime/memory/memory.jsonl\"; p.parent.mkdir(parents=True, exist_ok=True); p.touch()'"
   },
   "mcp-filesystem": {
     "commands": [
