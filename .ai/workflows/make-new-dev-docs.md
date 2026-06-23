@@ -36,7 +36,7 @@ Cấm tuyệt đối các mode/hành vi sau (forbidden legacy modes):
 Nếu runtime không thể spawn real sub-agent và cũng không thể tạo session độc lập cho từng agent:
 - Dừng trước Agent 1.
 - Ghi trạng thái `blocked-no-isolation-capability`.
-- Không được tạo `docs/PROJECT_HANDOVER_FULL.md`.
+- Không được tạo `docs/01_PROJECT_HANDOVER_FULL.md`.
 - Không được đánh dấu `Ready` hoặc `Partial`.
 - Chỉ được tạo báo cáo block có lý do cụ thể và hướng dẫn chạy lại trong môi trường hỗ trợ session isolation.
 
@@ -44,26 +44,26 @@ Nếu runtime không thể spawn real sub-agent và cũng không thể tạo ses
 
 The workflow may produce:
 
-- `docs/PROJECT_HANDOVER_FULL.md` (Overview/entry point)
-- `docs/PROJECT_CONTEXT.md`
-- `docs/REPOSITORY_GUIDE.md`
-- `docs/LOCAL_SETUP.md`
-- `docs/CONFIGURATION_REFERENCE.md`
-- `docs/ARCHITECTURE.md`
-- `docs/DATABASE_REFERENCE.md`
-- `docs/AUTH_AND_SECURITY.md`
-- `docs/API_CATALOG.md`
-- `docs/BACKGROUND_JOBS.md`
-- `docs/REALTIME_SIGNALR_SOCKET.md`
-- `docs/EXTERNAL_INTEGRATIONS.md`
-- `docs/FRONTEND_GUIDE.md`
-- `docs/OPERATIONS_RUNBOOK.md`
-- `docs/DEPLOYMENT_AND_CICD.md`
-- `docs/TESTING_GUIDE.md`
-- `docs/KNOWN_RISKS.md`
-- `docs/OPEN_QUESTIONS.md`
-- `docs/EVIDENCE_INDEX.md`
-- `docs/DOCUMENTATION_COVERAGE.md`
+- `docs/01_PROJECT_HANDOVER_FULL.md` (Overview/entry point)
+- `docs/02_PROJECT_CONTEXT.md`
+- `docs/03_REPOSITORY_GUIDE.md`
+- `docs/04_LOCAL_SETUP.md`
+- `docs/05_CONFIGURATION_REFERENCE.md`
+- `docs/06_ARCHITECTURE.md`
+- `docs/07_DATABASE_REFERENCE.md`
+- `docs/08_AUTH_AND_SECURITY.md`
+- `docs/09_API_CATALOG.md`
+- `docs/10_BACKGROUND_JOBS.md`
+- `docs/11_REALTIME_SIGNALR_SOCKET.md`
+- `docs/12_EXTERNAL_INTEGRATIONS.md`
+- `docs/13_FRONTEND_GUIDE.md`
+- `docs/14_OPERATIONS_RUNBOOK.md`
+- `docs/15_DEPLOYMENT_AND_CICD.md`
+- `docs/16_TESTING_GUIDE.md`
+- `docs/17_KNOWN_RISKS.md`
+- `docs/18_OPEN_QUESTIONS.md`
+- `docs/19_EVIDENCE_INDEX.md`
+- `docs/20_DOCUMENTATION_COVERAGE.md`
 
 **LANGUAGE REQUIREMENT**: All final markdown files generated in the `docs/` folder MUST be written entirely in Vietnamese (Tiếng Việt). Technical keywords, code snippets, and configuration keys should remain in English, but all prose, explanations, and headers must be in Vietnamese.
 
@@ -122,7 +122,7 @@ Agent 7 mới có quyền ghi vào:
 `.ai/handoff/`
 `.ai/runs/source-code-handover/<run_id>/final/`
 
-Không agent nào trong Agent 1–6 được ghi trực tiếp `docs/PROJECT_HANDOVER_FULL.md`.
+Không agent nào trong Agent 1–6 được ghi trực tiếp `docs/01_PROJECT_HANDOVER_FULL.md`.
 
 ## Mandatory Artifacts and Format
 
@@ -133,7 +133,7 @@ Mỗi agent bắt buộc tạo file Markdown vật lý tại CẢ HAI vị trí 
 `.ai/runs/source-code-handover/<run_id>/findings/agent-04/findings.md` VÀ `draft-docs/agent-04-findings.md`
 `.ai/runs/source-code-handover/<run_id>/findings/agent-05/findings.md` VÀ `draft-docs/agent-05-findings.md`
 `.ai/runs/source-code-handover/<run_id>/review/review.md` VÀ `draft-docs/agent-06-review.md`
-`.ai/runs/source-code-handover/<run_id>/final/PROJECT_HANDOVER_FULL.md`
+`.ai/runs/source-code-handover/<run_id>/final/01_PROJECT_HANDOVER_FULL.md`
 
 Mỗi artifact phải:
 - Tồn tại vật lý trên disk.
@@ -187,7 +187,7 @@ Bắt buộc tạo và cập nhật file `.ai/runs/source-code-handover/<run_id>
 | Agent 4 | yes | draft-docs/agent-04-findings.md | pending/complete/blocked/not-applicable | pending/pass/fail |
 | Agent 5 | yes | draft-docs/agent-05-findings.md | pending/complete/blocked/not-applicable | pending/pass/fail |
 | Agent 6 | yes | draft-docs/agent-06-review.md | pending/complete/blocked/not-applicable | pending/pass/fail |
-| Agent 7 | yes | final/PROJECT_HANDOVER_FULL.md | pending/complete/blocked/not-applicable | pending/pass/fail |
+| Agent 7 | yes | final/01_PROJECT_HANDOVER_FULL.md | pending/complete/blocked/not-applicable | pending/pass/fail |
 
 ## Blocking Reasons
 
