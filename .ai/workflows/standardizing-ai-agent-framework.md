@@ -44,16 +44,29 @@ Registered in:
 
 Generated native files should be validated in a temporary target repository unless the user explicitly asks to generate them in the current repository.
 
+## Evidence Policy
+
+All technical claims must be labeled as one of: `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, or `[BLOCKED]`.
+
+## Source of Truth
+
+Current repository source, configuration, migrations, CI/CD, and verified runtime output are authoritative. Project memory and existing documentation are supplementary context only, not source of truth. Any memory-derived claim that is not verified against current source must be marked `[UNVERIFIED]`.
+
+## Secret Safety
+
+Never copy secret values into documentation, findings, memory, logs, status files, or chat output. Redact sensitive values while preserving variable names and setup requirements.
+
 ## Execution
 
-1. Resolve the requested target agent set.
-2. Inspect current `.ai` registry, rule, skill, workflow, and adapter structure.
-3. Compare target behavior with official agent documentation.
-4. Classify each target path as verified native format or portable fallback.
-5. Update source `.ai` files, registry entries, and sync scripts.
-6. Generate adapters in a temporary repository for at least one representative agent.
-7. Validate syntax, registry consistency, and generated file placement.
-8. Respond in Vietnamese with changed files, official sources, validation, and fallback notes.
+1. Resolve the workflow from `.ai/registry/workflows.yml`. Expected key: `standardizing-ai-agent-framework`. If missing, record a blocking finding and continue in fallback mode.
+2. Resolve the requested target agent set.
+3. Inspect current `.ai` registry, rule, skill, workflow, and adapter structure.
+4. Compare target behavior with official agent documentation.
+5. Classify each target path as verified native format or portable fallback.
+6. Update source `.ai` files, registry entries, and sync scripts.
+7. Generate adapters in a temporary repository for at least one representative agent.
+8. Run final validation (syntax, registry consistency, generated file placement, secret scan).
+9. Respond in Vietnamese with changed files, official sources, validation, and fallback notes.
 
 ## Agent Output Matrix
 
@@ -74,3 +87,4 @@ Generated native files should be validated in a temporary target repository unle
 - [ ] `python3 -m py_compile` passed for changed Python scripts.
 - [ ] Generated native skills preserve valid frontmatter.
 - [ ] Fallback-only mappings are disclosed.
+- [ ] No secrets were exposed.

@@ -7,7 +7,7 @@ description: Use when creating source-code handover documentation, onboarding do
 
 ## Vietnamese User Summary
 
-Skill này dùng để tạo tài liệu bàn giao source code cho developer mới.
+Skill này dùng để tạo tài liệu bàn giao source code cho developer mới, bắt buộc sử dụng các session độc lập cho từng agent và kiểm tra file vật lý.
 
 ## REQUIRED BACKGROUND
 
@@ -20,37 +20,56 @@ Read `.ai/skills/using-superpowers/SKILL.md` before using this skill.
 - `.ai/rules/10-codegraph-first-rules.md`
 - `.ai/rules/12-memory-policy-rules.md`
 - `.ai/rules/06-quality-gates.md`
+- `.ai/rules/07-handover-documentation-dod.md`
 
 ## Main Workflow
 
 Use `.ai/workflows/make-new-dev-docs.md`.
-
 Use `.ai/workflows/make-new-dev-docs-model-routing.md` when the request includes cost, balanced, high-accuracy, or model-routing intent.
 
-Detailed legacy reference is available at `.ai/skills/skill-source-code-handover-docs.md`. Load it only when the selected workflow needs the expanded agent checklist.
+## Execution Isolation Policy
 
-## Memory Policy
+Isolation là yêu cầu workflow, không phải khuyến nghị. Các execution mode hợp lệ theo thứ tự ưu tiên:
+1. `subagent-isolated-worktrees`
+2. `isolated-sequential-sessions`
+3. `blocked-no-isolation-capability`
 
-Before starting, retrieve memory for project facts, prior decisions, known bugs, naming conventions, migration rules, documentation conventions, and debugging notes.
+Forbidden legacy modes: `single-runtime-sequential-fallback`, `single-session-multi-role-execution`, `memory-only-agent-handoff`, `implicit-agent-output`, `direct-final-handbook-without-artifacts`.
 
-During work, store only verified facts such as architecture decisions, API flows, database table meanings, background job behavior, external integration behavior, known bugs with root causes, and agreed naming/refactor rules.
+Không được coi một session đổi role là nhiều agent độc lập.
 
-Do not store secrets, tokens, passwords, private keys, temporary logs, unverified guesses, large raw source code, or full stack traces.
+## Artifact-First Handoff Policy
 
-After each major step, save a short memory summary with what was analyzed, what was confirmed, what remains uncertain, and which files prove the finding.
+Artifact trên disk là nguồn trao đổi chính thức giữa agents. Memory/chats/context chỉ là hỗ trợ, không phải artifact chính thức.
+Mỗi agent (1-7) phải sinh ra file vật lý Markdown đúng đường dẫn quy định trong workflow. File phải chứa các section chuẩn yếu: `Status`, `Evidence`, `Open Questions`, `Risks`, `Files Inspected`/`Commands Executed`. Không chứa secret thực tế.
 
-Before editing or documenting a module, retrieve memory for that module first.
+## Sequential Session Fallback Policy
 
-If memory conflicts with current source code, trust current source code and update memory.
+Nếu sử dụng `isolated-sequential-sessions`:
+Mỗi Agent 1–7 phải chạy trong một session mới, độc lập. Session coordinator chỉ điều phối việc tạo namespace, kích hoạt agent, và kiểm tra artifact gate, nhưng không được tự làm thay nội dung cho agent.
 
-## Execution Summary
+## Coordinator Restrictions
 
-1. Resolve the workflow through the registry.
-2. Run CodeGraph preflight.
-3. Retrieve project memory.
-4. Run assigned agents or sequential fallback.
-5. Produce evidence-backed docs only.
-6. Review conflicts and open questions.
-7. Generate final handbook when requested by the workflow.
-8. Store confirmed findings back to memory when available.
-9. Respond to the user in Vietnamese.
+Session coordinator không được tự thực hiện nội dung khảo sát thay Agent 1–6. Không được bypass Agent 1–6 để tạo handbook trực tiếp.
+
+## Disk Validation Gate
+
+CRITICAL: Intermediate findings must never exist only in model context, temporary memory, chat history, or coordinator state.
+CRITICAL: The next agent must not start until the previous agent artifact gate passes (file exists, size > 0, required headings, status file updated).
+CRITICAL: Agent 7 must read Agent 1–6 artifacts from disk. It must not aggregate from hidden session context or remembered summaries.
+
+## Memory Policy & Source of Truth
+
+Current repository source, configuration, migrations, CI/CD, and verified runtime output are authoritative. Project memory and existing documentation are supplementary context only. Any memory-derived claim that is not verified against current source must be marked `[UNVERIFIED]`.
+
+## Secret Safety
+
+Never copy secret values (connection strings, JWT signing keys, OAuth secrets, API keys, passwords) into documentation, findings, memory, logs, status files, or chat output. Redact sensitive values while preserving variable names and setup requirements.
+
+## Evidence Policy
+
+All technical claims must be labeled as one of: `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, or `[BLOCKED]`.
+
+## Final Validation
+
+Before publishing final docs or committing changes, run required-output validation, STATUS.md consistency validation, git diff --check, secret scan, markdown/link validation, and stack-appropriate build or test commands when environment permits.

@@ -407,3 +407,22 @@ Need verify:
 Recommended next step:
 - ...
 ```
+
+
+## Memory Policy & Source of Truth
+
+Current repository source, configuration, migrations, CI/CD, and verified runtime output are authoritative. Project memory and existing documentation are supplementary context only. Any memory-derived claim that is not verified against current source must be marked `[UNVERIFIED]`.
+
+## Secret Safety
+
+Never copy secret values (connection strings, JWT signing keys, OAuth secrets, API keys, passwords) into documentation, findings, memory, logs, status files, or chat output. Redact sensitive values while preserving variable names and setup requirements.
+
+## Evidence Policy
+
+All technical claims must be labeled as one of: `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, or `[BLOCKED]`.
+
+Each agent finding must include: inspected scope, evidence references, commands executed, findings, assumptions, open questions, risks, and completion state.
+
+## Final Validation
+
+Before publishing final docs or committing changes, run required-output validation, STATUS.md consistency validation, git diff --check, secret scan, markdown/link validation, and stack-appropriate build or test commands when environment permits.

@@ -49,6 +49,25 @@ developing-backend-feature-tdd
   -> reviewing-git-diff
 ```
 
+## Evidence Policy
+
+All technical claims must be labeled as one of:
+
+- `[CONFIRMED]`: directly verified from source, config, runtime output, database schema, or test result.
+- `[INFERRED]`: reasonable conclusion from multiple source references.
+- `[UNVERIFIED]`: mentioned by memory, comments, docs, or naming only.
+- `[CONFLICT]`: contradictory evidence exists.
+- `[NOT_APPLICABLE]`: verified absent after documented inspection.
+- `[BLOCKED]`: cannot verify due to missing access, missing files, or failed tooling.
+
+## Source of Truth
+
+Current repository source, configuration, migrations, CI/CD, and verified runtime output are authoritative. Project memory and existing documentation are supplementary context only, not source of truth. Any memory-derived claim that is not verified against current source must be marked `[UNVERIFIED]`.
+
+## Secret Safety
+
+Never copy secret values (connection strings, JWT signing keys, OAuth secrets, API keys, passwords) into documentation, findings, memory, logs, status files, or chat output. Redact sensitive values while preserving variable names and setup requirements.
+
 ## Gate
 
 Do not implement production code until brainstorm, contract, acceptance criteria, and test plan exist.
@@ -65,6 +84,17 @@ Do not implement production code until brainstorm, contract, acceptance criteria
 - `docs/PROJECT_CONTEXT.md`
 - `.ai/runs/developing-backend-feature-tdd/<run_id>/`
 
+## Final Validation
+
+Final validation must include:
+- git diff --check
+- no secret scan
+- stack-appropriate build or test commands when environment permits.
+- markdown link validation where available.
+
+A failed or skipped validation must be documented and lowers readiness accordingly.
+
 ## Final Response
 
-Respond in Vietnamese with brainstorm status, contract, tests, changed files, validation, risks, and remaining `Need verify` items.
+1. Resolve the workflow from `.ai/registry/workflows.yml`. Expected key: `developing-backend-feature-tdd`. If missing, record a blocking finding and continue in fallback mode.
+2. Respond in Vietnamese with brainstorm status, contract, tests, changed files, validation, risks, and remaining `Need verify` items.
