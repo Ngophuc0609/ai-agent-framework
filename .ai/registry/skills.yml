@@ -175,3 +175,21 @@ skills:
     workflow_id: standardizing-ai-agent-framework
     user_description_vi: "Chuẩn hóa bộ .ai, rule, skill, workflow và adapter native cho nhiều AI agent."
     status: active
+
+  - id: self-correction-loop
+    skill_path: .ai/skills/self-correction-loop/SKILL.md
+    workflow_id: null
+    user_description_vi: "Tự động review và sửa lỗi code trước khi chốt."
+    status: active
+
+  - id: human-approval-gate
+    skill_path: .ai/skills/human-approval-gate/SKILL.md
+    workflow_id: null
+    user_description_vi: "Dừng lại chờ người dùng duyệt trước khi chạy lệnh nguy hiểm."
+    status: active
+
+  - id: memory-consolidation-cleanup
+    skill_path: .ai/skills/memory-consolidation-cleanup/SKILL.md
+    workflow_id: memory-consolidation-cleanup
+    user_description_vi: "Nén và dọn dẹp bộ nhớ dự án định kỳ."
+    status: active

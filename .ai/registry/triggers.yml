@@ -407,3 +407,36 @@ triggers:
       - tạo rule cho nhiều agent
       - sinh cấu trúc riêng cho từng agent
       - phân tích cấu trúc và skill agent
+
+  - workflow_id: null
+    skill_id: self-correction-loop
+    trigger_phrases_en:
+      - self correct
+      - peer review code
+      - critique code
+    trigger_phrases_vi:
+      - tự sửa lỗi
+      - tự review code
+      - critique code
+
+  - workflow_id: null
+    skill_id: human-approval-gate
+    trigger_phrases_en:
+      - request human approval
+      - pause for approval
+      - wait for human
+    trigger_phrases_vi:
+      - chờ duyệt
+      - chờ con người duyệt
+      - xin phép chạy
+
+  - workflow_id: memory-consolidation-cleanup
+    skill_id: memory-consolidation-cleanup
+    trigger_phrases_en:
+      - consolidate memory
+      - clean up project memory
+      - compress memory
+    trigger_phrases_vi:
+      - dọn dẹp bộ nhớ
+      - nén bộ nhớ
+      - tổng hợp memory

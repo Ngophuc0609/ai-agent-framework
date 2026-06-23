@@ -222,7 +222,7 @@ def cursor_mdc(title: str, body: str, always: bool) -> str:
         [
             "---",
             f"description: {title}",
-            "globs: ",
+            "globs: *",
             f"alwaysApply: {'true' if always else 'false'}",
             "---",
             "",

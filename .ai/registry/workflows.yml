@@ -42,3 +42,10 @@ workflows:
     user_description_vi: "Workflow chuẩn hóa .ai để sinh native rules và Agent Skills cho nhiều AI agent."
     default_output_namespace: ai-agent-framework
     status: active
+
+  - id: memory-consolidation-cleanup
+    path: .ai/workflows/memory-consolidation-cleanup.md
+    skill_id: memory-consolidation-cleanup
+    user_description_vi: "Workflow nén và dọn dẹp bộ nhớ dự án."
+    default_output_namespace: memory
+    status: active
