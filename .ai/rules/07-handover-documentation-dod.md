@@ -3,10 +3,10 @@
 Mọi agent tham gia quá trình Handover phải tuân thủ nghiêm ngặt chuẩn này.
 
 ## 1. Quy tắc chung: mỗi claim phải có Evidence
-- Status: Confirmed | Inferred | Unverified | Conflict | Not Applicable
-- Every `[CONFIRMED]` claim requires an Evidence ID (e.g., EV-DB-001).
+- Status: `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`
+- Mọi `[CONFIRMED]` claim BẮT BUỘC có Evidence ID.
 
-## 2. Bộ tài liệu mục tiêu
+## 2. Bộ tài liệu mục tiêu (20 files in lowercase with prefix)
 - `01_project_handover_full.md`
 - `02_project_context.md`
 - `03_repository_guide.md`
@@ -29,10 +29,16 @@ Mọi agent tham gia quá trình Handover phải tuân thủ nghiêm ngặt chu�
 - `20_documentation_coverage.md`
 
 ## 3. Mandatory Coverage Rule
-`accounted = documented + unresolved + not applicable with negative evidence + excluded with explicit reason`
+Coverage math denominator MUST come from Phase 0 inventory.
+`accounted = documented + unresolved + not_applicable_with_negative_evidence + excluded_with_explicit_reason`
 
 ## 4. Documentation Coverage Manifest (20_documentation_coverage.md)
-Must use structural tables calculating `accounted` components versus `discovered` components from Phase 0 Inventory.
+Must use structural tables grouping by domain (Repository, Database, API, Background Jobs, Realtime) listing: `discovered`, `documented`, `accounted`, `unresolved`, `status`, `gaps`.
 
 ## 5. Negative Evidence Rule
-`[NOT_APPLICABLE]` must include search roots, commands executed, results, and negative evidence IDs.
+`[NOT_APPLICABLE]` is ONLY valid when documented with: Component/scope, source roots, search patterns, tools used, results, impact, and negative evidence ID. It cannot be used if status is `scan_failed` or `tool_unavailable`.
+
+## 6. Evidence Index chuẩn hóa
+`19_evidence_index.md` MUST contain table:
+`Evidence ID | Topic | Claim | Source Path | Line/Method | Verification Type | Source Commit | Status`
+Valid ID patterns: `EV-REPO-###`, `EV-CONFIG-###`, `EV-DB-###`, `EV-MIGRATION-###`, `EV-AUTH-###`, `EV-API-###`, `EV-JOB-###`, `EV-RT-###`, `EV-OPS-###`, `EV-TEST-###`, `EV-CICD-###`, `EV-NEG-###`.

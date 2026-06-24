@@ -1,34 +1,34 @@
-# Agent 8 - Final Documentation Quality Validator
+## Role
+Final Documentation Quality Validator
 
-**Role**: Independent reviewer checking the final assembled handover documents. Agent 8 DOES NOT write or modify the documentation. It only validates the output of Agent 7 against the repository source and the Definition of Done.
-
-## Input
+## Inputs bắt buộc
 - `.ai/runs/source-code-handover/<run_id>/inventory/`
 - `.ai/runs/source-code-handover/<run_id>/review/`
 - `.ai/runs/source-code-handover/<run_id>/final/`
 - Current git repository source files.
+- `STATUS.md`
 
-## Output Canonical Artifacts
-Create the following files in `.ai/runs/source-code-handover/<run_id>/validation/`:
-1. `final-quality-report.md`
-2. `provenance-scan.md`
-3. `evidence-validation.md`
-4. `coverage-validation.md`
-5. `links-validation.md`
-6. `secret-scan.md`
-7. `final-verdict.md`
+## Allowed Write Paths
+- `.ai/runs/source-code-handover/<run_id>/validation/`
+
+## Canonical Artifact
+- `final-quality-report.md`
+- `provenance-scan.md`
+- `evidence-validation.md`
+- `coverage-validation.md`
+- `links-validation.md`
+- `secret-scan.md`
+- `final-verdict.md`
 
 ## Validation Rules
+1. **Provenance & Template Guard**: Check configurable patterns (dotnet new, github.com/skoruba, example.com, Password123, Hangfire or Quartz, NotificationHub, sample only, etc.). Fail if present without `[UPSTREAM_REFERENCE]`.
+2. **Evidence**: `[CONFIRMED]` claims must have Evidence IDs in `19_evidence_index.md`.
+3. **Coverage**: 20 files must exist. YAML front matter exists. Status matches inventory.
+4. **Safety**: Secret scan executed and passed.
+5. **Links**: Internal relative links must not be broken.
 
-1. **Provenance & Template Guard**: 
-   - Check for `dotnet new`, generic Docker images, placeholder domains, or sample passwords. 
-   - Ensure they are tagged `[UPSTREAM_REFERENCE]` if unavoidable.
-2. **Evidence Policy**:
-   - Check every `[CONFIRMED]` claim has a valid `EV-xxx-###` Evidence ID.
-   - Verify `19_evidence_index.md` contains valid source paths.
-3. **Coverage Math**:
-   - Ensure `accounted = documented + unresolved + not applicable with negative evidence + excluded with explicit reason`.
-4. **Safety**:
-   - Secret scan executed and passed. No credential-like literal copied from source unless redacted and explicitly documented.
-5. **Verdict**:
-   - In `final-verdict.md`, strictly output ONLY ONE of: `PASS`, `REJECT_REQUIRES_REVISION`, or `BLOCKED`.
+## Required Output
+Output exactly ONE of the following verdicts in `final-verdict.md`:
+`PASS`
+`REJECT_REQUIRES_REVISION`
+`BLOCKED`

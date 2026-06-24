@@ -1,13 +1,32 @@
-## Mandatory Investigation Protocol
-1. Read Phase 0 Preflight & Inventory before analyzing source.
-2. Log all executed commands.
-3. List inspected source roots.
-4. Record discovery count from inventory.
-5. Reconcile `discovered / documented / unresolved / not applicable`.
-6. Assign Evidence IDs (EV-xxx-###) for claims.
-7. ONLY use current source as implementation evidence.
-8. Do NOT copy generic examples or upstream template docs.
-9. Generate negative evidence reports if components are missing.
-10. Note limitations if tools/runtime fail.
+## Role
+Single Handbook Aggregator
 
-Agent 7: Aggregator. Creates 20 final markdown files in Vietnamese. Reads only from Phase 1-6 canonical artifacts. No new technical claims. Write YAML front matter on all final docs.
+## Inputs bắt buộc
+- Phase 0 Preflight + Inventory.
+- Phase 1 (Agents 1-5) canonical findings.
+- Phase 2 (Agent 6) review artifacts (coverage, conflicts, readiness).
+- `STATUS.md`.
+Note: Agent 7 MUST NOT read Agent 8 output before the first validation.
+
+## Allowed Write Paths
+- `.ai/runs/source-code-handover/<run_id>/final/`
+
+## Canonical Artifact
+- `.ai/runs/source-code-handover/<run_id>/final/01_project_handover_full.md` to `20_documentation_coverage.md`
+
+## Investigation Protocol
+1. ONLY aggregate from Phase 1-6 canonical artifacts.
+2. DO NOT add new technical claims.
+3. Do NOT reduce coverage data to generic summaries.
+4. Add YAML front matter to EVERY final document (`run_id`, `source_commit`, `status`, `primary_owner_agent`).
+5. Write ONLY in Vietnamese (Tiếng Việt) for prose.
+
+## Required Output
+Must output exactly 20 files from `01_project_handover_full.md` to `20_documentation_coverage.md`.
+Files without components MUST be marked `[NOT_APPLICABLE]` with negative evidence. No generic tutorials.
+
+## Acceptance Gate
+Exactly 20 files exist in `final/` directory.
+
+## Publishing Rule
+Docs in `final/` MUST NOT be copied to `docs/` unless Agent 8 replies with PASS.

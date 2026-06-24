@@ -16,25 +16,50 @@ Read `.ai/skills/using-superpowers/SKILL.md` before using this skill.
 - `.ai/rules/06-quality-gates.md`
 - `.ai/rules/07-handover-documentation-dod.md`
 
-## Main Workflow
-Use `.ai/workflows/make-new-dev-docs.md`.
-Use `.ai/workflows/make-new-dev-docs-model-routing.md` when model-routing is required.
+## Execution Isolation Policy & Fallbacks
+Isolation is MANDATORY. Valid modes:
+1. `subagent-isolated-worktrees`
+2. `isolated-sequential-sessions`
+3. `blocked-no-isolation-capability`
 
-## Current Repository Provenance Guard
-Final documentation ONLY describes the currently checked-out repository. 
-- You MUST NOT use generic framework knowledge, template generator docs, upstream READMEs, or chat memory as primary evidence.
-- Upstream content MUST be placed in `docs/02_project_context.md` under "Nguồn gốc upstream / template" with `[UPSTREAM_REFERENCE]`.
+Forbidden Legacy Modes: `single-runtime-sequential-fallback`, `single-session-multi-role-execution`, `memory-only-agent-handoff`, `implicit-agent-output`, `direct-final-handbook-without-artifacts`
 
-## Canonical Artifact Policy
-- Draft docs shared path (`draft-docs/`) is NEVER the source of truth.
-- Canonical path: `.ai/runs/source-code-handover/<run_id>/...`
-- Every canonical artifact MUST contain a YAML front matter with `run_id`, `agent_id`, `source_commit`, `created_at`, `status`.
+If runner lacks isolation capability, STOP before Agent 1, log `blocked-no-isolation-capability` in `STATUS.md`, generate block report, DO NOT run Agent 7, DO NOT publish.
+
+## Artifact-First Handoff Policy & Coordinator Restrictions
+- Physical files on disk are the ONLY official handoff mechanism. 
+- Coordinator CANNOT bypass Agents 1-6 to generate docs directly.
+- `draft-docs/` shared path is NEVER the source of truth. Canonical artifacts are ONLY in `.ai/runs/source-code-handover/<run_id>/...`
+
+## Disk Validation Gate
+- Next agent must not start until previous agent artifact passes.
+- Artifact must have YAML front matter (`run_id`, `source_commit`, `created_at`, `status`).
+
+## Current Repository Provenance & Template Guard
+- Final docs ONLY describe the currently checked-out repository.
+- NO generic framework knowledge, template docs, upstream READMEs, generic passwords (Password123), or sample domains (example.com).
+- Upstream references must be isolated in `docs/02_project_context.md` with `[UPSTREAM_REFERENCE]`.
+
+## Evidence & Negative Evidence Policy
+- Valid Labels: `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`
+- `[NOT_APPLICABLE]` is strictly for `not_found_after_scan` and MUST include negative evidence IDs (`EV-NEG-###`).
+
+## Secret Safety
+Secret scan MUST be executed and passed. No unredacted secrets or credential-like literals are permitted.
 
 ## Pipeline Phases
-Phase 0: Preflight + Deterministic Discovery
-Phase 1: Agent 1–5 isolated domain analysis
-Phase 2: Agent 6 evidence/coverage/conflict review
-Phase 3: Agent 7 creates final documentation
-Phase 4: Agent 8 independently validates final documentation
-Phase 5: Agent 7 revision in a new isolated session if Agent 8 rejects
-Phase 6: Agent 8 final pass
+Phase 0: Preflight + Deterministic Discovery (create JSON inventories).
+Phase 1: Agent 1–5 Domain Analysis (match findings against Phase 0 inventory).
+Phase 2: Agent 6 Evidence/Coverage/Conflict Review.
+Phase 3: Agent 7 Final Documentation Assembly.
+Phase 4: Agent 8 Independent Quality Validation.
+Phase 5: Agent 7 Revision (only if Agent 8 REJECTS).
+Phase 6: Final Publish.
+
+## Readiness Policy
+- **Ready**: Execution isolation passed. Phase 0 valid. Agents 1-6 passed. Agent 7 created 20 canonical docs. Agent 8 passed. No critical conflicts. No unresolved cores. No template contamination. Secret scan passed. Coverage math passed.
+- **Partial**: Isolation passed. Inventory & coverage exist. Runtime/prod limitations noted. Local dev possible. Agent 8 finds no critical failure. No `Ready` claims for unverified areas.
+- **Blocked**: No isolation. No reliable inventory. Stale/missing artifacts. Coverage fails. Template contamination. Agent 8 rejects without revision. Critical evidence conflict.
+
+## Publish Policy
+Documents in `.ai/runs/.../final/` MUST NOT be copied to `docs/` until Agent 8 validation is complete and yields a `PASS` verdict.

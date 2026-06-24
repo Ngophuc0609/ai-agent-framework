@@ -1,10 +1,14 @@
+import os
+
+def write_file(path, content):
+    with open(path, "w") as f:
+        f.write(content.strip() + "\n")
+
+skill_md = """
 ---
 name: source-code-handover
 description: Use when creating source-code handover documentation, onboarding documentation for new developers, architecture summaries, repository maps, setup guides, API/database/auth documentation, or final project handbooks from source code
 ---
-
-<!-- generated-by: ai-agent-adapter-sync -->
-
 
 # Source Code Handover (Evidence-First Documentation Pipeline)
 
@@ -66,3 +70,7 @@ Phase 6: Final Publish.
 
 ## Publish Policy
 Documents in `.ai/runs/.../final/` MUST NOT be copied to `docs/` until Agent 8 validation is complete and yields a `PASS` verdict.
+"""
+
+write_file(".ai/skills/source-code-handover/SKILL.md", skill_md)
+print("Updated SKILL.md")
