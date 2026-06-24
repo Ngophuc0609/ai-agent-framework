@@ -15,26 +15,26 @@ Agent này tổng hợp và tách chính xác ra 20 file tài liệu cuối cùn
 
 You MUST split the consolidated findings into exactly these 20 files in `docs/`:
 
-1. `01_PROJECT_HANDOVER_FULL.md` (Summary & Index link to the others)
-2. `02_PROJECT_CONTEXT.md`
-3. `03_REPOSITORY_GUIDE.md`
-4. `04_LOCAL_SETUP.md`
-5. `05_CONFIGURATION_REFERENCE.md`
-6. `06_ARCHITECTURE.md`
-7. `07_DATABASE_REFERENCE.md`
-8. `08_AUTH_AND_SECURITY.md`
-9. `09_API_CATALOG.md`
-10. `10_BACKGROUND_JOBS.md`
-11. `11_REALTIME_SIGNALR_SOCKET.md`
-12. `12_EXTERNAL_INTEGRATIONS.md`
-13. `13_FRONTEND_GUIDE.md`
-14. `14_OPERATIONS_RUNBOOK.md`
-15. `15_DEPLOYMENT_AND_CICD.md`
-16. `16_TESTING_GUIDE.md`
-17. `17_KNOWN_RISKS.md`
-18. `18_OPEN_QUESTIONS.md`
-19. `19_EVIDENCE_INDEX.md`
-20. `20_DOCUMENTATION_COVERAGE.md`
+1. `01_project_handover_full.md` (Summary & Index link to the others)
+2. `02_project_context.md`
+3. `03_repository_guide.md`
+4. `04_local_setup.md`
+5. `05_configuration_reference.md`
+6. `06_architecture.md`
+7. `07_database_reference.md`
+8. `08_auth_and_security.md`
+9. `09_api_catalog.md`
+10. `10_background_jobs.md`
+11. `11_realtime_signalr_socket.md`
+12. `12_external_integrations.md`
+13. `13_frontend_guide.md`
+14. `14_operations_runbook.md`
+15. `15_deployment_and_cicd.md`
+16. `16_testing_guide.md`
+17. `17_known_risks.md`
+18. `18_open_questions.md`
+19. `19_evidence_index.md`
+20. `20_documentation_coverage.md`
 
 **CRITICAL LANGUAGE REQUIREMENT**: ALL 20 FILES MUST BE WRITTEN IN VIETNAMESE (Tiếng Việt). Technical terms and variables may remain in English.
 

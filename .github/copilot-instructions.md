@@ -1,7 +1,7 @@
 <!-- generated-by: ai-agent-adapter-sync -->
 # .ai Framework Instructions for copilot
 
-Generated on: `2026-06-23`
+Generated on: `2026-06-24`
 Source of truth: `.ai/`
 
 ## Required Startup

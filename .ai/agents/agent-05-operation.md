@@ -13,12 +13,12 @@ Agent này đảm nhiệm Sổ tay Vận hành, SignalR/Sockets, và Background 
 
 1. **Background Jobs Inventory & Cards**:
    - Quét toàn bộ IHostedService, BackgroundService, Hangfire, Quartz, Timer, v.v.
-   - Job Card: `ID | Tên | Cơ chế | Trigger | Lịch chạy | Input | Output/Side effect | Dependency | Retry | Failure behavior | Monitoring`. Sequence diagram cho job quan trọng.
+   - Job Card: `ID | Tên | Cơ chế | Trigger | Lịch chạy | Input | Output/Side effect | Dependency | Retry | Failure behavior | Monitoring`. BẮT BUỘC vẽ Sequence diagram đầy đủ cho các Background Job phức tạp/quan trọng.
 2. **Realtime / SignalR / Sockets**:
    - Hub inventory: `Hub ID | Class | Route | Auth policy | Evidence`.
    - Connection contract: URL, protocol, CORS, transport, reconnect policy, scale-out (Redis backplane).
    - Event contract (Client->Server & Server->Client): `Event | Payload DTO | Trigger | Receiver`.
-   - Realtime Smoke test.
+   - Realtime Smoke test. BẮT BUỘC vẽ Sequence diagram logic cho các flow realtime (Socket/SignalR) quan trọng.
 3. **Operations Runbook (Docker/Nginx/Redis/Logs)**:
    - Compose file topology, volume, port map, env sources. Nginx routing, TLS cert paths.
    - Serilog sinks, log retention, PII masking.
