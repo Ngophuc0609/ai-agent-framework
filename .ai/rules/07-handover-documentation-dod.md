@@ -1,12 +1,18 @@
 # Documentation Definition of Done (DoD)
 
-Mọi agent tham gia quá trình Handover phải tuân thủ nghiêm ngặt chuẩn này.
+Every agent participating in the Source Code Handover workflow MUST follow this standard.
 
-## 1. Quy tắc chung: mỗi claim phải có Evidence
-- Status: `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`
-- Mọi `[CONFIRMED]` claim BẮT BUỘC có Evidence ID.
+## 0. Mandatory Quality Checklist
 
-## 2. Bộ tài liệu mục tiêu (20 files in lowercase with prefix)
+Every final document MUST also comply with `.ai/rules/08-source-code-handover-quality-checklist.md`.
+If front matter, common sections, Evidence Index, coverage manifest, negative evidence, or forbidden-content checks are missing or invalid, Agent 8 MUST return `REJECT_REQUIRES_REVISION` or `BLOCKED`, never `PASS`.
+
+## 1. General Rule: Every Claim Needs Evidence
+- Status: `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`, `[DECISION]`
+- Every `[CONFIRMED]` claim MUST have an Evidence ID.
+- Every `[DECISION]` item MUST include the decision owner or required owner confirmation.
+
+## 2. Target Document Set (20 lowercase files with numeric prefixes)
 - `01_project_handover_full.md`
 - `02_project_context.md`
 - `03_repository_guide.md`
@@ -38,7 +44,7 @@ Must use structural tables grouping by domain (Repository, Database, API, Backgr
 ## 5. Negative Evidence Rule
 `[NOT_APPLICABLE]` is ONLY valid when documented with: Component/scope, source roots, search patterns, tools used, results, impact, and negative evidence ID. It cannot be used if status is `scan_failed` or `tool_unavailable`.
 
-## 6. Evidence Index chuẩn hóa
+## 6. Standardized Evidence Index
 `19_evidence_index.md` MUST contain table:
 `Evidence ID | Topic | Claim | Source Path | Line/Method | Verification Type | Source Commit | Status`
 Valid ID patterns: `EV-REPO-###`, `EV-CONFIG-###`, `EV-DB-###`, `EV-MIGRATION-###`, `EV-AUTH-###`, `EV-API-###`, `EV-JOB-###`, `EV-RT-###`, `EV-OPS-###`, `EV-TEST-###`, `EV-CICD-###`, `EV-NEG-###`.

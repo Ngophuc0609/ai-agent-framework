@@ -1123,14 +1123,14 @@ triggers:
 <!-- BEGIN SOURCE: .ai/rules/00-global-rules.md -->
 # 00 Global Rules
 
-## Vietnamese User Summary
+## Summary
 
-Rule này đặt nguyên tắc nền cho toàn bộ `.ai`: dùng registry để chọn skill/workflow, dùng English cho hướng dẫn agent, dùng Vietnamese khi trả lời bạn trong chat.
+This rule defines the baseline for `.ai`: use registries for skill/workflow selection, use English for agent-facing instructions, and use Vietnamese only for final chat responses to the Vietnamese-speaking user unless another language is requested.
 
 ## Language Policy
 
 - Write all machine-facing rules, workflows, skill bodies, agent specs, templates, and operational notes in English.
-- Vietnamese is allowed only in explicitly labeled user-facing sections or trigger aliases.
+- Vietnamese is allowed only in user-facing chat responses, explicit Vietnamese trigger aliases, or final developer-facing deliverables that explicitly require Vietnamese.
 - Final chat responses to the user must be in Vietnamese unless the user requests another language.
 - Do not mix Vietnamese into execution instructions.
 
@@ -1205,9 +1205,9 @@ Never store secrets, tokens, passwords, private keys, temporary logs, unverified
 <!-- BEGIN SOURCE: .ai/rules/01-documentation-skill.md -->
 # 01 Documentation Skill Rules
 
-## Vietnamese User Summary
+## Summary
 
-Rule này mô tả cách kích hoạt và kiểm soát workflow tạo tài liệu bàn giao source code.
+This rule describes how to trigger and control the source-code handover documentation workflow.
 
 ## Trigger Resolution
 
@@ -1226,6 +1226,8 @@ Before generating documentation, read:
 - `.ai/rules/00-global-rules.md`
 - `.ai/rules/10-codegraph-first-rules.md`
 - `.ai/rules/12-memory-policy-rules.md`
+- `.ai/rules/07-handover-documentation-dod.md`
+- `.ai/rules/08-source-code-handover-quality-checklist.md`
 - The selected skill and workflow files.
 
 If a required file is missing, record the limitation and continue only with the safe subset of the workflow.
@@ -1272,9 +1274,9 @@ When an area is not detected:
 <!-- BEGIN SOURCE: .ai/rules/02-multi-agent-rules.md -->
 # 02 Multi-Agent Rules
 
-## Vietnamese User Summary
+## Summary
 
-Rule này chuẩn hóa cách chia việc giữa nhiều agent khi tạo tài liệu hoặc rà soát source.
+This rule standardizes how work is divided across multiple agents for documentation or source review.
 
 ## Coordination
 
@@ -1500,9 +1502,9 @@ Before completion:
 <!-- BEGIN SOURCE: .ai/rules/06-quality-gates.md -->
 # 06 Quality Gates
 
-## Vietnamese User Summary
+## Summary
 
-Rule này định nghĩa các điều kiện bắt buộc trước khi coi một workflow là hoàn thành.
+This rule defines mandatory conditions before a workflow can be considered complete.
 
 ## General Gates
 
@@ -1696,9 +1698,9 @@ Record the selected mode in workflow status and final summary.
 <!-- BEGIN SOURCE: .ai/rules/10-codegraph-first-rules.md -->
 # 10 CodeGraph-First Rules
 
-## Vietnamese User Summary
+## Summary
 
-Rule này bắt buộc kiểm tra và dùng CodeGraph trước khi rà soát source code. Nếu không có và không tự cài được, agent phải hỏi bạn trước khi dùng fallback yếu hơn.
+This rule requires checking and using CodeGraph before source-code review. If CodeGraph is unavailable and cannot be initialized, the agent must ask before using a weaker fallback.
 
 ## Requirement
 
@@ -1833,9 +1835,9 @@ Source-reading skillflows must follow:
 <!-- BEGIN SOURCE: .ai/rules/12-memory-policy-rules.md -->
 # 12 Memory Policy Rules
 
-## Vietnamese User Summary
+## Summary
 
-Rule này quy định cách dùng memory: chỉ lưu thông tin bền vững, đã xác minh, có namespace theo project, không bao giờ lưu secret.
+This rule defines memory usage: store only durable, verified, project-namespaced information and never store secrets.
 
 ## Core Policy
 

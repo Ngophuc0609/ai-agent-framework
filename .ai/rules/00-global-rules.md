@@ -1,13 +1,13 @@
 # 00 Global Rules
 
-## Vietnamese User Summary
+## Summary
 
-Rule này đặt nguyên tắc nền cho toàn bộ `.ai`: dùng registry để chọn skill/workflow, dùng English cho hướng dẫn agent, dùng Vietnamese khi trả lời bạn trong chat.
+This rule defines the baseline for `.ai`: use registries for skill/workflow selection, use English for agent-facing instructions, and use Vietnamese only for final chat responses to the Vietnamese-speaking user unless another language is requested.
 
 ## Language Policy
 
 - Write all machine-facing rules, workflows, skill bodies, agent specs, templates, and operational notes in English.
-- Vietnamese is allowed only in explicitly labeled user-facing sections or trigger aliases.
+- Vietnamese is allowed only in user-facing chat responses, explicit Vietnamese trigger aliases, or final developer-facing deliverables that explicitly require Vietnamese.
 - Final chat responses to the user must be in Vietnamese unless the user requests another language.
 - Do not mix Vietnamese into execution instructions.
 

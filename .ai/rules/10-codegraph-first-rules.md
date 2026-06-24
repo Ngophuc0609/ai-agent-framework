@@ -1,8 +1,8 @@
 # 10 CodeGraph-First Rules
 
-## Vietnamese User Summary
+## Summary
 
-Rule này bắt buộc kiểm tra và dùng CodeGraph trước khi rà soát source code. Nếu không có và không tự cài được, agent phải hỏi bạn trước khi dùng fallback yếu hơn.
+This rule requires checking and using CodeGraph before source-code review. If CodeGraph is unavailable and cannot be initialized, the agent must ask before using a weaker fallback.
 
 ## Requirement
 

@@ -1,8 +1,8 @@
 # 01 Documentation Skill Rules
 
-## Vietnamese User Summary
+## Summary
 
-Rule này mô tả cách kích hoạt và kiểm soát workflow tạo tài liệu bàn giao source code.
+This rule describes how to trigger and control the source-code handover documentation workflow.
 
 ## Trigger Resolution
 
@@ -21,6 +21,8 @@ Before generating documentation, read:
 - `.ai/rules/00-global-rules.md`
 - `.ai/rules/10-codegraph-first-rules.md`
 - `.ai/rules/12-memory-policy-rules.md`
+- `.ai/rules/07-handover-documentation-dod.md`
+- `.ai/rules/08-source-code-handover-quality-checklist.md`
 - The selected skill and workflow files.
 
 If a required file is missing, record the limitation and continue only with the safe subset of the workflow.

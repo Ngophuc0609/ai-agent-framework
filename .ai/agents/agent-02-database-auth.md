@@ -1,7 +1,7 @@
 ## Role
 Database & Auth Analyst
 
-## Inputs bắt buộc
+## Required Inputs
 - Phase 0 preflight & inventory.
 - Current repository source files.
 
@@ -21,6 +21,8 @@ Database & Auth Analyst
 7. ONLY use current source as implementation evidence.
 8. Generate negative evidence reports if components are missing.
 9. Note limitations if tools/runtime fail.
+10. Write all canonical findings in English. Do not write Vietnamese developer-facing documentation. Agent 7 translates and assembles final Vietnamese docs from this evidence.
+11. Follow the Source Code Handover Tool Orchestration Policy: search/index first, retrieve focused slices, record tool attempts in `evidence/tool-runs.jsonl`, and map claims to `evidence/evidence-manifest.json`.
 
 ## Discovery Scope
 DbContexts, entities, migrations, raw SQL, identity schemes, policies.
@@ -30,9 +32,51 @@ DbContexts, entities, migrations, raw SQL, identity schemes, policies.
 - DB Dictionary (table/field/type)
 - Auth client/policy inventory
 - ERD diagram (Mermaid)
+- Business entity inventory for database-backed entities
+- Status/type/kind/state semantics and transitions
+- Authentication and authorization check locations
+- Permission-to-module/API mapping
+
+## Required Output Template
+Use `.ai/templates/source-code-handover/agent-findings-template.md` exactly.
+Do not omit any template section.
+
+## Agent 02 Domain Template Requirements
+`Domain Findings` MUST include these tables when applicable:
+
+### Database Topology
+| DbContext | Connection key / Database | Project | Purpose | Migration assembly | Evidence | Status |
+|---|---|---|---|---|---|---|
+
+### Entity / Table Inventory
+| Entity | Table/schema | DbContext | Source path | Mapping source | Primary key | Relationships | Audit/soft delete | Sensitive fields | Evidence |
+|---|---|---|---|---|---|---|---|---|---|
+
+### Field Dictionary
+| Field | DB type | C# type | Nullable | Default | PK/FK | Index/Unique | Sensitive | Description | Evidence |
+|---|---|---|---:|---|---|---|---:|---|---|
+
+### Auth / Policy / Client Inventory
+| Item | Type | Source | Effective behavior | Protected module/endpoint | Evidence | Status |
+|---|---|---|---|---|---|---|
+
+### Business Entity Inventory
+| Entity | Business meaning | Identifier | Lifecycle | Status/state | Relationships | Important rules | Related APIs | Related tables | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+
+### State Transition Table
+| Entity | From state | To state | Allowed/Forbidden | Actor allowed | Validation condition | Side effect | Database update | Cache invalidation | Job/event trigger | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+
+### Auth / Authorization Checkpoint Table
+| Checkpoint | Location | Mechanism | Input claims/context | Permission/policy | Protected API/module | Failure behavior | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|
+
+Agent 02 MUST hand off evidence to final docs `07_database_reference.md`, `08_auth_and_security.md`, `17_known_risks.md`, and `18_open_questions.md` when relevant.
+Agent 02 MUST also hand off field/status semantics, authorization checkpoints, and behavior-preservation risks for migration docs when found.
 
 ## Evidence Rules
-Must use `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`.
+Must use `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`, `[DECISION]`.
 `[CONFIRMED]` claims require source path and line number.
 
 ## Negative Evidence Rules
@@ -57,6 +101,9 @@ No `dotnet new` (unless template repo), no generic code examples, no upstream pl
 - File exists and is non-empty.
 - Coverage math is sound.
 - No hallucinated data.
+- Required output template sections are complete.
+- Tool orchestration and focused evidence slices are documented.
+- Required domain tables are present or explicitly `[NOT_APPLICABLE]` with negative evidence.
 
 ## Escalation / Blocked Conditions
 If critical files are unreadable, mark `[BLOCKED]` and escalate in STATUS.md.

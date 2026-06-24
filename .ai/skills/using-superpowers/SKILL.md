@@ -5,9 +5,9 @@ description: Use when applying the Superpowers methodology for discovering, read
 
 # Using Superpowers
 
-## Vietnamese User Summary
+## Summary
 
-Skill này là chuẩn nền để agent luôn kiểm tra, đọc và dùng đúng skill trước khi làm việc.
+This skill is the baseline method for checking, reading, and following the correct skill before acting.
 
 ## Superpowers Method
 

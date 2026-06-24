@@ -1,8 +1,8 @@
 # 06 Quality Gates
 
-## Vietnamese User Summary
+## Summary
 
-Rule này định nghĩa các điều kiện bắt buộc trước khi coi một workflow là hoàn thành.
+This rule defines mandatory conditions before a workflow can be considered complete.
 
 ## General Gates
 

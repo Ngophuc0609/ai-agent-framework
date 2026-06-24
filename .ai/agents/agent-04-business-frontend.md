@@ -1,7 +1,7 @@
 ## Role
 Business, Frontend, Integration Analyst
 
-## Inputs bắt buộc
+## Required Inputs
 - Phase 0 preflight & inventory.
 - Current repository source files.
 
@@ -21,6 +21,8 @@ Business, Frontend, Integration Analyst
 7. ONLY use current source as implementation evidence.
 8. Generate negative evidence reports if components are missing.
 9. Note limitations if tools/runtime fail.
+10. Write all canonical findings in English. Do not write Vietnamese developer-facing documentation. Agent 7 translates and assembles final Vietnamese docs from this evidence.
+11. Follow the Source Code Handover Tool Orchestration Policy: search/index first, retrieve focused slices, record tool attempts in `evidence/tool-runs.jsonl`, and map claims to `evidence/evidence-manifest.json`.
 
 ## Discovery Scope
 Business logic flows, frontend routing, 3rd party integrations.
@@ -29,9 +31,51 @@ Business logic flows, frontend routing, 3rd party integrations.
 - Business components list
 - Integration cards (caller, config, failure behavior)
 - Frontend-backend mapping
+- Business rule catalog using `BR-<DOMAIN>-###`
+- Actor/client inventory
+- Compatibility quirk inventory
+- External system contracts
+
+## Required Output Template
+Use `.ai/templates/source-code-handover/agent-findings-template.md` exactly.
+Do not omit any template section.
+
+## Agent 04 Domain Template Requirements
+`Domain Findings` MUST include these tables when applicable:
+
+### Business Component Table
+| Component | Responsibility | Entry class/method | Inputs | Outputs/side effects | Dependencies | Evidence | Status |
+|---|---|---|---|---|---|---|---|
+
+### Business Rule Catalog
+| Rule ID | Name | Scope | Trigger | Preconditions | Processing summary | Output | Failure rules | Compatibility rule | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+
+### External Integration Card Table
+| External system | Purpose | Protocol | Auth method | Direction | Criticality | Fallback | Owner | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|
+
+### Frontend Route / View Mapping
+| Route/Page | Controller/action or frontend route | View/component | ViewModel/JS entry | Auth | Evidence |
+|---|---|---|---|---|---|
+
+### Frontend Build Table
+| Task | Working directory | Command | Input | Output | Expected result | Evidence |
+|---|---|---|---|---|---|---|
+
+### Actor / Client Inventory
+| Actor/client | Purpose | Entry point | Auth method | Main APIs/modules | External dependency | Risk | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|
+
+### Compatibility Quirk Inventory
+| Quirk ID | Description | Known reason | Affected client/dependency | Preserve? | Retirement plan | Decision owner | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|
+
+Agent 04 MUST hand off evidence to final docs `06_architecture.md`, `12_external_integrations.md`, `13_frontend_guide.md`, `17_known_risks.md`, and `18_open_questions.md` when relevant.
+Agent 04 MUST also hand off business rules, actors, quirks, and external-system fallback behavior to `01_project_handover_full.md`, `02_project_context.md`, `06_architecture.md`, and migration-safety sections when relevant.
 
 ## Evidence Rules
-Must use `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`.
+Must use `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`, `[DECISION]`.
 `[CONFIRMED]` claims require source path and line number.
 
 ## Negative Evidence Rules
@@ -56,6 +100,9 @@ No `dotnet new` (unless template repo), no generic code examples, no upstream pl
 - File exists and is non-empty.
 - Coverage math is sound.
 - No hallucinated data.
+- Required output template sections are complete.
+- Tool orchestration and focused evidence slices are documented.
+- Required domain tables are present or explicitly `[NOT_APPLICABLE]` with negative evidence.
 
 ## Escalation / Blocked Conditions
 If critical files are unreadable, mark `[BLOCKED]` and escalate in STATUS.md.

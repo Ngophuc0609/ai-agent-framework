@@ -1,8 +1,8 @@
 # 12 Memory Policy Rules
 
-## Vietnamese User Summary
+## Summary
 
-Rule này quy định cách dùng memory: chỉ lưu thông tin bền vững, đã xác minh, có namespace theo project, không bao giờ lưu secret.
+This rule defines memory usage: store only durable, verified, project-namespaced information and never store secrets.
 
 ## Core Policy
 

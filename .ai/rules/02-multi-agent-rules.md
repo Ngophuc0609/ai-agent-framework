@@ -1,8 +1,8 @@
 # 02 Multi-Agent Rules
 
-## Vietnamese User Summary
+## Summary
 
-Rule này chuẩn hóa cách chia việc giữa nhiều agent khi tạo tài liệu hoặc rà soát source.
+This rule standardizes how work is divided across multiple agents for documentation or source review.
 
 ## Coordination
 

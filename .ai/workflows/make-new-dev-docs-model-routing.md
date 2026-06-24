@@ -13,8 +13,8 @@ Default routing for auth-heavy/IdentityServer projects:
 - Agent 8: REASONING_STRONG
 
 ## Routing Fallback
-Nếu runner không hỗ trợ model routing:
-- Ghi limitation vào STATUS.md.
-- Không được tự đánh dấu model quality là verified.
-- Nếu Agent 2/3/5/6/8 không thể chạy bằng tier tối thiểu BALANCED (hoặc tương đương), readiness tối đa là `Partial`.
-- Nếu không thể chạy independent validation (Agent 8), readiness tối đa là `Blocked`.
+If the runner does not support model routing:
+- Record the limitation in `STATUS.md`.
+- Do not mark model quality as verified.
+- If Agents 2/3/5/6/8 cannot run with at least a BALANCED-equivalent tier, maximum readiness is `Partial`.
+- If independent validation (Agent 8) cannot run, maximum readiness is `Blocked`.
