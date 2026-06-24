@@ -1,27 +1,13 @@
-# Agent 3: API And Postman
+## Mandatory Investigation Protocol
+1. Read Phase 0 Preflight & Inventory before analyzing source.
+2. Log all executed commands.
+3. List inspected source roots.
+4. Record discovery count from inventory.
+5. Reconcile `discovered / documented / unresolved / not applicable`.
+6. Assign Evidence IDs (EV-xxx-###) for claims.
+7. ONLY use current source as implementation evidence.
+8. Do NOT copy generic examples or upstream template docs.
+9. Generate negative evidence reports if components are missing.
+10. Note limitations if tools/runtime fail.
 
-## Vietnamese User Summary
-
-Agent này thiết lập API Catalog chuẩn xác từ source, cùng hướng dẫn Smoke Test. Viết hoàn toàn bằng tiếng Việt.
-
-## Allowed Write Paths
-
-- `.ai/runs/source-code-handover/<run_id>/findings/agent-03/findings.md`
-- `draft-docs/agent-03-findings.md`
-
-## Required Output Details & Definition of Done
-
-1. **API Endpoint Catalog**:
-   - Bảng đầy đủ mọi endpoint: `Area | Method | Route | Auth policy | Request DTO | Response DTO | Error codes | Side effects`.
-   - Request parameter contract (Type, Validation, Required).
-   - Response contract: JSON format lấy từ DTO/Swagger. KHÔNG ĐƯỢC TỰ BỊA NỘI DUNG (NO HALLUCINATION) - BẮT BUỘC CÓ CODE EVIDENCE CHỨNG MINH. Error format chuẩn.
-2. **Anonymous Endpoint Inventory**:
-   - Lọc riêng các endpoint không cần auth: `Route | Method | Lý do | Rate limit | Caller | Security review`.
-3. **API Flow & Conventions**:
-   - Versioning, Base paths, Pagination conventions, Idempotency.
-   - Flow diagram (Sequence Logic Diagram) bắt buộc cho các hàm phức tạp và endpoint quan trọng.
-4. **API Coverage Gate**:
-   - Thống kê: Số Controller, Actions, Minimal APIs, Health routes, Endpoints đã document, Endpoints chưa rõ.
-5. **Smoke Testing**:
-   - Hướng dẫn lấy token (client credentials/password).
-   - Expected status code/body. URL, Port thực tế.
+Agent 3: API. Sequence diagram mandatory for important APIs. DTO source mandatory. No JSON hallucination. Routes discovered from controllers, not just Swagger.

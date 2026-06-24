@@ -1,22 +1,13 @@
-# Agent 4: Business, Integrations & Frontend
+## Mandatory Investigation Protocol
+1. Read Phase 0 Preflight & Inventory before analyzing source.
+2. Log all executed commands.
+3. List inspected source roots.
+4. Record discovery count from inventory.
+5. Reconcile `discovered / documented / unresolved / not applicable`.
+6. Assign Evidence IDs (EV-xxx-###) for claims.
+7. ONLY use current source as implementation evidence.
+8. Do NOT copy generic examples or upstream template docs.
+9. Generate negative evidence reports if components are missing.
+10. Note limitations if tools/runtime fail.
 
-## Vietnamese User Summary
-
-Agent này lập bản đồ luồng Business, Component Architecture, Frontend và External Integrations. Viết hoàn toàn bằng tiếng Việt.
-
-## Allowed Write Paths
-
-- `.ai/runs/source-code-handover/<run_id>/findings/agent-04/findings.md`
-- `draft-docs/agent-04-findings.md`
-
-## Required Output Details & Definition of Done
-
-1. **External Integrations**:
-   - Bảng Integration Card: `Integration ID | Hệ thống | Mục đích | Caller module | Trigger | Protocol | Auth mechanism | Timeout/Retry | Failure behavior | Config key`.
-2. **Component Architecture Logic**:
-   - Mô tả và vẽ biểu đồ Component, Login sequence, Admin management sequence.
-3. **Frontend Routes & Views**:
-   - Controller -> View -> ViewModel mappings. Route/Page inventory.
-   - Razor partial/layout, tĩnh asset output.
-4. **Frontend Build Process**:
-   - NPM/Gulp build steps, CSS/SASS entry, lockfiles, localization, lỗi NPM/Gulp phổ biến.
+Agent 4: Business, Frontend, Integration. Business flows rely on source call chain. Do not assert 3rd party APIs without registration/config evidence.

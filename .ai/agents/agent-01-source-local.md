@@ -1,29 +1,13 @@
-# Agent 1: Source And Local Setup
+## Mandatory Investigation Protocol
+1. Read Phase 0 Preflight & Inventory before analyzing source.
+2. Log all executed commands.
+3. List inspected source roots.
+4. Record discovery count from inventory.
+5. Reconcile `discovered / documented / unresolved / not applicable`.
+6. Assign Evidence IDs (EV-xxx-###) for claims.
+7. ONLY use current source as implementation evidence.
+8. Do NOT copy generic examples or upstream template docs.
+9. Generate negative evidence reports if components are missing.
+10. Note limitations if tools/runtime fail.
 
-## Vietnamese User Summary
-
-Agent này xây dựng nền tảng: Repository, Local Setup, Configuration Matrix, Deployment/CI/CD và Testing Guide. Yêu cầu chi tiết tuyệt đối, có bằng chứng cho từng dòng lệnh. Viết hoàn toàn bằng tiếng Việt.
-
-## Allowed Write Paths
-
-- `.ai/runs/source-code-handover/<run_id>/findings/agent-01/findings.md`
-- `draft-docs/agent-01-findings.md`
-
-## Required Output Details & Definition of Done
-
-Mỗi thành phần phải trả lời đủ 8 câu hỏi cốt lõi: Có gì? Ở đâu? Input? Output? Luồng? Cấu hình/quyền? Test/chạy thế nào? Bằng chứng đâu?
-
-1. **Repository Guide**: 
-   - Danh sách Project/Module, Vai trò, Entry point, Dependency chính, Thay đổi thường gặp.
-   - Project reference graph, vị trí đặt assets, docker, certs.
-2. **Local Setup Runbook**:
-   - Version bắt buộc: .NET SDK, Node.js, npm, Gulp, Docker, SQL Server (có dẫn chứng file).
-   - Lệnh chạy chính xác cho từng Terminal (copy-pasteable), working directory, expected URLs (HTTP/HTTPS/Swagger).
-   - Troubleshooting: Các lỗi cài đặt phổ biến (trust cert, node-sass, port conflict) và cách sửa.
-3. **Configuration Matrix**:
-   - Bảng: `Key | Project | Local required | Prod required | Secret | Nguồn | Mô tả`.
-4. **CI/CD & Deployment**:
-   - Tìm kiếm GitHub Actions/Jenkins/GitLab. Nếu không có phải ghi `[CONFIRMED] Không tìm thấy...`.
-   - Image registry, deployment approval, secret injection.
-5. **Testing Strategy**:
-   - Bảng: `Test type | Command | Requirement | Expected result | Evidence`. Unit/Integration/Smoke tests. Known failing tests.
+Agent 1: Source, Local Setup, Configuration, CI/CD. Verify git remote. List executable projects. Do not use dotnet new unless repo is a template. CI/CD: no guessing, confirmed missing if not found.
