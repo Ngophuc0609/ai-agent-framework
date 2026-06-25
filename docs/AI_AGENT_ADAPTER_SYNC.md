@@ -67,6 +67,23 @@ ai-agent-adapter-sync --force
 - Native Agent Skills are generated from `.ai/skills/*/SKILL.md` into the target agent's skill directory.
 - Existing user-authored files are not overwritten unless `--force` is passed.
 
+## Runtime Tool Policy
+
+All generated native instructions include `.ai/rules/15-agent-runtime-tool-policy.md`. This rule prevents the class of failures where an agent emits malformed tool calls, repeats the same failed call, scans the whole repository without bounds, or writes source-code handover docs from model context instead of physical evidence.
+
+Adapter-specific optimization profiles are maintained in `.ai/adapters/*.md`:
+
+| Adapter | Optimization focus |
+|---|---|
+| Codex | Deterministic shell validation, source edits, git diff review, commit/push delivery, sequential fallback for required agents. |
+| Cline | Strict `execute_command` schema, bounded commands, source-code-handover run initialization with one safe script call. |
+| Cursor | Workspace navigation, scoped Composer/Agent edits, symbol search, portable `.agents/skills` fallback. |
+| Claude | Deep reasoning, cross-layer synthesis, critique, sub-agent use only when the runtime exposes it. |
+| GitHub Copilot | PR/code review, CI/GitHub evidence, small scoped edits, no unverified build/test claims. |
+| Antigravity | Gemini-only model routing for source handover, cost-aware discovery, evidence-first multi-agent documentation. |
+
+Optional tool candidates for deeper workflows live in `.ai/registry/tool-candidates.json`. Keep mandatory bootstrap tools in `.ai/registry/tool-bootstrap.json`; do not auto-install cloud or production-facing tools by default.
+
 ## Recommended Sync Flow
 
 From the target repository:

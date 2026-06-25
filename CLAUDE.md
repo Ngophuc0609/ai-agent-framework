@@ -43,3 +43,4 @@ Before any coding, documentation, debugging, review, refactor, commit, or analys
 - `.ai/rules/12-memory-policy-rules.md`
 - `.ai/rules/13-efficiency-cost-policy-rules.md`
 - `.ai/rules/14-tdd-first-feature-rules.md`
+- `.ai/rules/15-agent-runtime-tool-policy.md`

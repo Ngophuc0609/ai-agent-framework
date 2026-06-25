@@ -32,6 +32,7 @@ CORE_FILES = [
     ".ai/registry/workflows.yml",
     ".ai/registry/triggers.yml",
     ".ai/registry/tool-bootstrap.json",
+    ".ai/registry/tool-candidates.json",
     ".ai/rules/00-global-rules.md",
     ".ai/rules/01-documentation-skill.md",
     ".ai/rules/02-multi-agent-rules.md",
@@ -47,6 +48,7 @@ CORE_FILES = [
     ".ai/rules/12-memory-policy-rules.md",
     ".ai/rules/13-efficiency-cost-policy-rules.md",
     ".ai/rules/14-tdd-first-feature-rules.md",
+    ".ai/rules/15-agent-runtime-tool-policy.md",
 ]
 
 ADAPTER_FILES = {
@@ -169,6 +171,7 @@ def compact_header(tool: str, generated_on: str) -> str:
             "- `.ai/rules/12-memory-policy-rules.md`",
             "- `.ai/rules/13-efficiency-cost-policy-rules.md`",
             "- `.ai/rules/14-tdd-first-feature-rules.md`",
+            "- `.ai/rules/15-agent-runtime-tool-policy.md`",
         ]
     )
 

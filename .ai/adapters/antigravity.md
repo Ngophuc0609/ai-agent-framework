@@ -8,6 +8,7 @@ Adapter này mô tả cách dùng framework `.ai/` với Google Antigravity IDE/
 
 - Use generated workspace instructions from `GEMINI.md`, `.agent/rules/00-ai-framework.md`, and `.agents/AGENTS.md` when present.
 - Treat `.ai/registry/` as the source of truth for skill and workflow routing.
+- Apply `.ai/rules/15-agent-runtime-tool-policy.md` before terminal commands, workspace edits, browser/MCP calls, or delegated agent actions.
 - For Antigravity environments that support mounted `AGENTS.md`, follow the repository root `AGENTS.md` as the cross-tool fallback.
 - Run or verify `ai-agent-sync --install-tools --yes` before source-reading or code-changing tasks when runtime state is missing.
 - Keep filesystem and external tool access scoped to the active workspace.
@@ -27,3 +28,11 @@ When running `source-code-handover` or `make-new-dev-docs` in Antigravity:
 - Use `Gemini 3.5 Flash (Low)` only for low-risk inventory classification, formatting, and checklist cleanup.
 - Use `Gemini 3.1 Pro (High)` only as a Gemini-family fallback for complex review/synthesis when `Gemini 3.5 Flash (High)` is unavailable or underperforms.
 - Record the selected model and any downgrade/escalation in `STATUS.md`.
+
+## Optimization Profile
+
+- Best fit: cost-optimized multi-step documentation, broad discovery, structured synthesis, and Gemini-family model routing.
+- Start with deterministic local tools and `Gemini 3.5 Flash (Low/Medium)` for inventory classification; escalate to `Gemini 3.5 Flash (High)` for verification, conflict analysis, and final review.
+- Keep `Claude Opus 4.6 Thinking` and `Claude Sonnet 4.6 Thinking` out of Antigravity routing unless a future explicit user decision changes the policy.
+- For `source-code-handover`, Agents 1-5 should prioritize complete physical inventory; Agents 6-8 should do deeper source/symbol/build/runtime verification; Agent 9 writes only from frozen evidence; Agent 10 audits independently.
+- If Antigravity lacks a native tool required by `.ai/registry/tool-candidates.json`, record the tool limitation and use local fallback commands when available.

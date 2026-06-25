@@ -1,0 +1,70 @@
+{
+  "purpose": "Optional tool candidates for evidence-backed source-code handover and framework workflows. These are not mandatory bootstrap installs.",
+  "local_required": {
+    "ripgrep": {
+      "commands": ["rg"],
+      "role": "Fast physical file discovery for routes, configs, Redis keys, SQL, and identifiers."
+    },
+    "git": {
+      "commands": ["git"],
+      "role": "Repository status, history, blame, changed files, and provenance."
+    },
+    "language_build_tool": {
+      "commands": ["dotnet", "npm", "mvn", "gradle", "go", "cargo"],
+      "role": "Build/test verification when applicable to the repository stack."
+    },
+    "semgrep": {
+      "commands": ["semgrep"],
+      "role": "Pattern scanning for auth bypass, raw SQL, secret exposure, risky legacy code, and framework-specific hazards."
+    },
+    "sql_metadata_export": {
+      "commands": ["sqlcmd", "psql", "mysql", "sqlite3"],
+      "role": "Database schema extraction for tables, columns, constraints, indexes, procedures, triggers, and views."
+    },
+    "openapi_postman_parser": {
+      "commands": ["jq", "yq", "node", "python3"],
+      "role": "Parse Swagger/OpenAPI/Postman collections into endpoint inventory, request schema, response schema, and examples."
+    }
+  },
+  "large_repo_recommended": {
+    "sourcegraph_mcp": {
+      "role": "Large or multi-repo search, symbol navigation, references, ownership, history, and cross-repository evidence.",
+      "installation_policy": "Configure only when available/trusted; do not auto-install by default."
+    },
+    "github_mcp": {
+      "role": "Repository, commit, pull request, issue, CI, and security evidence from GitHub.",
+      "installation_policy": "Use official GitHub MCP configuration when the user grants repository access."
+    },
+    "codeql": {
+      "commands": ["codeql"],
+      "role": "Semantic query and data-flow analysis for high-risk modules.",
+      "installation_policy": "Use for high-risk flows; building CodeQL databases can be expensive."
+    },
+    "scip_lsp_index": {
+      "commands": ["scip", "lsif", "clangd", "typescript-language-server", "omnisharp"],
+      "role": "Go-to-definition, references, implementations, and symbol graph evidence."
+    },
+    "sqlite_duckdb": {
+      "commands": ["sqlite3", "duckdb"],
+      "role": "Persist evidence graph, inventory coverage, and asset-level documentation metrics."
+    },
+    "diagram_generator": {
+      "commands": ["mmdc", "plantuml"],
+      "role": "Generate or validate Mermaid/PlantUML diagrams for architecture, jobs, realtime, and request lifecycles."
+    }
+  },
+  "runtime_optional": {
+    "opentelemetry_or_log_parser": {
+      "role": "Confirm runtime behavior, request flow, errors, and integration behavior from logs/traces."
+    },
+    "hangfire_dashboard_export": {
+      "role": "Confirm background jobs, schedules, retry, and failed job behavior."
+    },
+    "redis_snapshot": {
+      "role": "Confirm Redis key patterns, TTLs, data types, and real cache usage."
+    },
+    "api_traffic_sample": {
+      "role": "Confirm real client request/response contracts and legacy quirks."
+    }
+  }
+}

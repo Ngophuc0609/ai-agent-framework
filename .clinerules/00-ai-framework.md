@@ -43,6 +43,7 @@ Before any coding, documentation, debugging, review, refactor, commit, or analys
 - `.ai/rules/12-memory-policy-rules.md`
 - `.ai/rules/13-efficiency-cost-policy-rules.md`
 - `.ai/rules/14-tdd-first-feature-rules.md`
+- `.ai/rules/15-agent-runtime-tool-policy.md`
 
 ## Materialized .ai Rule Bundle
 
@@ -105,6 +106,7 @@ Skills are grouped by runtime role:
 The trigger registry is the routing source of truth. If a user-facing skill should be callable from natural language, add trigger aliases in `.ai/registry/triggers.yml`.
 
 Tool bootstrap commands live in `.ai/registry/tool-bootstrap.json` and are used by `ai-agent-sync` when syncing this framework into another repository.
+Optional tool candidates for deep documentation, source evidence, large-repository analysis, and runtime verification live in `.ai/registry/tool-candidates.json`; these are selected by workflows when available and are not installed automatically by default.
 The MCP Memory bootstrap command was created on `2026-06-20`; agents must run `ai-agent-sync --install-tools --yes` before any work when `.ai/runtime/memory/memory.jsonl` or `.ai/runtime/mcp-servers.json` is missing.
 Native agent instruction files can be generated from `.ai/` with `ai-agent-adapter-sync`; see `docs/AI_AGENT_ADAPTER_SYNC.md`.
 
@@ -144,6 +146,7 @@ For multi-agent orchestration:
 - Resolve skills and workflows through `.ai/registry/`; do not hard-code triggers.
 - For a new AI tool/session, start by reading `.ai/BOOTSTRAP_ONCE.md`.
 - Run CodeGraph preflight before any source-code review.
+- Apply `.ai/rules/15-agent-runtime-tool-policy.md` before shell commands, native agent tool calls, delegated agent actions, or source-code-handover runs.
 - Retrieve memory before editing or documenting a module.
 - Treat current source code as the source of truth when memory conflicts with code.
 - Do not store secrets in memory, docs, vectors, or handoff files.
@@ -1110,6 +1113,82 @@ triggers:
   }
 }
 <!-- END SOURCE: .ai/registry/tool-bootstrap.json -->
+
+
+## Source File: `.ai/registry/tool-candidates.json`
+
+<!-- BEGIN SOURCE: .ai/registry/tool-candidates.json -->
+{
+  "purpose": "Optional tool candidates for evidence-backed source-code handover and framework workflows. These are not mandatory bootstrap installs.",
+  "local_required": {
+    "ripgrep": {
+      "commands": ["rg"],
+      "role": "Fast physical file discovery for routes, configs, Redis keys, SQL, and identifiers."
+    },
+    "git": {
+      "commands": ["git"],
+      "role": "Repository status, history, blame, changed files, and provenance."
+    },
+    "language_build_tool": {
+      "commands": ["dotnet", "npm", "mvn", "gradle", "go", "cargo"],
+      "role": "Build/test verification when applicable to the repository stack."
+    },
+    "semgrep": {
+      "commands": ["semgrep"],
+      "role": "Pattern scanning for auth bypass, raw SQL, secret exposure, risky legacy code, and framework-specific hazards."
+    },
+    "sql_metadata_export": {
+      "commands": ["sqlcmd", "psql", "mysql", "sqlite3"],
+      "role": "Database schema extraction for tables, columns, constraints, indexes, procedures, triggers, and views."
+    },
+    "openapi_postman_parser": {
+      "commands": ["jq", "yq", "node", "python3"],
+      "role": "Parse Swagger/OpenAPI/Postman collections into endpoint inventory, request schema, response schema, and examples."
+    }
+  },
+  "large_repo_recommended": {
+    "sourcegraph_mcp": {
+      "role": "Large or multi-repo search, symbol navigation, references, ownership, history, and cross-repository evidence.",
+      "installation_policy": "Configure only when available/trusted; do not auto-install by default."
+    },
+    "github_mcp": {
+      "role": "Repository, commit, pull request, issue, CI, and security evidence from GitHub.",
+      "installation_policy": "Use official GitHub MCP configuration when the user grants repository access."
+    },
+    "codeql": {
+      "commands": ["codeql"],
+      "role": "Semantic query and data-flow analysis for high-risk modules.",
+      "installation_policy": "Use for high-risk flows; building CodeQL databases can be expensive."
+    },
+    "scip_lsp_index": {
+      "commands": ["scip", "lsif", "clangd", "typescript-language-server", "omnisharp"],
+      "role": "Go-to-definition, references, implementations, and symbol graph evidence."
+    },
+    "sqlite_duckdb": {
+      "commands": ["sqlite3", "duckdb"],
+      "role": "Persist evidence graph, inventory coverage, and asset-level documentation metrics."
+    },
+    "diagram_generator": {
+      "commands": ["mmdc", "plantuml"],
+      "role": "Generate or validate Mermaid/PlantUML diagrams for architecture, jobs, realtime, and request lifecycles."
+    }
+  },
+  "runtime_optional": {
+    "opentelemetry_or_log_parser": {
+      "role": "Confirm runtime behavior, request flow, errors, and integration behavior from logs/traces."
+    },
+    "hangfire_dashboard_export": {
+      "role": "Confirm background jobs, schedules, retry, and failed job behavior."
+    },
+    "redis_snapshot": {
+      "role": "Confirm Redis key patterns, TTLs, data types, and real cache usage."
+    },
+    "api_traffic_sample": {
+      "role": "Confirm real client request/response contracts and legacy quirks."
+    }
+  }
+}
+<!-- END SOURCE: .ai/registry/tool-candidates.json -->
 
 
 ## Source File: `.ai/rules/00-global-rules.md`
@@ -2218,6 +2297,108 @@ When reviewing a diff that adds a new feature or endpoint, warn if there is no a
 <!-- END SOURCE: .ai/rules/14-tdd-first-feature-rules.md -->
 
 
+## Source File: `.ai/rules/15-agent-runtime-tool-policy.md`
+
+<!-- BEGIN SOURCE: .ai/rules/15-agent-runtime-tool-policy.md -->
+# 15 Agent Runtime Tool Policy
+
+## Vietnamese User Summary
+
+Rule này khóa cách agent dùng tool/runtime để tránh lỗi gọi tool sai schema, scan quá rộng, tự retry vô hạn, hoặc tạo tài liệu từ context thay vì source vật lý.
+
+## Universal Tool-Call Contract
+
+Before calling any tool, the agent MUST know the exact schema required by the active runtime.
+
+If the runtime exposes a shell/command tool, the agent MUST provide every required field in one valid call. Do not emit partial, empty, or placeholder tool calls.
+
+If a tool call fails because of malformed arguments:
+
+1. Retry at most once with the complete required schema.
+2. If the retry fails, stop that action.
+3. Record the limitation in the workflow artifact.
+4. Continue only with a documented fallback that does not pretend the failed tool succeeded.
+
+Do not loop on the same malformed tool call.
+
+## Command Safety Defaults
+
+Safe local read/setup commands may run without user approval when the runtime permits it:
+
+- `pwd`
+- `ls`
+- `rg`
+- `rg --files`
+- `git status`
+- `git rev-parse`
+- bounded `find <path> -maxdepth N`
+- validation scripts under `.ai/scripts/`
+- run initialization under `.ai/runs/`
+
+High-risk commands require explicit user approval or an approved workflow gate:
+
+- destructive git commands
+- deploy/release commands
+- database migration or data mutation commands
+- production credentials or secret access
+- external network operations that upload code or data
+- package install commands when the environment policy requires approval
+
+## Search And Scan Limits
+
+Do not start with unbounded repository scans such as `find .` without exclusions or max depth.
+
+Prefer:
+
+```bash
+rg --files
+rg --files .ai/workflows
+find .ai/workflows -maxdepth 1 -type f -name "*.md"
+```
+
+For large repositories, exclude generated/vendor/build folders before broad discovery:
+
+```bash
+rg --files -g '!bin/' -g '!obj/' -g '!node_modules/' -g '!dist/' -g '!build/'
+```
+
+## Source-Code Handover Minimum Tool Behavior
+
+When running `source-code-handover` or `make-new-dev-docs`:
+
+1. Initialize the run with `.ai/scripts/init-source-code-handover-run.sh`.
+2. Agents 1-5 MUST discover from physical files and write inventory/findings artifacts.
+3. Agents 6-8 MUST re-open physical source slices and tool outputs before verifying claims.
+4. Agent 9 MUST write final docs from frozen evidence, not from vague model memory.
+5. Agent 10 MUST audit evidence coverage and mark weak sections `REJECT`, `PARTIAL`, or `NOT_VERIFIED`.
+
+## Runtime Limitation Recording
+
+Every workflow that depends on tools MUST record missing or failed tools in a limitation artifact such as:
+
+- `.ai/runs/<skillflow_id>/<run_id>/evidence/tool-limitations.json`
+- `.ai/runs/<skillflow_id>/<run_id>/validation/tool-orchestration-validation.md`
+- `.ai/runs/<skillflow_id>/<run_id>/STATUS.md`
+
+The limitation record MUST include:
+
+- tool name
+- expected role
+- attempted command or tool action
+- error/failure mode
+- impact on evidence quality
+- fallback used
+
+## Do Not
+
+- Do not claim a tool was used when it was skipped or failed.
+- Do not treat model context as evidence.
+- Do not mark generated docs `Ready` when build/test/runtime evidence is missing.
+- Do not publish final docs when required agent artifacts are absent.
+- Do not broaden filesystem or network access to compensate for poor prompt routing.
+<!-- END SOURCE: .ai/rules/15-agent-runtime-tool-policy.md -->
+
+
 ## Source File: `.ai/adapters/cline.md`
 
 <!-- BEGIN SOURCE: .ai/adapters/cline.md -->
@@ -2231,6 +2412,7 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Cline.
 
 - Resolve user intent through `.ai/registry/triggers.yml`.
 - Read the selected `SKILL.md` before executing the workflow.
+- Apply `.ai/rules/15-agent-runtime-tool-policy.md` before `execute_command`, file edits, browser actions, MCP calls, or delegated tool actions.
 - Run CodeGraph preflight before source-code review.
 - Keep all tool access scoped to the project folder.
 - If an MCP server or tool is missing, record the limitation and ask the user before continuing with a weaker fallback.

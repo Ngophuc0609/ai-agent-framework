@@ -8,6 +8,7 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Cline.
 
 - Resolve user intent through `.ai/registry/triggers.yml`.
 - Read the selected `SKILL.md` before executing the workflow.
+- Apply `.ai/rules/15-agent-runtime-tool-policy.md` before `execute_command`, file edits, browser actions, MCP calls, or delegated tool actions.
 - Run CodeGraph preflight before source-code review.
 - Keep all tool access scoped to the project folder.
 - If an MCP server or tool is missing, record the limitation and ask the user before continuing with a weaker fallback.
