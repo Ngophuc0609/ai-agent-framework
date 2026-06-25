@@ -5,7 +5,7 @@ Every agent participating in the Source Code Handover workflow MUST follow this 
 ## 0. Mandatory Quality Checklist
 
 Every final document MUST also comply with `.ai/rules/08-source-code-handover-quality-checklist.md`.
-If front matter, common sections, Evidence Index, coverage manifest, negative evidence, or forbidden-content checks are missing or invalid, Agent 8 MUST return `REJECT_REQUIRES_REVISION` or `BLOCKED`, never `PASS`.
+If front matter, common sections, Evidence Index, coverage manifest, negative evidence, or forbidden-content checks are missing or invalid, Agent 10 MUST return `REJECT_REQUIRES_REVISION` or `BLOCKED`, never `PASS`.
 
 ## 1. General Rule: Every Claim Needs Evidence
 - Status: `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`, `[DECISION]`

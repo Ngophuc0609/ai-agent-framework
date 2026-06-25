@@ -5,7 +5,7 @@ applyTo: "**"
 <!-- generated-by: ai-agent-adapter-sync -->
 # .ai Framework Instructions for copilot
 
-Generated on: `2026-06-24`
+Generated on: `2026-06-25`
 Source of truth: `.ai/`
 
 ## Required Startup
@@ -1282,7 +1282,7 @@ This rule standardizes how work is divided across multiple agents for documentat
 - Each agent must write only to its assigned files.
 - Each agent must include evidence paths for important findings.
 - Agents must write open questions instead of guessing.
-- The coordinator/reviewer is responsible for consistency, conflicts, readiness, and final synthesis.
+- Agent 6 is responsible for source/symbol verification, Agent 7 for cross-layer flow/conflict verification, Agent 8 for safety/build/test/runtime/ops evidence, Agent 9 for final documentation, and Agent 10 for independent publish validation.
 
 ## Execution Contract
 
@@ -1299,7 +1299,7 @@ Required behavior:
    - `delegated-parallel`
    - `delegated-sequential`
    - `single-runtime-sequential-fallback`
-7. Do not generate the final handbook until Agent 1-5 outputs and Agent 6 review exist, or the missing outputs are explicitly marked not applicable with a reason.
+7. Do not generate the final handbook until Agent 1-5 discovery outputs and Agent 6-8 verification outputs exist, or the missing outputs are explicitly marked not applicable with a reason.
 
 ## Handoff
 
@@ -1642,8 +1642,22 @@ Rule này quy định cách chọn model/tier cho từng agent để cân bằng
 - Use small or cheap models for discovery, file classification, keyword search, summarization, formatting, checklist generation, simple edits, simple curl generation, and commit message drafting.
 - Use strong models only after the relevant scope has been narrowed.
 - Escalate when evidence is conflicting, source is large, behavior is critical, or reasoning depends on multiple modules.
-- Final reviewer and final handbook aggregator should use `REASONING_STRONG` or `LONG_CONTEXT_STRONG` when available.
+- Final reviewer and final handbook writer should use `REASONING_STRONG` or `LONG_CONTEXT_STRONG` when available.
 - If the runner does not support per-agent model selection, record the limitation.
+
+## Antigravity Gemini-Only Rule
+
+For Google Antigravity runs, route `source-code-handover` and `make-new-dev-docs` through Gemini models only.
+
+- Do not use `Claude Opus 4.6 Thinking`.
+- Do not use `Claude Sonnet 4.6 Thinking`.
+- Prefer `Gemini 3.5 Flash (Medium)` for normal discovery/findings after deterministic tools narrow the scope.
+- Prefer `Gemini 3.5 Flash (High)` for Agents 2, 3, 5, 6, 7, 8, 9, and 10, and for high-risk business/auth/API/Redis/job/migration evidence.
+- Use `Gemini 3.5 Flash (Low)` only for low-risk inventory classification, formatting, and checklist normalization.
+- Use `Gemini 3.1 Pro (High)` only as a Gemini-family fallback for complex synthesis/review when `Gemini 3.5 Flash (High)` is unavailable or performs poorly.
+- Use `Gemini 3.1 Pro (Low)` only for low-risk helper tasks; it is not acceptable for final synthesis or final validation on non-trivial repositories.
+
+If an Antigravity runner proposes a non-Gemini model, override it to the closest Gemini tier and record the override in `STATUS.md`.
 
 ## Required Logging
 

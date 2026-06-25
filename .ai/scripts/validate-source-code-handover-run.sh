@@ -70,13 +70,20 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "Validating Agent 1-6 canonical artifacts..."
+python3 ./.ai/scripts/validate-source-code-handover-physical-evidence.py "$RUN_DIR" "."
+if [ $? -ne 0 ]; then
+  echo "FAIL: physical evidence validation failed."
+  exit 1
+fi
+
+echo "Validating Agent 1-8 canonical artifacts..."
 for agent in 01 02 03 04 05; do
   findings="$RUN_DIR/findings/agent-$agent/findings.md"
   require_file "$findings"
   require_pattern "$findings" "^## Scope"
   require_pattern "$findings" "^## Commands Executed"
   require_pattern "$findings" "^## Tool Orchestration"
+  require_pattern "$findings" "^## Physical Discovery Inventory"
   require_pattern "$findings" "^## Focused Evidence Slices"
   require_pattern "$findings" "^## Evidence List"
   require_pattern "$findings" "^## Discovery Reconciliation"
@@ -85,8 +92,17 @@ for agent in 01 02 03 04 05; do
   require_pattern "$findings" "^## Negative Evidence"
   require_pattern "$findings" "^## Final-Doc Handoff"
 done
-for review in review.md coverage-reconciliation.md conflicts.md evidence-store-review.md tool-orchestration-review.md template-contamination-report.md readiness-decision.md; do
-  require_file "$RUN_DIR/review/$review"
+for verification in \
+  agent-06/source-symbol-verification.md agent-06/promoted-claims.jsonl agent-06/rejected-claims.jsonl agent-06/source-slice-index.json \
+  agent-07/cross-layer-flow-map.md agent-07/cross-domain-conflicts.md agent-07/claim-triangulation.md agent-07/coverage-reconciliation.md agent-07/readiness-decision.md \
+  agent-08/build-test-evidence.md agent-08/runtime-ops-evidence.md agent-08/safety-review.md agent-08/secret-leakage-review.md agent-08/tool-limitations-impact.md
+do
+  require_file "$RUN_DIR/verification/$verification"
+done
+
+echo "Validating Agent 9 drafting artifacts..."
+for drafting in documentation-plan.md claim-to-document-map.json terminology-glossary.md; do
+  require_file "$RUN_DIR/drafting/$drafting"
 done
 
 echo "Running provenance/template contamination scan..."
@@ -110,14 +126,16 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "Validating Agent 8 verdict..."
-for validation in final-quality-report.md provenance-scan.md evidence-validation.md coverage-validation.md links-validation.md secret-scan.md language-validation.md evidence-store-validation.md tool-orchestration-validation.md final-verdict.md; do
+echo "Validating Agent 10 verdict..."
+for validation in mechanical-validation.md semantic-validation.md onboarding-usability-review.md final-quality-report.md provenance-scan.md evidence-validation.md coverage-validation.md links-validation.md secret-scan.md language-validation.md evidence-store-validation.md tool-orchestration-validation.md source-change-validation.md final-verdict.md; do
   require_file "$RUN_DIR/validation/$validation"
 done
+require_file "$RUN_DIR/publish/publish-manifest.json"
+require_file "$RUN_DIR/publish/release-note.md"
 
 VERDICT=$(cat "$RUN_DIR/validation/final-verdict.md" | grep -o "PASS\|REJECT_REQUIRES_REVISION\|BLOCKED" | head -n 1)
 if [ "$VERDICT" != "PASS" ]; then
-  echo "FAIL: Agent 8 verdict is $VERDICT"
+  echo "FAIL: Agent 10 verdict is $VERDICT"
   exit 1
 fi
 

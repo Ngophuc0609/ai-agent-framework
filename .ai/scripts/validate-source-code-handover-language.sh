@@ -94,17 +94,13 @@ for agent in 01 02 03 04 05; do
   fi
 done
 
-if [ -d "$RUN_DIR/review" ]; then
-  while IFS= read -r -d '' file; do
-    forbidden_vietnamese_internal_heading "$file"
-  done < <(find "$RUN_DIR/review" -name "*.md" -print0)
-fi
-
-if [ -d "$RUN_DIR/validation" ]; then
-  while IFS= read -r -d '' file; do
-    forbidden_vietnamese_internal_heading "$file"
-  done < <(find "$RUN_DIR/validation" -name "*.md" -print0)
-fi
+for internal_dir in review verification drafting validation publish; do
+  if [ -d "$RUN_DIR/$internal_dir" ]; then
+    while IFS= read -r -d '' file; do
+      forbidden_vietnamese_internal_heading "$file"
+    done < <(find "$RUN_DIR/$internal_dir" -name "*.md" -print0)
+  fi
+done
 
 if [ "$FAILURES" -ne 0 ]; then
   echo "Language validation failed with $FAILURES issue(s)."

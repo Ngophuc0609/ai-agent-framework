@@ -10,7 +10,7 @@ This rule standardizes how work is divided across multiple agents for documentat
 - Each agent must write only to its assigned files.
 - Each agent must include evidence paths for important findings.
 - Agents must write open questions instead of guessing.
-- The coordinator/reviewer is responsible for consistency, conflicts, readiness, and final synthesis.
+- Agent 6 is responsible for source/symbol verification, Agent 7 for cross-layer flow/conflict verification, Agent 8 for safety/build/test/runtime/ops evidence, Agent 9 for final documentation, and Agent 10 for independent publish validation.
 
 ## Execution Contract
 
@@ -27,7 +27,7 @@ Required behavior:
    - `delegated-parallel`
    - `delegated-sequential`
    - `single-runtime-sequential-fallback`
-7. Do not generate the final handbook until Agent 1-5 outputs and Agent 6 review exist, or the missing outputs are explicitly marked not applicable with a reason.
+7. Do not generate the final handbook until Agent 1-5 discovery outputs and Agent 6-8 verification outputs exist, or the missing outputs are explicitly marked not applicable with a reason.
 
 ## Handoff
 

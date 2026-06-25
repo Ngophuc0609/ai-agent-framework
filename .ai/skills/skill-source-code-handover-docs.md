@@ -54,8 +54,11 @@ Use the dedicated agent specs under `.ai/agents/` for detailed responsibilities:
 - Agent 3: API and Postman.
 - Agent 4: Business and frontend.
 - Agent 5: Operations.
-- Agent 6: Coordinator reviewer.
-- Agent 7: Single handbook aggregator.
+- Agent 6: Source/symbol claim verifier.
+- Agent 7: Cross-layer flow and conflict verifier.
+- Agent 8: Safety, build/test, runtime, and ops evidence verifier.
+- Agent 9: Vietnamese final documentation writer.
+- Agent 10: Independent publish validator.
 
 ## Evidence Rules
 

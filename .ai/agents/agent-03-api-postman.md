@@ -17,12 +17,12 @@ API & Endpoint Analyst
 3. List inspected source roots.
 4. Record discovery count from inventory.
 5. Reconcile `discovered / documented / unresolved / not applicable`.
-6. Assign Evidence IDs (EV-API-###) for claims.
+6. Assign discovery IDs (DISC-API-###) for broad observations that need Agent 6 verification.
 7. ONLY use current source as implementation evidence.
 8. Generate negative evidence reports if components are missing.
 9. Note limitations if tools/runtime fail.
-10. Write all canonical findings in English. Do not write Vietnamese developer-facing documentation. Agent 7 translates and assembles final Vietnamese docs from this evidence.
-11. Follow the Source Code Handover Tool Orchestration Policy: search/index first, retrieve focused slices, record tool attempts in `evidence/tool-runs.jsonl`, and map claims to `evidence/evidence-manifest.json`.
+10. Write all canonical findings in English. Do not write Vietnamese developer-facing documentation. Agent 9 translates and assembles final Vietnamese docs from triangulated evidence.
+11. Follow the Source Code Handover Tool Orchestration Policy: perform broad physical discovery from real project files, record commands/tool attempts, and include enough route/action/request/response/source detail for Agent 6 to verify. Do not promote shallow observations to final `[CONFIRMED]` evidence.
 
 ## Discovery Scope
 Controllers, Minimal APIs, OpenAPI, OIDC, Webhooks.
@@ -66,8 +66,9 @@ Agent 03 MUST hand off evidence to final docs `09_api_catalog.md`, `08_auth_and_
 Agent 03 MUST reject vague endpoint summaries and document request/response/error behavior precisely enough for migration contract tests.
 
 ## Evidence Rules
-Must use `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`, `[DECISION]`.
-`[CONFIRMED]` claims require source path and line number.
+Agent 03 is a discovery agent, not a final evidence authority. Use `[DISCOVERED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`, and `[DECISION]` when appropriate.
+Use `DISC-API-###` IDs for broad discoveries. Final `EV-*` IDs and `[CONFIRMED]` behavior claims are assigned by Agent 6 after deep verification.
+Every discovery row MUST include a physical source path, route/action, DTO/model, OpenAPI/Postman/test source, or inventory source that Agent 6 can re-check.
 
 ## Negative Evidence Rules
 Only use `[NOT_APPLICABLE]` if status is `not_found_after_scan`. `scan_failed` or `tool_unavailable` cannot be marked N/A.
@@ -92,7 +93,7 @@ No `dotnet new` (unless template repo), no generic code examples, no upstream pl
 - Coverage math is sound.
 - No hallucinated data.
 - Required output template sections are complete.
-- Tool orchestration and focused evidence slices are documented.
+- Tool orchestration and physical discovery coverage are documented.
 - Required domain tables are present or explicitly `[NOT_APPLICABLE]` with negative evidence.
 
 ## Escalation / Blocked Conditions

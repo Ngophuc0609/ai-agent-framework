@@ -26,7 +26,17 @@ Required files:
 - `runtime-artifacts.json`
 - `tool-limitations.json`
 
-Agent 8 MUST reject final docs when important claims have no Evidence ID in `evidence-manifest.json`, when focused slices are missing for important claims, or when high-risk flows lack symbol/data-flow/independent validation while the required tools were available.
+Agent 10 MUST reject final docs when important claims have no Evidence ID in `evidence-manifest.json`, when focused slices are missing for important claims, or when high-risk flows lack triangulated Agent 6 source/symbol evidence, Agent 7 cross-layer flow/conflict evidence, and Agent 8 safety/runtime evidence or explicit limitations.
+
+## Discovery vs Verified Evidence
+
+Agents 1-5 create broad physical discovery findings. Their `DISC-*` IDs are not final evidence and MUST NOT appear in final documents.
+
+Agent 6 is responsible for promoting discovery candidates into source/symbol verified `EV-*` Evidence IDs after targeted tool verification against physical source files, SQL/API metadata, symbols, routes, tables, keys, jobs, or approved negative evidence.
+
+Agent 7 is responsible for tracing cross-layer flows and conflicts from Agent 6 evidence. Agent 8 is responsible for build/test/runtime/ops/safety evidence. Agent 9 MUST write final Vietnamese docs from Agent 6-8 triangulated `EV-*` evidence only. Agent 10 MUST reject any final document that includes `DISC-*`, model context as proof, or Agent 1-5 prose as proof.
+
+The examples in `.ai/skills/source-code-handover/SKILL.md` and `.ai/templates/source-code-handover/*` are calibration examples. Agents MUST follow their structure, but MUST replace every sample path, route, class, table, Redis key, and Evidence ID with current-repository evidence. Agent 10 MUST reject copied sample values that do not exist in the current run evidence store.
 
 ## Scope
 
@@ -58,6 +68,56 @@ last_verified_at: "<ISO-8601 timestamp>"
 ```
 
 Allowed `status` values are exactly: `Ready`, `Partial`, `Blocked`, `Not Applicable`.
+
+## Readiness Dimensions
+
+`status: "Ready"` in front matter is documentation-readiness only and MUST NOT be used as a shortcut for build, test, runtime, operations, or production readiness.
+
+Every final documentation set MUST include an explicit readiness matrix, preferably in `01_project_handover_full.md` and `20_documentation_coverage.md`:
+
+```yaml
+documentation_structure: Ready | Partial | Blocked
+source_discovery: Complete | Partial | Insufficient
+evidence_quality: Sufficient | Partial | Insufficient
+documentation_coverage: Valid | Partial | Invalid Measurement
+local_setup_readiness: Ready | Blocked | Not Verified
+build_readiness: Ready | Blocked | Not Verified
+test_readiness: Ready | Blocked | Not Verified
+runtime_readiness: Verified | Not Verified
+operations_readiness: Ready | Partial | Blocked
+production_handover: Ready | Not Ready | Not Verified | Rejected
+```
+
+Agent 9 MUST NOT mark all final documents `Ready` unless Agent 8 has produced build/test/runtime/ops or explicit limitation evidence and Agent 10 has verified it. Agent 10 MUST reject all-Ready output when `EV-TEST-*`, `EV-RT-*` or `EV-OPS-*`, and readiness limitations are absent.
+
+## Inventory-Backed Coverage Gate
+
+`20_documentation_coverage.md` MUST be generated from Phase 0 inventory, not from model estimates. For each domain row, `Discovered` MUST equal the item count in the referenced `inventory/*.json` file.
+
+Agent 10 MUST reject the run when:
+
+- A coverage row claims a `Discovered` number that does not match the actual JSON item count.
+- `07_database_reference.md` omits any `DbSet`, entity class, or mapped table from `inventory/dbsets.json` or `inventory/entities.json`, unless the item is explicitly accounted as `Unresolved`, `N/A`, or `Excluded` with linked evidence.
+- `09_api_catalog.md` omits any route, controller, action, or endpoint handler from `inventory/routes.json`, unless the item is explicitly accounted as `Unresolved`, `N/A`, or `Excluded` with linked evidence.
+- Phase 0 inventory says `status: "complete"` but a source-smoke scan finds substantially more HTTP attributes, endpoint mappings, `DbSet`, `ToTable`, `CreateTable`, or migration table definitions than the inventory recorded.
+
+This gate prevents a document from passing by adding the right headings or sample rows while still missing most database tables/fields or API contracts.
+
+## Skeleton Rejection Gates
+
+Agent 10 MUST reject `DOCUMENTATION_SKELETON_ONLY` output. A final documentation set is a skeleton when it matches any of these patterns:
+
+- Many files exist but important files only contain headings, generic prose, or fewer than the minimum behavior-level sections.
+- Most claims reuse one broad evidence ID such as `EV-REPO-001`.
+- Evidence IDs prove categories or existence only, while final claims describe behavior, readiness, contracts, or operations.
+- Coverage denominators count categories instead of assets, such as `DbContext = 1` when multiple DbContexts are discovered.
+- `20_documentation_coverage.md` reports PASS without asset-level denominator from Phase 0 inventory.
+- `04_local_setup.md` lacks real run prerequisites, startup order, ports/URLs, DB/config setup, smoke checks, and troubleshooting.
+- `16_testing_guide.md` lists test projects but has no observed test command result or explicit `[UNVERIFIED]` limitation.
+- `14_operations_runbook.md` lacks service topology, health/log checks, incident runbooks, rollback, and escalation.
+- All or most documents are marked `Ready` while build/test/runtime/operations readiness remains `Not Verified`.
+
+Minimum content is not a word-count game, but Agent 10 MUST use size as a smoke signal: important non-`Not Applicable` docs under roughly 300 words, or a 20-file set under roughly 7,000 words, require rejection unless the repository is demonstrably tiny and the limitation is explicit.
 
 ## Required Common Sections
 
@@ -100,6 +160,8 @@ Every assumption MUST be labeled `[UNVERIFIED]`. Every conflict MUST be labeled 
 ## Evidence IDs
 
 Every Evidence ID used in any final document MUST appear in `19_evidence_index.md`.
+Every Evidence ID used in any final document MUST also appear in `evidence/evidence-manifest.json`.
+`DISC-*` discovery IDs are allowed in Agent 1-5 findings only and are forbidden in final documents.
 
 Allowed patterns:
 
@@ -118,6 +180,14 @@ Allowed patterns:
 - Domain-expanded negative IDs such as `EV-NEG-RT-###` are allowed only when they are indexed in `19_evidence_index.md`.
 
 Evidence MUST include source path, class/method or line range, verification type, and source commit. A class name alone is not evidence.
+For `source_type=source`, the evidence source path MUST resolve to an existing file in the checked-out repository unless explicitly marked `[BLOCKED]` with a limitation. For runtime, SQL, API contract, or git history evidence, the source object/artifact MUST be listed in the evidence store.
+
+Evidence atomicity rules:
+
+- One Evidence ID should support one narrow claim or one tightly scoped flow.
+- A broad inventory evidence such as "solution contains 17 projects" MUST NOT be used to prove readiness, architecture correctness, DB behavior, API contract, CI/CD, local setup, or production handover.
+- Reusing the same non-negative Evidence ID across many unrelated final docs is a skeleton smell and MUST be rejected unless the claim is explicitly the same narrow claim.
+- Build readiness requires `EV-TEST-*`, `EV-CICD-*`, or Agent 8 build evidence. Test readiness requires observed test evidence or an explicit `[UNVERIFIED]` / `[BLOCKED]` limitation. Runtime readiness requires `EV-RT-*` or explicit runtime limitation.
 
 ## Documentation Capability Requirements
 
@@ -475,6 +545,123 @@ Use this table shape:
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 ```
 
+## Required Database Deep Detail
+
+`07_database_reference.md` MUST go beyond connection strings and DbContext names. When a database is present, it MUST include:
+
+- DbContext inventory with source path, owning project, registration point, connection string key, migration assembly, and target database when known.
+- DbSet/entity/table inventory with mapping source.
+- Field dictionary for important tables/entities, including column/property name, CLR type, DB type when available, nullable/required, default/max length, PK/FK/index/unique constraint, meaning, and read/write consumers.
+- Relationship map or ERD when relationships are found.
+- Migration/schema source coverage.
+- Table/API/job consumer map.
+- Coverage row for entities/tables/columns using asset-level denominator.
+
+Use these table shapes:
+
+```md
+| DbContext | Source path | Project | Registration point | Connection string key | Migration assembly | Database | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|
+
+| Entity | Table/schema | Columns documented | PK | FK/relationships | Used by APIs/jobs | Mapping source | Evidence | Status |
+|---|---|---:|---|---|---|---|---|---|
+
+| Table | Column | CLR type | DB type | Nullable | Key/index | Meaning/rule | Read/write path | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|
+```
+
+Agent 10 MUST reject `07_database_reference.md` when it only names `Clients`, connection string `IdentityServer4Admin`, or DbContexts without table/field coverage.
+
+Agent 10 MUST additionally compare `07_database_reference.md` against `inventory/dbsets.json`, `inventory/entities.json`, `inventory/sql-metadata.json`, and migration/table metadata. Every discovered `DbSet`, entity, mapped table, and important column must appear in the final document or be accounted as unresolved with evidence.
+
+## Required API Discovery Completeness
+
+`09_api_catalog.md` MUST reconcile every discovered route/action, not only common management pages.
+
+It MUST include:
+
+- Asset-level route coverage from Phase 0 `routes.json`.
+- Full route/action matrix for controllers, MVC areas, Razor handlers, minimal APIs, and legacy route tables when present.
+- Request DTO/model field table per endpoint or endpoint group.
+- Response DTO/model/wrapper field table per endpoint or endpoint group.
+- Validation source and error/status behavior.
+- Auth/permission source.
+- Side-effect map to DB/cache/job/external/audit/log.
+
+Use these table shapes:
+
+```md
+| API ID | Route | Method | Action | Request fields | Response fields | Validation | Auth/permission | DB/cache/job/external side effects | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+
+| API ID | Field location | Field | Type | Required | Validation/default | Source DTO/model | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|
+```
+
+Agent 10 MUST reject `09_api_catalog.md` when request/response is missing for discovered endpoints or when route coverage cannot be reconciled against Phase 0 inventory.
+
+Agent 10 MUST additionally compare `09_api_catalog.md` against `inventory/routes.json` and `inventory/api-contract-sources.json`. Every discovered route/action must appear in the final document with request/response fields or an explicit unresolved gap. A few representative API rows are not sufficient.
+
+## Required Background Job Flow Diagrams
+
+`10_background_jobs.md` MUST include a flow diagram for each discovered job/worker family unless `[NOT_APPLICABLE]` negative evidence proves no jobs exist.
+
+Each job MUST include:
+
+- Registration source.
+- Trigger/schedule.
+- Producer.
+- Consumer/handler.
+- Queue/storage.
+- Service/repository calls.
+- DB/Redis/external side effects.
+- Retry/timeout/idempotency/failure/logging behavior or explicit `[UNVERIFIED]`.
+- Mermaid flowchart.
+
+Use this diagram shape:
+
+```mermaid
+flowchart TD
+  Trigger["Trigger / schedule"] --> Registration["Job registration source"]
+  Registration --> Handler["Handler.Execute"]
+  Handler --> Service["Service method"]
+  Service --> Store["SQL / Redis / Queue / External API"]
+  Handler --> Failure["Retry / log / failure handling"]
+```
+
+Agent 10 MUST reject `10_background_jobs.md` when jobs are discovered but no Mermaid flowchart or lifecycle table exists.
+
+## Required Realtime Flow Diagrams
+
+`11_realtime_signalr_socket.md` MUST include a realtime flow diagram and event contract table for each discovered hub/socket/event family unless `[NOT_APPLICABLE]` negative evidence proves realtime is absent.
+
+Each realtime path MUST include:
+
+- Hub/socket class.
+- Route mapping.
+- Auth/policy.
+- Producer.
+- Event name and direction.
+- Payload fields.
+- Group/user/client mapping.
+- Client handler when found, or `[UNVERIFIED]`.
+- Reconnect/backplane/failure behavior or explicit limitation.
+- Mermaid sequence diagram.
+
+Use this diagram shape:
+
+```mermaid
+sequenceDiagram
+  participant Producer as API / Job / Service
+  participant Hub as Hub / Socket endpoint
+  participant Client as Web / Mobile client
+  Producer->>Hub: Send event with payload
+  Hub->>Client: event name
+  Client->>Client: UI/business update
+```
+
+Agent 10 MUST reject `11_realtime_signalr_socket.md` when realtime assets are discovered but no diagram or event contract table exists.
+
 ## Required Migration Safety Content
 
 The final docs MUST answer:
@@ -493,7 +680,7 @@ Use this table shape:
 
 ## Final Documentation Acceptance Questions
 
-Agent 8 MUST reject the documentation unless the final set can answer these checks with evidence or explicit `[NOT_APPLICABLE]` negative evidence:
+Agent 10 MUST reject the documentation unless the final set can answer these checks with evidence or explicit `[NOT_APPLICABLE]` negative evidence:
 
 - Dev mới có thể chạy hệ thống local từ tài liệu không?
 - AI có thể xác định entry point và request lifecycle không?
@@ -540,8 +727,8 @@ Final docs MUST NOT present these as current repository behavior without `[UPSTR
 
 ## Canonical Examples For High-Quality Output
 
-Agent 7 MUST use these examples as structure patterns when assembling final documents.
-Agent 8 MUST use these examples as pass/fail calibration when validating quality.
+Agent 9 MUST use these examples as structure patterns when assembling final documents.
+Agent 10 MUST use these examples as pass/fail calibration when validating quality.
 Do not copy example values into final docs; replace every project name, path, route, command, and Evidence ID with current-repository evidence.
 
 ### Example: Good Front Matter
@@ -817,6 +1004,126 @@ Why this fails:
 
 - No denominator, no formula, no inventory source, no gap link.
 
+### Example: Good Readiness Matrix
+
+```md
+| Dimension | Status | Evidence | Ghi chú |
+|---|---|---|---|
+| Documentation structure | Ready | EV-DOC-001 | Đủ 20 file canonical và đúng template. |
+| Source discovery | Complete | EV-REPO-010 | Phase 0 inventory đã account toàn bộ source asset. |
+| Evidence quality | Partial | EV-NEG-SYM-002 | CodeQL unavailable; high-risk flows dùng Roslyn/call graph fallback. |
+| Build readiness | Ready | EV-TEST-003 | `dotnet build Project.sln` exit `0`. |
+| Test readiness | Not Verified | EV-NEG-TEST-001 | Test integration cần database credential chưa có. |
+| Runtime readiness | Not Verified | EV-NEG-RT-001 | Không có environment để start đủ service. |
+| Operations readiness | Partial | EV-OPS-014 | Có health/log path, thiếu escalation owner production. |
+| Production handover | Not Ready | EV-OPS-020 | Thiếu rollback owner và secret rotation policy. |
+```
+
+Why this passes:
+
+- It separates documentation readiness from build/test/runtime/ops/production readiness.
+- It does not hide missing runtime evidence behind `status: "Ready"`.
+- Every readiness dimension has evidence or negative evidence.
+
+### Example: Bad Readiness Matrix
+
+```md
+status: "Ready"
+```
+
+Why this fails:
+
+- It hides which dimensions are verified.
+- It does not prove build, test, runtime, operations, or production readiness.
+
+### Example: Good Local Setup Block
+
+```md
+| Step | Prerequisites | Working directory | Command | Expected | Smoke/verification | Evidence | Status |
+|---|---|---|---|---|---|---|---|
+| Restore | NuGet feeds configured | repo root | `dotnet restore Project.sln` | exit `0` | packages restored without credential errors | EV-TEST-002 | [CONFIRMED] |
+| Build | restore passed | repo root | `dotnet build Project.sln` | exit `0` | no compile errors | EV-TEST-003 | [CONFIRMED] |
+| Run API | DB/Redis config present | `src/Web` | `dotnet run --urls http://localhost:5000` | app listens on `5000` | `GET /health` returns `200` | EV-RT-001, EV-RT-002 | [CONFIRMED] |
+```
+
+Why this passes:
+
+- A new developer can execute it without guessing.
+- It states prerequisites, working directory, command, expected result, smoke check, and evidence.
+
+### Example: Bad Local Setup Block
+
+```md
+Run `dotnet build`.
+```
+
+Why this fails:
+
+- No working directory, prerequisites, expected result, DB/config setup, port, smoke check, or troubleshooting.
+
+### Example: Good API Contract Row
+
+```md
+| API ID | Route | Method | Module | Auth | Permission | Content type | Request model | Success response | Error response | DB side effects | Redis/jobs/external side effects | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| API-ACCT-001 | `/accounts` | POST | Accounts | Bearer token | `Accounts.Create` | `application/json` | `CreateAccountRequest` (`username`, `channel_id`) | `200`, `{ success, data: id }` | `ModelState` validation errors | inserts `Accounts`, writes audit log | invalidates `account:*` | EV-API-021, EV-AUTH-012, EV-DB-044, EV-OPS-009 | [CONFIRMED] |
+```
+
+Why this passes:
+
+- It lets a new developer and AI answer route, module, auth, contract, validation, side effects, and evidence.
+
+### Example: Bad API Contract Row
+
+```md
+| `/accounts` | POST | Create account |
+```
+
+Why this fails:
+
+- It is a catalog label, not an API contract.
+
+### Example: Good Evidence Index Row
+
+```md
+| Evidence ID | Claim | Source path | Line/method | Verification type | Source commit | Status |
+|---|---|---|---|---|---|---|
+| EV-API-014 | `POST /quiz-submit` is implemented by `QuizSubmitController.Submit`. | `src/WebApi/Controllers/QuizSubmitController.cs` | `QuizSubmitController.Submit` | Source + Symbol | `<git_sha>` | [CONFIRMED] |
+```
+
+Why this passes:
+
+- The claim is narrow and physically verifiable.
+
+### Example: Bad Evidence Index Row
+
+```md
+| EV-REPO-001 | System is ready for handover. | `Project.sln` | File exists | [CONFIRMED] |
+```
+
+Why this fails:
+
+- A solution file existing cannot prove readiness, behavior, API contracts, tests, runtime, or operations.
+
+### Example: Good Operations Incident Card
+
+```md
+| Field | Value |
+|---|---|
+| Incident | API cannot issue tokens |
+| Detection | token endpoint returns `5xx` or health check fails |
+| Health | `GET /health`, `GET /.well-known/openid-configuration` |
+| Log | container logs for API service; application log path from config |
+| First checks | DB connectivity, signing certificate, token service startup |
+| Rollback | redeploy previous image tag; do not roll back DB unless migration rollback evidence exists |
+| Escalation | Auth owner, DevOps owner |
+| Evidence | EV-RT-002, EV-OPS-014, EV-CONFIG-009 |
+```
+
+Why this passes:
+
+- It is operationally actionable and evidence-backed.
+
 ## Required Final Documents
 
 The final directory MUST contain exactly these files:
@@ -882,12 +1189,12 @@ Do not mark the run or any final output `Ready` if any of these are missing:
 - Test inventory when test projects exist.
 - Template/upstream content properly isolated.
 - Secret scan pass.
-- Agent 8 final verdict `PASS`.
+- Agent 10 final verdict `PASS`.
 - No unresolved Critical conflict.
 
 ## Quick Review Table
 
-Agent 8 MUST evaluate each final file against:
+Agent 10 MUST evaluate each final file against:
 
 | File | Front matter | Evidence | Inventory/coverage | Contract tables | Diagrams when needed | Runbook/test | No template content | Verdict |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
