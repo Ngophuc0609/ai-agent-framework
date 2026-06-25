@@ -16,7 +16,9 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Cline.
 
 ## Cline Model Capability Gate
 
-For `source-code-handover` or `make-new-dev-docs`, do not run the full workflow with low-capability, nano, free, or unknown instruction-following models. This includes `nvidia/nemotron-3-nano-30b-a3b:free`.
+For `source-code-handover` or `make-new-dev-docs`, do not run the full workflow with low-capability, nano, random-router, non-generative, safety-only, embedding-only, rerank-only, or unknown instruction-following models. This includes `nvidia/nemotron-3-nano-30b-a3b:free`.
+
+Free pricing alone is not a blocker. Strong free models such as `Qwen: Qwen3 Coder 480B A35B (free)`, `Qwen: Qwen3 Next 80B A3B Instruct (free)`, `Google: Gemma 4 26B A4B (free)`, `Meta: Llama 3.3 70B Instruct (free)`, or verified-stable `Nous: Hermes 3 405B Instruct (free)` may be used for limited phases according to `.ai/rules/08-model-routing-rules.md`.
 
 Those models may only run:
 
@@ -33,7 +35,7 @@ They MUST NOT:
 - mark any documentation `Ready`,
 - bypass `.ai` because a file read or shell command failed.
 
-If Cline is using a low-capability/free model and the user asks to create onboarding/source-handover docs, stop with `model-capability-blocked` and ask the user to switch to a stronger model or run the workflow with Codex/Claude/Gemini High-equivalent tooling.
+If Cline is using a blocked low-capability model and the user asks to create onboarding/source-handover docs, stop with `model-capability-blocked` and ask the user to switch to a stronger model or run the workflow with Codex/Claude/Gemini High-equivalent tooling.
 
 ## Cline Fatal Preflight Gate
 

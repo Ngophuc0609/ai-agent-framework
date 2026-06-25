@@ -48,6 +48,14 @@ If the runner does not support model routing:
 
 The following model class is not acceptable for executing the full workflow:
 
-- low-capability/free/nano models, including `nvidia/nemotron-3-nano-30b-a3b:free`.
+- low-capability/nano/random-router/non-generative/safety-only/embedding-only/rerank-only models, including `nvidia/nemotron-3-nano-30b-a3b:free`.
 
 These models may summarize already-created artifacts but MUST NOT run Agents 1-10, generate final docs, publish to `docs/`, or recover from tool failures by writing generic onboarding content.
+
+Free pricing alone is not a block. If the runner must use free models, prefer this order:
+
+1. `Qwen: Qwen3 Coder 480B A35B (free)` for code/repo/tool-heavy phases.
+2. `Qwen: Qwen3 Next 80B A3B Instruct (free)` for broad discovery and structured summaries.
+3. `Google: Gemma 4 26B A4B (free)` for long-context extraction and structured output.
+4. `Meta: Llama 3.3 70B Instruct (free)` for Vietnamese summaries and second-pass review.
+5. `Nous: Hermes 3 405B Instruct (free)` only when endpoint reliability is verified.
