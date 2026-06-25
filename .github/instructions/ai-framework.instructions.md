@@ -1782,6 +1782,32 @@ Recommended free models from the current evaluated list:
 | `Meta: Llama 3.3 70B Instruct (free)` | Good general reasoning, Vietnamese summaries, and second-pass review. | Deep code/tool orchestration as primary model when Qwen Coder is available. | Strong general assistant; code/repo agent behavior may be less consistent. |
 | `Nous: Hermes 3 405B Instruct (free)` | Optional strong critique/synthesis model when the endpoint is stable. | Deterministic publish gate unless tool behavior is verified. | Potentially strong, but free endpoint reliability must be recorded. |
 
+## Free Model Rate-Limit Fallback
+
+Free model endpoints often return provider-level `429` rate limits. When a model call fails with `429`, `rate_limit`, `temporarily rate-limited`, or an OpenRouter `retry_after_seconds` / `Retry-After` value:
+
+1. Record the failure in `STATUS.md` or the active run's model/tool limitation artifact.
+2. Respect `Retry-After` when it is short and the current step is safe to wait for.
+3. Retry the same model at most once after the wait.
+4. If it fails again, switch to the next approved model in the same or stronger capability class.
+5. Do not downgrade a high-risk agent to a weak model just because it is available.
+6. If no approved model is available, stop the phase as `BLOCKED_MODEL_RATE_LIMIT`.
+
+Preferred free fallback ladder for source-code handover:
+
+```text
+Qwen3 Coder 480B A35B (free)
+  -> Qwen3 Next 80B A3B Instruct (free)
+  -> Gemma 4 26B A4B (free)
+  -> Llama 3.3 70B Instruct (free)
+  -> Hermes 3 405B Instruct (free, only if endpoint stability is verified)
+  -> BLOCKED_MODEL_RATE_LIMIT
+```
+
+For Agents 6-10 on complex repositories, if the fallback drops below `REASONING_STRONG` / `LONG_CONTEXT_STRONG`, the final readiness must be `Partial` at best. If Agent 10 cannot run with an approved model, publish readiness is `Blocked`.
+
+Do not use `OpenRouter Free Models Router` as a rate-limit fallback for this workflow because random model selection makes evidence quality non-reproducible.
+
 Not recommended for executing this workflow:
 
 | Model | Reason |

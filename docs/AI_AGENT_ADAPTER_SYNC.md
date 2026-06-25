@@ -109,6 +109,8 @@ pwd; test -f .ai/workflows/make-new-dev-docs.md; test -x .ai/scripts/init-source
 
 Use a BALANCED-equivalent or stronger model for the actual source-handover workflow. Free/nano models may summarize existing artifacts but must stop with `model-capability-blocked` for full documentation generation.
 
+If a free OpenRouter/provider model returns `429`, respect `Retry-After`, retry once, then switch through the approved free fallback ladder in `.ai/rules/08-model-routing-rules.md`. If no approved model is available, stop as `BLOCKED_MODEL_RATE_LIMIT` and resume later from the existing `.ai/runs/source-code-handover/<run_id>/` artifacts.
+
 ## Recommended Sync Flow
 
 From the target repository:

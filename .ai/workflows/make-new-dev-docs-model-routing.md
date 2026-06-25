@@ -59,3 +59,20 @@ Free pricing alone is not a block. If the runner must use free models, prefer th
 3. `Google: Gemma 4 26B A4B (free)` for long-context extraction and structured output.
 4. `Meta: Llama 3.3 70B Instruct (free)` for Vietnamese summaries and second-pass review.
 5. `Nous: Hermes 3 405B Instruct (free)` only when endpoint reliability is verified.
+
+## Rate-Limit Recovery
+
+When a free provider returns `429`, `temporarily rate-limited`, `retry_after_seconds`, or a `Retry-After` header:
+
+1. Wait for the provider retry interval when it is short.
+2. Retry the same model once.
+3. If the retry fails, move to the next approved free model in the fallback order above.
+4. Record the original model, provider, error code, retry interval, fallback model, and readiness impact in `STATUS.md`.
+5. Do not fall back to a blocked/non-generative/random-router model.
+
+If no approved model is available:
+
+- Mark the affected phase `BLOCKED_MODEL_RATE_LIMIT`.
+- Do not run Agent 9 final docs.
+- Do not publish to `docs/`.
+- Keep already-created deterministic inventory/evidence artifacts for resume.

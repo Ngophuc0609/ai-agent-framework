@@ -20,6 +20,16 @@ For `source-code-handover` or `make-new-dev-docs`, do not run the full workflow 
 
 Free pricing alone is not a blocker. Strong free models such as `Qwen: Qwen3 Coder 480B A35B (free)`, `Qwen: Qwen3 Next 80B A3B Instruct (free)`, `Google: Gemma 4 26B A4B (free)`, `Meta: Llama 3.3 70B Instruct (free)`, or verified-stable `Nous: Hermes 3 405B Instruct (free)` may be used for limited phases according to `.ai/rules/08-model-routing-rules.md`.
 
+If Cline receives an OpenRouter/provider `429` for a free model, it MUST follow `.ai/rules/08-model-routing-rules.md` rate-limit fallback:
+
+- wait for `Retry-After` when short,
+- retry once,
+- switch to the next approved model,
+- record the limitation,
+- stop as `BLOCKED_MODEL_RATE_LIMIT` if no approved model is available.
+
+Cline MUST NOT recover from a free-model rate limit by switching to `OpenRouter Free Models Router`, embedding/rerank/safety models, nano models, or by writing generic docs.
+
 Those models may only run:
 
 - framework preflight checks,
