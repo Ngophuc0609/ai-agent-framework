@@ -93,6 +93,7 @@ FORBIDDEN_PATTERNS = [
 EVIDENCE_RE = re.compile(r"\bEV-(?:REPO|CONFIG|DB|MIGRATION|AUTH|API|JOB|RT|OPS|CICD|TEST|NEG(?:-[A-Z]+)?)-\d{3}\b")
 LABEL_RE = re.compile(r"\[([A-Z_]+)\]")
 LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+\.md(?:#[^)]+)?)\)")
+WORD_RE = re.compile(r"\b[\wÀ-ỹ]+\b", flags=re.UNICODE)
 
 IMPORTANT_DOC_MIN_WORDS = {
     "01_project_handover_full.md": 400,
@@ -128,6 +129,9 @@ READINESS_DIMENSIONS = [
 
 HTTP_ATTRIBUTE_RE = re.compile(r"\[(?:HttpGet|HttpPost|HttpPut|HttpDelete|HttpPatch|AcceptVerbs)\b")
 TABLE_MAPPING_RE = re.compile(r"\b(?:ToTable|CreateTable)\s*\(\s*\"([^\"]+)\"")
+SECRET_VALUE_RE = re.compile(
+    r"(?i)\b(?:password|pwd|secret|clientsecret|apikey|api_key|token|signingkey)\s*=\s*(?!<redacted>|redacted|\*\*\*|xxxx|xxxxx)[^;\s`\"']{8,}"
+)
 
 
 def split_front_matter(text: str) -> tuple[dict[str, str], str] | tuple[None, str]:
@@ -299,6 +303,46 @@ def validate_links(path: Path, text: str, final_dir: Path, errors: list[str]) ->
             errors.append(f"{path.name}: broken markdown link to {target_path}")
 
 
+def normalize_words(text: str) -> list[str]:
+    return [word.lower() for word in WORD_RE.findall(text)]
+
+
+def repeated_ngram_counts(words: list[str], size: int) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    if len(words) < size:
+        return counts
+    for index in range(0, len(words) - size + 1):
+        gram = " ".join(words[index : index + size])
+        counts[gram] = counts.get(gram, 0) + 1
+    return counts
+
+
+def validate_repetition_and_line_shape(path: Path, text: str, body: str, errors: list[str]) -> None:
+    lines = body.splitlines()
+    body_chars = max(len(body), 1)
+    for line_no, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("|") or stripped.startswith("```"):
+            continue
+        if len(stripped) > 1200:
+            errors.append(f"{path.name}: prose line {line_no} is too long ({len(stripped)} chars)")
+        if len(stripped) / body_chars > 0.25:
+            errors.append(f"{path.name}: prose line {line_no} dominates the document body")
+
+    words = normalize_words(body)
+    for size, max_count in [(20, 2), (40, 1)]:
+        repeated = [
+            (gram, count)
+            for gram, count in repeated_ngram_counts(words, size).items()
+            if count > max_count
+        ]
+        if repeated:
+            gram, count = sorted(repeated, key=lambda item: item[1], reverse=True)[0]
+            errors.append(
+                f"{path.name}: repeated {size}-word prose block appears {count} times: {gram[:120]}"
+            )
+
+
 def validate_document(path: Path, final_dir: Path, indexed_ids: set[str], errors: list[str]) -> None:
     text = path.read_text(encoding="utf-8")
     front_matter, body = split_front_matter(text)
@@ -318,6 +362,8 @@ def validate_document(path: Path, final_dir: Path, indexed_ids: set[str], errors
     for section in REQUIRED_SECTIONS:
         if section not in body:
             errors.append(f"{path.name}: missing section {section}")
+
+    validate_repetition_and_line_shape(path, text, body, errors)
 
     for label in LABEL_RE.findall(text):
         if label.startswith("EV-"):
@@ -450,6 +496,34 @@ def require_text_contains_items(doc_name: str, text: str, item_names: set[str], 
         errors.append(f"{doc_name} missing {label} from inventory: {preview}{suffix}")
 
 
+def collect_sql_tables_and_columns(data: object | None) -> tuple[set[str], set[str]]:
+    tables: set[str] = set()
+    columns: set[str] = set()
+    if not isinstance(data, dict):
+        return tables, columns
+    table_items = data.get("tables")
+    if not isinstance(table_items, list):
+        table_items = data.get("items")
+    if not isinstance(table_items, list):
+        return tables, columns
+    for table in table_items:
+        if not isinstance(table, dict):
+            continue
+        table_name = table.get("table") or table.get("name") or table.get("table_name")
+        if table_name:
+            tables.add(str(table_name))
+        column_items = table.get("columns")
+        if isinstance(column_items, list):
+            for column in column_items:
+                if isinstance(column, dict):
+                    column_name = column.get("column") or column.get("name") or column.get("column_name")
+                    if column_name:
+                        columns.add(str(column_name))
+                elif isinstance(column, str):
+                    columns.add(column)
+    return tables, columns
+
+
 def validate_inventory_backed_coverage(final_dir: Path, errors: list[str]) -> None:
     inventory_dir = find_inventory_dir(final_dir)
     if inventory_dir is None:
@@ -499,9 +573,13 @@ def validate_inventory_backed_coverage(final_dir: Path, errors: list[str]) -> No
         for item in entities
         if isinstance(item, dict) and (item.get("mapped_table") or item.get("table"))
     }
+    sql_tables, sql_columns = collect_sql_tables_and_columns(load_json(inventory_dir / "sql-metadata.json"))
+    table_names.update(sql_tables)
     require_text_contains_items("07_database_reference.md", database_doc, dbset_names, errors, "DbSet names")
     require_text_contains_items("07_database_reference.md", database_doc, entity_names, errors, "entity names")
     require_text_contains_items("07_database_reference.md", database_doc, table_names, errors, "table names")
+    if table_names and sql_columns:
+        require_text_contains_items("07_database_reference.md", database_doc, sql_columns, errors, "column names")
 
     api_doc = (final_dir / "09_api_catalog.md").read_text(encoding="utf-8") if (final_dir / "09_api_catalog.md").exists() else ""
     routes = inventory_items(load_json(inventory_dir / "routes.json"))
@@ -575,11 +653,17 @@ def validate_document_capabilities(final_dir: Path, errors: list[str]) -> None:
         if re.search(pattern, combined, flags=re.IGNORECASE | re.MULTILINE):
             errors.append(f"final documentation contains likely generic module description matching: {pattern}")
 
+    for doc in final_dir.glob("*.md"):
+        text = doc.read_text(encoding="utf-8")
+        match = SECRET_VALUE_RE.search(text)
+        if match:
+            errors.append(f"{doc.name}: possible unredacted secret/credential literal in final documentation: {match.group(0)[:80]}")
+
 
 def validate_anti_skeleton(final_dir: Path, indexed_ids: set[str], errors: list[str]) -> None:
     docs = {path.name: path.read_text(encoding="utf-8") for path in final_dir.glob("*.md")}
     combined = "\n".join(docs.values())
-    total_words = len(re.findall(r"\b[\wÀ-ỹ]+\b", combined, flags=re.UNICODE))
+    total_words = len(WORD_RE.findall(combined))
     if total_words < 7000:
         errors.append(
             f"final documentation set is likely skeleton-only; total word count {total_words} is below minimum smoke threshold 7000"
@@ -612,6 +696,15 @@ def validate_anti_skeleton(final_dir: Path, indexed_ids: set[str], errors: list[
     ]
     if broad_reuse:
         errors.append("evidence appears too broad/reused across unrelated docs: " + "; ".join(broad_reuse[:5]))
+
+    repeated_cross_doc = [
+        (gram, count)
+        for gram, count in repeated_ngram_counts(normalize_words(combined), 30).items()
+        if count >= 10
+    ]
+    if repeated_cross_doc:
+        gram, count = sorted(repeated_cross_doc, key=lambda item: item[1], reverse=True)[0]
+        errors.append(f"final documentation repeats the same 30-word block {count} times across docs: {gram[:120]}")
 
     for dimension in READINESS_DIMENSIONS:
         if dimension not in combined:
@@ -664,19 +757,120 @@ def validate_deep_document_requirements(final_dir: Path, errors: list[str]) -> N
             "Route",
             "Method",
             "Action",
+            "Client path",
+            "Gateway",
+            "Proxy",
+            "Upstream",
             "Request",
             "Response",
+            "Success",
+            "Error",
             "Field",
             "Type",
             "Required",
             "Validation",
             "Auth",
+            "Header",
+            "Content type",
             "Status codes",
             "DB side effects",
+            "Redis",
+            "External",
+            "Versioning",
+            "Timeout",
+            "Retry",
+            "Idempotency",
+            "Rate limit",
+            "Curl",
+            "Postman",
+            "Smoke",
         ]
         for token in required_api_tokens:
             if token.lower() not in api_catalog.lower():
                 errors.append(f"09_api_catalog.md missing deep API contract token/section: {token}")
+
+    database = docs.get("07_database_reference.md", "")
+    database_has_assets = any(token.lower() in database.lower() for token in ["EV-DB-", "DbContext", "DbSet", "Entity", "Migration", "Connection string"])
+    if "[NOT_APPLICABLE]" not in database or database_has_assets:
+        extra_database_tokens = [
+            "Relationship",
+            "Consumer",
+            "Seed",
+            "Reset",
+            "Backup",
+            "Restore",
+            "Data risk",
+            "Coverage",
+        ]
+        for token in extra_database_tokens:
+            if token.lower() not in database.lower():
+                errors.append(f"07_database_reference.md missing operations database token/section: {token}")
+
+    external = docs.get("12_external_integrations.md", "")
+    external_has_assets = any(
+        token.lower() in external.lower()
+        for token in ["EV-CONFIG-", "EV-API-", "EV-OPS-", "Consul", "Redis", "HTTP", "Webhook", "External", "Integration", "Cluster", "Destination"]
+    )
+    if "[NOT_APPLICABLE]" not in external or external_has_assets:
+        required_external_tokens = [
+            "Integration ID",
+            "External system",
+            "Caller",
+            "Trigger",
+            "Protocol",
+            "Direction",
+            "Auth method",
+            "Config keys",
+            "Contract",
+            "Timeout",
+            "Retry",
+            "Fallback",
+            "Failure",
+            "Health",
+            "Test strategy",
+            "Owner",
+        ]
+        for token in required_external_tokens:
+            if token.lower() not in external.lower():
+                errors.append(f"12_external_integrations.md missing external integration token/section: {token}")
+
+    operations = docs.get("14_operations_runbook.md", "")
+    if "[NOT_APPLICABLE]" not in operations:
+        required_ops_tokens = [
+            "Runtime topology",
+            "Service map",
+            "Domain",
+            "Port",
+            "Environment",
+            "Dependency",
+            "Health",
+            "Log",
+            "Trace",
+            "Correlation",
+            "Reverse proxy",
+            "Upstream",
+            "Fault isolation",
+            "Symptom",
+            "Likely layer",
+            "First check",
+            "Verification command",
+            "Fix/next action",
+            "Rollback",
+            "Escalation",
+            "401",
+            "403",
+            "404",
+            "502",
+            "504",
+            "Redis",
+            "Database",
+            "External API",
+            "CORS",
+            "TLS",
+        ]
+        for token in required_ops_tokens:
+            if token.lower() not in operations.lower():
+                errors.append(f"14_operations_runbook.md missing operations/debug token/section: {token}")
 
     background = docs.get("10_background_jobs.md", "")
     background_has_assets = any(

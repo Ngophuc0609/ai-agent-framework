@@ -46,6 +46,12 @@ require_file ".ai/templates/source-code-handover/agent-findings-template.md"
 require_file ".ai/templates/source-code-handover/final-document-template.md"
 require_file ".ai/templates/source-code-handover/evidence-store-template.md"
 
+python3 ./.ai/scripts/validate-source-code-handover-status.py "$RUN_DIR"
+if [ $? -ne 0 ]; then
+  echo "FAIL: STATUS.md consistency validation failed."
+  exit 1
+fi
+
 echo "Validating Phase 0 inventory artifacts..."
 for inventory in \
   projects.json entry-points.json configuration-files.json dependencies.json dbcontexts.json dbsets.json \
@@ -133,11 +139,36 @@ done
 require_file "$RUN_DIR/publish/publish-manifest.json"
 require_file "$RUN_DIR/publish/release-note.md"
 
+require_pattern "$RUN_DIR/validation/final-quality-report.md" "\|[[:space:]]*File[[:space:]]*\|[[:space:]]*Front matter[[:space:]]*\|[[:space:]]*Evidence[[:space:]]*\|[[:space:]]*Inventory/coverage[[:space:]]*\|[[:space:]]*Contract tables[[:space:]]*\|[[:space:]]*Diagrams when needed[[:space:]]*\|[[:space:]]*Runbook/test[[:space:]]*\|[[:space:]]*No template content[[:space:]]*\|[[:space:]]*Verdict[[:space:]]*\|"
+for final_doc in \
+  01_project_handover_full.md 02_project_context.md 03_repository_guide.md 04_local_setup.md \
+  05_configuration_reference.md 06_architecture.md 07_database_reference.md 08_auth_and_security.md \
+  09_api_catalog.md 10_background_jobs.md 11_realtime_signalr_socket.md 12_external_integrations.md \
+  13_frontend_guide.md 14_operations_runbook.md 15_deployment_and_cicd.md 16_testing_guide.md \
+  17_known_risks.md 18_open_questions.md 19_evidence_index.md 20_documentation_coverage.md
+do
+  require_pattern "$RUN_DIR/validation/final-quality-report.md" "$final_doc"
+done
+
 VERDICT=$(cat "$RUN_DIR/validation/final-verdict.md" | grep -o "PASS\|REJECT_REQUIRES_REVISION\|BLOCKED" | head -n 1)
 if [ "$VERDICT" != "PASS" ]; then
   echo "FAIL: Agent 10 verdict is $VERDICT"
   exit 1
 fi
+
+for pattern in \
+  "^Verdict: PASS" \
+  "^Run ID: $RUN_ID" \
+  "^Source Commit:" \
+  "^Validator Agent: agent-10" \
+  "^Status Gate: PASS" \
+  "^Quality Gate: PASS" \
+  "^Evidence Gate: PASS" \
+  "^Language Gate: PASS" \
+  "^Publish Gate: PASS"
+do
+  require_pattern "$RUN_DIR/validation/final-verdict.md" "$pattern"
+done
 
 echo "Validation passed."
 exit 0

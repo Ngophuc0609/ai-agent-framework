@@ -214,10 +214,65 @@ Required outputs:
 - Auth/permission source: attribute, policy, middleware, filter, or negative evidence.
 - Side effects: DB read/write table, Redis mutation, job/event enqueue, external call, audit/log.
 - Evidence per endpoint, not one evidence ID for the whole API catalog.
+- Integration examples for application developers: required headers, auth header shape, route/query/body sample, success sample, error sample, curl command, Postman/OpenAPI/test source or explicit negative evidence, client-facing proxy path, upstream path, versioning behavior, timeout/retry guidance, idempotency/rate-limit notes, and smoke-test command.
 
 Agent 10 MUST reject `09_api_catalog.md` if it only lists a few management APIs or lacks request/response detail for discovered endpoints.
 
 Agent 10 MUST also verify that every route, controller/action, and endpoint handler listed in Phase 0 `routes.json` appears in `09_api_catalog.md`, unless it is explicitly accounted as `Unresolved`, `N/A`, or `Excluded` in `20_documentation_coverage.md` with linked evidence. If source-smoke scan finds many more `[HttpGet]`, `[HttpPost]`, `[HttpPut]`, `[HttpDelete]`, `[HttpPatch]`, or endpoint mappings than `routes.json`, the inventory is invalid and Agent 9 MUST NOT publish final docs.
+
+#### Application Integration Contract
+
+When any public API, gateway route, reverse-proxy route, callback, webhook, SignalR hub, or external-facing endpoint is discovered, Agent 7 MUST create an application integration map and Agent 9 MUST include it in `09_api_catalog.md`, `12_external_integrations.md`, `13_frontend_guide.md`, and/or `14_operations_runbook.md` as appropriate.
+
+Required outputs:
+
+- Client-facing API matrix: client path, gateway/proxy path, upstream service/path, method, auth header, required headers, query/body fields, response body, error body, status codes, content type, versioning behavior, timeout/retry/idempotency/rate-limit guidance, and evidence.
+- Copy-pastable integration examples: curl command and Postman/OpenAPI/test reference when available; if unavailable, explicit negative evidence and a minimal curl smoke check generated from source evidence.
+- Proxy path mapping: how an external app calls the gateway, how YARP rewrites or forwards the path, which cluster/destination receives it, and which config key controls it.
+- Consumer safety notes: which behavior must not be changed, expected compatibility quirks, auth/token expiry assumptions, failure modes, and rollback/smoke-test checks.
+
+Good application integration row:
+
+```md
+| API ID | Client path | Gateway/proxy path | Upstream | Method | Auth header | Required headers | Request example | Success example | Error example | Versioning | Timeout/retry | Idempotency/rate limit | Curl/Postman | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| API-USER-001 | `/users-service/users` | `/users-service/{**catch-all}` | `User.Api` `/users` | GET | `Authorization: Bearer <token>` or `[NOT_APPLICABLE]` | `Accept: application/json` | query `filter` optional | `200`, user array | `401/403/5xx` from gateway/upstream | none detected | retry only on `502/504`; no retry on validation errors | safe read | `curl -H "Accept: application/json" ...` | EV-API-003, EV-AUTH-002 | [CONFIRMED] |
+```
+
+Bad integration docs to reject:
+
+```md
+Frontend can call the API through the Gateway.
+```
+
+Reject because it does not give a developer the concrete path, auth/header shape, request/response contract, proxy mapping, error contract, or test command.
+
+#### Operations, Debugging, And Fault Isolation Contract
+
+Agent 7 MUST trace failure boundaries across client, gateway/proxy, auth, upstream service, database, Redis/cache, background jobs, external systems, and runtime configuration. Agent 8 MUST collect runtime/ops evidence or explicit limitations. Agent 9 MUST include actionable debug/runbook content.
+
+Required outputs:
+
+- Runtime topology: service/process map, ports/domains, environment/config source, upstream/downstream dependencies, health endpoints, log locations, trace/correlation IDs when present, and evidence.
+- Fault isolation matrix: symptom/status code, likely layer, first check, command/log/query to verify, fix/next action, rollback/escalation, evidence, and status.
+- Incident runbooks for common gateway/microservice failures: `401/403`, `404 route not matched`, `502/504 upstream unavailable`, Consul/config reload failure, Redis/cache/data-protection failure, database connectivity/query failure when DB exists, external API timeout, SignalR connection failure, background queue saturation, CORS/TLS/certificate failure, and deployment rollback.
+- Database operations when DB exists: full schema inventory, table/column dictionary, relationship map, migration/seed/runbook, read/write consumers, data-risk notes, and backup/restore or explicit limitation.
+
+Good fault isolation row:
+
+```md
+| Symptom | Likely layer | First check | Verification command/log/query | Fix/next action | Rollback/escalation | Evidence | Status |
+|---|---|---|---|---|---|---|---|
+| `502` on `/users-service/users` | Gateway -> upstream service | Check `users-cluster` destination and User.Api process | `curl -i https://localhost:7014/users`; inspect YARP/Serilog logs | start User.Api or fix destination config | revert `ReverseProxy.json` change; escalate service owner | EV-API-002, EV-OPS-003 | [CONFIRMED] |
+```
+
+Bad operations docs to reject:
+
+```md
+Restart the service when an error happens.
+```
+
+Reject because it does not help an operator isolate the failing layer, verify the cause, choose the fix, or protect rollback.
 
 Good API deep row:
 
@@ -791,4 +846,6 @@ Phase 8: Final Publish.
 - **Blocked**: No isolation. No reliable inventory. Stale/missing artifacts. Coverage fails. Template contamination. Agent 10 rejects without revision. Critical evidence conflict.
 
 ## Publish Policy
-Documents in `.ai/runs/.../final/` MUST NOT be copied to `docs/` until Agent 10 validation is complete and yields a `PASS` verdict.
+Documents in `.ai/runs/.../final/` MUST NOT be copied to `docs/` until Agent 10 validation is complete, yields a structured `Verdict: PASS`, and `.ai/scripts/validate-source-code-handover-run.sh <run_id>` exits `0`.
+
+A one-line `PASS` verdict is invalid. The publish gate MUST reject runs where `STATUS.md` still contains `Execution Mode: unverified`, `Isolation Verified: no`, `TBD`, or pending required agents. The quality gate MUST reject repeated prose padding, extremely long generated prose lines, and repeated generic paragraphs used to inflate word count.

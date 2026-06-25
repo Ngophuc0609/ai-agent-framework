@@ -70,6 +70,8 @@ When running `source-code-handover` or `make-new-dev-docs`:
 4. Agents 6-8 MUST re-open physical source slices and tool outputs before verifying claims.
 5. Agent 9 MUST write final docs from frozen evidence, not from vague model memory.
 6. Agent 10 MUST audit evidence coverage and mark weak sections `REJECT`, `PARTIAL`, or `NOT_VERIFIED`.
+7. Agent 10 MUST produce a structured `final-verdict.md` with gate-by-gate PASS/FAIL lines. A one-line `PASS` is invalid.
+8. Final publish MUST run `.ai/scripts/validate-source-code-handover-run.sh <run_id>` and stop on any failure.
 
 If the selected skill/workflow cannot be read, if the run cannot be initialized, or if the runtime cannot access `.ai/`, the workflow MUST stop before writing deliverable docs.
 
@@ -78,6 +80,7 @@ Forbidden fallback outputs:
 - `docs/onboarding.md`
 - `docs/NEW-DEVELOPER-ONBOARDING.md`
 - any direct `docs/*.md` handover file written without Agent 10 `PASS`
+- any direct `docs/*.md` handover file written when `STATUS.md` still has `Execution Mode: unverified`, `Isolation Verified: no`, `TBD`, or pending required agents
 - any generic setup guide based on model assumptions instead of current-repository evidence
 
 ## Runtime Limitation Recording
@@ -102,6 +105,8 @@ The limitation record MUST include:
 - Do not claim a tool was used when it was skipped or failed.
 - Do not treat model context as evidence.
 - Do not mark generated docs `Ready` when build/test/runtime evidence is missing.
+- Do not use repeated prose, repeated paragraphs, or extremely long generated lines to satisfy documentation length checks.
 - Do not publish final docs when required agent artifacts are absent.
+- Do not publish final docs when the deterministic validation script fails, even if a model-generated verdict says `PASS`.
 - Do not create generic onboarding documents as a fallback when `.ai` files, tools, or source scans fail.
 - Do not broaden filesystem or network access to compensate for poor prompt routing.

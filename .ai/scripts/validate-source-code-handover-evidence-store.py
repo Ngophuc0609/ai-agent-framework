@@ -22,6 +22,24 @@ REQUIRED_FILES = [
 ]
 
 EVIDENCE_RE = re.compile(r"\bEV-(?:REPO|CONFIG|DB|MIGRATION|AUTH|API|JOB|RT|OPS|CICD|TEST|NEG(?:-[A-Z]+)?)-\d{3}\b")
+REQUIRED_AGENTS = {f"agent-{index:02d}" for index in range(1, 11)}
+REQUIRED_TOOL_CATEGORIES = {
+    "fast_search",
+    "build",
+    "symbol",
+    "semantic",
+    "pattern_scan",
+    "api_contract",
+    "runtime_artifact",
+}
+
+CATEGORY_ALIASES = {
+    "build_compile_context": "build",
+    "symbol_navigation": "symbol",
+    "semantic_analysis": "semantic",
+    "api_contract_parser": "api_contract",
+    "runtime_artifact_parser": "runtime_artifact",
+}
 
 
 def load_json(path: Path, errors: list[str]) -> object | None:
@@ -34,10 +52,13 @@ def load_json(path: Path, errors: list[str]) -> object | None:
 
 def validate_tool_runs(path: Path, errors: list[str]) -> None:
     lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
-    if not lines:
-        errors.append("tool-runs.jsonl: must contain at least one tool attempt or explicit limitation record")
-        return
+    if len(lines) < 10:
+        errors.append("tool-runs.jsonl: must contain at least 10 agent/tool attempts for a full source handover run")
+        if not lines:
+            return
     required = {"run_id", "agent_id", "tool_category", "tool", "status"}
+    agents_seen: set[str] = set()
+    categories_seen: set[str] = set()
     for index, line in enumerate(lines, start=1):
         try:
             item = json.loads(line)
@@ -47,6 +68,19 @@ def validate_tool_runs(path: Path, errors: list[str]) -> None:
         missing = sorted(required - set(item))
         if missing:
             errors.append(f"tool-runs.jsonl:{index}: missing keys: {', '.join(missing)}")
+        agent_id = str(item.get("agent_id", ""))
+        if agent_id:
+            agents_seen.add(agent_id)
+        category = str(item.get("tool_category", "")).lower().replace(" ", "_").replace("/", "_")
+        category = CATEGORY_ALIASES.get(category, category)
+        if category:
+            categories_seen.add(category)
+    missing_agents = sorted(REQUIRED_AGENTS - agents_seen)
+    if missing_agents:
+        errors.append("tool-runs.jsonl: missing tool attempts for agents: " + ", ".join(missing_agents))
+    missing_categories = sorted(REQUIRED_TOOL_CATEGORIES - categories_seen)
+    if missing_categories:
+        errors.append("tool-runs.jsonl: missing required tool categories: " + ", ".join(missing_categories))
 
 
 def validate_evidence_manifest(path: Path, errors: list[str]) -> set[str]:
@@ -103,6 +137,8 @@ def validate_json_file(path: Path, errors: list[str]) -> None:
         return
     if data in ({}, []):
         errors.append(f"{path.name}: file must contain a status, items, limitations, or records")
+    if isinstance(data, dict) and len(json.dumps(data, ensure_ascii=False)) < 80:
+        errors.append(f"{path.name}: file is too small to be meaningful evidence")
 
 
 def main() -> int:

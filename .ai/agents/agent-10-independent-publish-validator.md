@@ -57,6 +57,11 @@ Independent Publish Validator
 16. **Source Change Guard**: If `metadata/source-manifest.jsonl` exists, validate the current source snapshot is not stale before allowing publish.
 17. **Skeleton Rejection**: Reject `DOCUMENTATION_SKELETON_ONLY` outputs: thin files, broad reused evidence, category-level coverage denominators, all-Ready status without build/test/runtime/ops evidence, or final docs that merely restate template headings.
 18. **Readiness Matrix**: Validate separate statuses for documentation structure, source discovery, evidence quality, documentation coverage, local setup, build, test, runtime, operations, and production handover.
+19. **Application Integration Completeness**: Reject `09_api_catalog.md` when discovered APIs or gateway routes lack client-facing path, gateway/proxy path, upstream service/path, auth header shape, required headers, request example, success example, error example, status codes, versioning, timeout/retry guidance, idempotency/rate-limit notes, curl command, and Postman/OpenAPI/test source or explicit negative evidence.
+20. **External Integration Completeness**: Reject `12_external_integrations.md` when discovered external APIs, upstream/downstream services, service discovery, Redis/cache, queues, webhooks, or gateway destinations lack caller, trigger, protocol, direction, auth method without secrets, config keys, contract, timeout/retry/fallback behavior, failure behavior, health/test strategy, owner when known, evidence, and status.
+21. **Operations Debug Completeness**: Reject `14_operations_runbook.md` when it lacks runtime topology, service/port/domain map, dependency map, health checks, log/trace checks, reverse-proxy/upstream map when applicable, fault-isolation matrix, verification commands, fix/next action, rollback, escalation, and incident families for auth, route, upstream, config/service discovery, Redis/cache, database when present, external API, realtime, background jobs, CORS/TLS, and deployment rollback.
+22. **Database Operations Completeness**: Reject `07_database_reference.md` when a database exists and any discovered DbContext, DbSet, entity, table, important column, relationship, migration/schema source, seed/reset path, read/write consumer, or data-risk note is missing without an explicit unresolved/negative-evidence record.
+23. **Secret Redaction**: Reject final docs, validation reports, and evidence summaries that copy secret values. It is allowed to identify the config key and file path, but values must be redacted.
 
 ## Final Documentation Language Validation
 `language-validation.md` MUST report PASS/FAIL for:
@@ -72,7 +77,31 @@ Reject with `REJECT_REQUIRES_REVISION` if final prose is mostly English, final d
 `final-quality-report.md` MUST include the quick review table from `.ai/rules/08-source-code-handover-quality-checklist.md` with one row per final document.
 
 ## Required Output
-Output exactly ONE of the following verdicts in `final-verdict.md`:
-`PASS`
-`REJECT_REQUIRES_REVISION`
-`BLOCKED`
+`final-verdict.md` MUST be a structured verdict report, not a one-line token.
+
+Minimum required lines:
+
+```text
+Verdict: PASS | REJECT_REQUIRES_REVISION | BLOCKED
+Run ID: <run_id>
+Source Commit: <source_commit>
+Validator Agent: agent-10
+Status Gate: PASS | FAIL
+Quality Gate: PASS | FAIL
+Evidence Gate: PASS | FAIL
+Language Gate: PASS | FAIL
+Publish Gate: PASS | FAIL
+```
+
+Agent 10 MUST NOT write `Verdict: PASS` unless:
+
+- `.ai/scripts/validate-source-code-handover-status.py <run_dir>` passes.
+- `.ai/scripts/validate-source-code-handover-evidence-store.py <run_dir>/evidence` passes.
+- `.ai/scripts/validate-source-code-handover-physical-evidence.py <run_dir> <repo_root>` passes.
+- `.ai/scripts/validate-source-code-handover-quality.py <run_dir>/final` passes.
+- `.ai/scripts/validate-source-code-handover-language.sh <run_id>` passes.
+- Final docs have no repeated prose padding, no dominant long prose lines, and no generic repeated paragraph used to satisfy word-count thresholds.
+- `final-quality-report.md` contains the Quick Review Table with one row per required final document and a non-PASS reason for every rejected or partial document.
+- API integration, external integration, operations/debug, and database-operation completeness checks pass or are explicitly marked `Partial`, `Not Verified`, `[UNVERIFIED]`, `[BLOCKED]`, or `[NOT_APPLICABLE]` with negative evidence.
+
+A bare `PASS`, `REJECT_REQUIRES_REVISION`, or `BLOCKED` line is invalid and MUST be rejected by the publish validator.

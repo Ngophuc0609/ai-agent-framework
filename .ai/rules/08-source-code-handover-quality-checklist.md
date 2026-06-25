@@ -534,6 +534,13 @@ Every endpoint MUST document:
 - External API calls.
 - Idempotency.
 - Rate limit.
+- Client-facing path.
+- Gateway/proxy path and upstream path/service when proxied.
+- Auth header shape or explicit negative evidence.
+- Copy-pastable curl smoke command.
+- Postman/OpenAPI/test/traffic source or explicit negative evidence.
+- Versioning behavior.
+- Timeout and retry guidance.
 - Known quirks.
 - Evidence.
 - Status.
@@ -544,6 +551,15 @@ Use this table shape:
 | API ID | Route | Method | Module | Auth | Permission | Content type | Headers | Query | Request model | Validation | Response model | Success | Error | Status codes | DB side effects | Redis side effects | Jobs/events | External calls | Idempotency | Rate limit | Known quirks | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 ```
+
+For systems used through an API Gateway or by another application, `09_api_catalog.md` MUST also include an application integration cookbook table:
+
+```md
+| API ID | Client path | Gateway/proxy path | Upstream service/path | Method | Auth header | Required headers | Request example | Success example | Error example | Versioning | Timeout/retry | Idempotency/rate limit | Curl/Postman/OpenAPI | Smoke check | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+```
+
+Agent 10 MUST reject `09_api_catalog.md` when a developer from another app cannot determine the exact URL to call, required auth/headers, request/response/error shape, proxy/upstream mapping, retry behavior, and a safe smoke command.
 
 ## Required Database Deep Detail
 
@@ -601,6 +617,77 @@ Use these table shapes:
 Agent 10 MUST reject `09_api_catalog.md` when request/response is missing for discovered endpoints or when route coverage cannot be reconciled against Phase 0 inventory.
 
 Agent 10 MUST additionally compare `09_api_catalog.md` against `inventory/routes.json` and `inventory/api-contract-sources.json`. Every discovered route/action must appear in the final document with request/response fields or an explicit unresolved gap. A few representative API rows are not sufficient.
+
+## Required External Integration Detail
+
+`12_external_integrations.md` MUST document every discovered external API, service discovery system, third-party service, upstream microservice, downstream microservice, queue broker, cache server, object storage, webhook/callback target, or gateway destination.
+
+Each integration MUST include:
+
+- External system/service name.
+- Caller/source module.
+- Trigger.
+- Protocol/transport.
+- Direction.
+- Auth method without secret values.
+- Config keys and environment source.
+- Request/response or data contract, or explicit unresolved marker.
+- Timeout/retry/fallback/failure behavior.
+- Health/smoke check or test strategy.
+- Owner when known.
+- Evidence.
+- Status.
+
+Use this table shape:
+
+```md
+| Integration ID | External system | Caller | Trigger | Protocol | Direction | Auth method | Config keys | Contract | Timeout/retry/fallback | Failure behavior | Health/test strategy | Owner | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+```
+
+Agent 10 MUST reject `12_external_integrations.md` when it only says a system integrates with Consul/Redis/another service but does not identify caller, trigger, config keys, contract, failure behavior, and test strategy.
+
+## Required Operations Debug And Fault Isolation Detail
+
+`14_operations_runbook.md` MUST help an operator isolate faults across client, gateway/proxy, auth, upstream service, database, Redis/cache/data-protection, background jobs, realtime, external integrations, configuration, TLS/CORS, and deployment.
+
+It MUST include:
+
+- Runtime topology and service map.
+- Domain/port map.
+- Environment/config source.
+- Dependency map.
+- Health endpoints and smoke commands.
+- Log paths/commands and trace/correlation IDs when present or explicit negative evidence.
+- Reverse proxy routing and upstream destination map when gateway routes exist.
+- Restart/scaling behavior.
+- Secret rotation and certificate/TLS notes when source-visible or explicit limitation.
+- Rollback procedure.
+- Escalation owner/path when known or explicit open question.
+- Incident/fault isolation matrix.
+
+Use this table shape:
+
+```md
+| Symptom | Likely layer | First check | Verification command/log/query | Fix/next action | Rollback | Escalation | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|
+```
+
+Minimum incident families to account for when relevant:
+
+- `401/403` authentication or authorization failure.
+- `404` route not matched.
+- `502/504` upstream unavailable or timeout.
+- Config reload or service discovery failure.
+- Redis/cache/data-protection failure.
+- Database connectivity, migration, lock, or query failure when DB exists.
+- External API timeout or contract failure.
+- SignalR/WebSocket failure when realtime exists.
+- Background queue saturation or job failure when jobs exist.
+- CORS/TLS/certificate failure.
+- Deployment rollback.
+
+Agent 10 MUST reject runbooks that only say "restart service" or list generic incidents without a verification command, layer isolation, fix/next action, rollback, and evidence.
 
 ## Required Background Job Flow Diagrams
 

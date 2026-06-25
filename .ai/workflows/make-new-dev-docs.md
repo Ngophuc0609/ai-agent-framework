@@ -18,6 +18,9 @@ Agent 10 validates:
 - Technical identifiers, paths, commands, Evidence IDs, API routes, config keys, JSON keys, database names, and code blocks are preserved.
 - Intermediate artifacts remain English.
 - No mixed-language instruction policy overrides this workflow.
+- `STATUS.md` proves isolation, execution mode, completed agent artifacts, and publish/complete phase.
+- `final-verdict.md` is a structured gate report, not a one-line `PASS`.
+- Final docs do not contain repeated prose padding, dominant long generated lines, or repeated generic paragraphs.
 
 English intermediate artifacts are not deliverables for Vietnamese developers and must not replace Agent 9 final docs.
 
@@ -98,11 +101,13 @@ Count 0 is ONLY allowed if scan succeeds but finds nothing. If scan fails, mark 
 
 Deep Inventory Requirements:
 - `entities.json` MUST include entity class, source path, mapped table/schema when known, key fields, status/type/state fields, and mapping source.
-- `sql-metadata.json` MUST include table, column, PK/FK/index/constraint metadata when available; if live DB metadata is unavailable, it MUST record migration/source-derived coverage plus a limitation.
-- `routes.json` MUST include controller/action or endpoint handler, route prefix, HTTP method, auth markers, request DTO/model, response DTO/model when source-visible, and source path.
-- `api-contract-sources.json` MUST include request/response field inventories from Swagger/OpenAPI/Postman/tests/source DTOs when available.
+- `sql-metadata.json` MUST include every discovered table, column, CLR/database type when available, nullable/required flag, default/max length, PK/FK/index/unique/constraint metadata, relationship source, table/API/job consumers, and source/migration/live-SQL confidence. If live DB metadata is unavailable, it MUST record migration/source-derived coverage plus a limitation.
+- `routes.json` MUST include controller/action or endpoint handler, route prefix, HTTP method, auth markers, required headers, request DTO/model, response DTO/model when source-visible, client-facing route, gateway/proxy route, upstream route/service when proxied, versioning marker, timeout/retry/idempotency hints when source-visible, and source path.
+- `api-contract-sources.json` MUST include request/response field inventories from Swagger/OpenAPI/Postman/tests/source DTOs when available, plus curl/smoke candidates, auth-header shape, success/error/status-code examples, and explicit negative evidence when contract sources are absent.
 - `background-jobs.json` MUST include registration source, trigger, schedule, handler, producer/consumer, queue/storage, retry/failure hints, and source path.
 - `realtime-events.json` MUST include hub/socket class, mapped route, producer, event name, payload model/fields, group/user mapping, client handler, and source path when available.
+- `integrations.json` MUST include every external API/system/service dependency, caller, trigger, protocol, auth method without secret values, config keys, request/response contract or unresolved marker, timeout/retry/failure behavior, fallback, owner when source-visible, and test strategy.
+- `runtime-artifacts.json` MUST include or explicitly limit health endpoints, log paths, trace/correlation identifiers, ports/domains, service startup order, dependency checks, rollback hooks, and fault-isolation commands for client/gateway/upstream/database/cache/job/external layers.
 - Missing deep inventory fields MUST be explicit `unknown` or `not_found_after_scan` with search patterns/commands, not silently omitted.
 
 ## Discovery And Evidence Responsibility Split
@@ -120,6 +125,20 @@ Agent 8 is responsible for safety/build/test/runtime/ops evidence. Agent 8 MUST 
 Agent 9 formats final Vietnamese developer documentation from triangulated Agent 6-8 evidence only. Agent 9 MUST NOT add new technical claims and MUST NOT promote Agent 1-5 discovery candidates without Agent 6-8 verification.
 
 Agent 10 independently validates final docs, evidence IDs, physical provenance, language, coverage, safety, source freshness, and publish readiness.
+
+## Application Integration And Operations Depth Gate
+
+Agent 9 MUST generate documentation that a separate application team can use to integrate and operate the system, not only read the source.
+
+The final set MUST include:
+
+- API integration cookbook content: API matrix, client path, gateway/proxy path, upstream path/service, auth header, required headers, request/response/error examples, status codes, curl command, Postman/OpenAPI/test reference or negative evidence, versioning, timeout/retry/idempotency/rate-limit notes, and smoke checks.
+- Microservice integration guidance: how to add or update a gateway route/cluster/service dependency, which config files/keys control it, health/log checks, CORS/auth/cache/rewrite implications, and rollback checks.
+- Operations and fault-isolation runbooks: runtime topology, service/port/domain map, dependency map, health endpoints, log/trace locations, incident matrix for auth/route/upstream/database/cache/external/job/realtime/deploy failures, verification command, fix/next action, rollback, escalation, and evidence.
+- Database operation detail when a DB exists: every discovered DbContext/DbSet/entity/table/important column, relationship, migration/schema source, seed/reset/backup-restore notes or limitations, read/write consumers, and data-risk notes.
+- External integration detail when external systems exist: caller, trigger, protocol, auth without secrets, config keys, contract, timeout/retry/failure/fallback behavior, test strategy, owner when known, evidence, and unresolved gaps.
+
+If any of these areas cannot be verified from source/runtime artifacts, Agent 9 MUST mark the area `Partial`, `Not Verified`, `[UNVERIFIED]`, `[BLOCKED]`, or `[NOT_APPLICABLE]` with negative evidence. Agent 10 MUST reject final docs that mark production handover, runtime readiness, operations readiness, API integration, or database readiness as `Ready` while these details are missing.
 
 ## Evidence Store Contract
 Coordinator MUST create `.ai/runs/source-code-handover/<run_id>/evidence/` before Agent 1 runs.
@@ -155,5 +174,11 @@ Phase 7: Revision if Agent 10 REJECTS.
 Phase 8: Final publish (copies `final/` to `docs/`).
 
 ## Publish Gate Rule
-Docs from `.ai/runs/.../final/` MUST NOT be copied/published to `docs/` unless Agent 10 outputs `PASS` in `final-verdict.md`.
+Docs from `.ai/runs/.../final/` MUST NOT be copied/published to `docs/` unless:
+
+1. Agent 10 outputs a structured `Verdict: PASS` in `final-verdict.md`.
+2. `.ai/scripts/validate-source-code-handover-run.sh <run_id>` exits `0`.
+3. `STATUS.md` has a valid isolation-backed execution mode, no `TBD` required agent rows, and completed Agent 1-10 statuses.
+
 If `REJECT_REQUIRES_REVISION`, `docs/` must not be overwritten.
+If deterministic validation fails, the workflow MUST treat the run as `REJECT_REQUIRES_REVISION` or `BLOCKED` even when model-authored validation text says `PASS`.
