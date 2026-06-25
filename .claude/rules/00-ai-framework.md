@@ -1746,6 +1746,23 @@ Each agent should record:
 ## Readiness Constraint
 
 If critical review or final synthesis cannot be run with a sufficiently capable model, final readiness must not exceed `Partial` unless the source evidence is simple and fully verified.
+
+## Low-Capability Model Block
+
+For source-code handover and new-developer documentation workflows, low-capability, nano, free, or unknown instruction-following models are not approved for final documentation generation, publication, independent validation, or tool-orchestration recovery.
+
+Example blocked model for this workflow:
+
+- `nvidia/nemotron-3-nano-30b-a3b:free`
+
+Allowed use for these models is limited to:
+
+- reading and summarizing already-created artifacts,
+- checking whether expected files exist,
+- listing blocked preflight status,
+- formatting non-authoritative notes.
+
+If a low-capability model is active, maximum workflow state is `BLOCKED` until a BALANCED-equivalent or stronger model/tool runtime is used. It MUST NOT write final docs or fallback onboarding docs.
 <!-- END SOURCE: .ai/rules/08-model-routing-rules.md -->
 
 
@@ -2366,11 +2383,21 @@ rg --files -g '!bin/' -g '!obj/' -g '!node_modules/' -g '!dist/' -g '!build/'
 
 When running `source-code-handover` or `make-new-dev-docs`:
 
-1. Initialize the run with `.ai/scripts/init-source-code-handover-run.sh`.
-2. Agents 1-5 MUST discover from physical files and write inventory/findings artifacts.
-3. Agents 6-8 MUST re-open physical source slices and tool outputs before verifying claims.
-4. Agent 9 MUST write final docs from frozen evidence, not from vague model memory.
-5. Agent 10 MUST audit evidence coverage and mark weak sections `REJECT`, `PARTIAL`, or `NOT_VERIFIED`.
+1. Read `.ai/registry/triggers.yml`, the selected `SKILL.md`, `.ai/workflows/make-new-dev-docs.md`, and this runtime tool policy.
+2. Initialize the run with `.ai/scripts/init-source-code-handover-run.sh`.
+3. Agents 1-5 MUST discover from physical files and write inventory/findings artifacts.
+4. Agents 6-8 MUST re-open physical source slices and tool outputs before verifying claims.
+5. Agent 9 MUST write final docs from frozen evidence, not from vague model memory.
+6. Agent 10 MUST audit evidence coverage and mark weak sections `REJECT`, `PARTIAL`, or `NOT_VERIFIED`.
+
+If the selected skill/workflow cannot be read, if the run cannot be initialized, or if the runtime cannot access `.ai/`, the workflow MUST stop before writing deliverable docs.
+
+Forbidden fallback outputs:
+
+- `docs/onboarding.md`
+- `docs/NEW-DEVELOPER-ONBOARDING.md`
+- any direct `docs/*.md` handover file written without Agent 10 `PASS`
+- any generic setup guide based on model assumptions instead of current-repository evidence
 
 ## Runtime Limitation Recording
 
@@ -2395,6 +2422,7 @@ The limitation record MUST include:
 - Do not treat model context as evidence.
 - Do not mark generated docs `Ready` when build/test/runtime evidence is missing.
 - Do not publish final docs when required agent artifacts are absent.
+- Do not create generic onboarding documents as a fallback when `.ai` files, tools, or source scans fail.
 - Do not broaden filesystem or network access to compensate for poor prompt routing.
 <!-- END SOURCE: .ai/rules/15-agent-runtime-tool-policy.md -->
 

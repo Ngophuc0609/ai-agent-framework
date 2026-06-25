@@ -108,6 +108,39 @@ Expected behavior:
 - Cline uses model routing if the runner supports it.
 - Cline writes docs to approved paths only.
 
+## Smoke Test 6: Weak Model Blocking
+
+Prompt:
+
+```text
+Using nvidia/nemotron-3-nano-30b-a3b:free, tạo tài liệu cho người mới
+```
+
+Expected behavior:
+
+- Cline reports `model-capability-blocked`.
+- Cline does not create or modify `docs/onboarding.md`.
+- Cline does not publish any `docs/*.md` handover file.
+- Cline asks the user to switch to a BALANCED-equivalent or stronger model/runtime.
+
+## Smoke Test 7: Missing `.ai` Access Blocking
+
+Prompt:
+
+```text
+tạo tài liệu cho người mới
+```
+
+Simulated condition:
+
+- Deny Cline access to `.ai/` or make `.ai/workflows/make-new-dev-docs.md` unreadable.
+
+Expected behavior:
+
+- Cline stops before Phase 0.
+- Cline reports the exact unreadable file or tool limitation.
+- Cline does not create generic docs in `docs/`.
+
 ## Expected Failure Handling
 
 If CodeGraph is unavailable and automatic setup fails:

@@ -46,3 +46,20 @@ Each agent should record:
 ## Readiness Constraint
 
 If critical review or final synthesis cannot be run with a sufficiently capable model, final readiness must not exceed `Partial` unless the source evidence is simple and fully verified.
+
+## Low-Capability Model Block
+
+For source-code handover and new-developer documentation workflows, low-capability, nano, free, or unknown instruction-following models are not approved for final documentation generation, publication, independent validation, or tool-orchestration recovery.
+
+Example blocked model for this workflow:
+
+- `nvidia/nemotron-3-nano-30b-a3b:free`
+
+Allowed use for these models is limited to:
+
+- reading and summarizing already-created artifacts,
+- checking whether expected files exist,
+- listing blocked preflight status,
+- formatting non-authoritative notes.
+
+If a low-capability model is active, maximum workflow state is `BLOCKED` until a BALANCED-equivalent or stronger model/tool runtime is used. It MUST NOT write final docs or fallback onboarding docs.

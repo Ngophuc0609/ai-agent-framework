@@ -1746,6 +1746,23 @@ Each agent should record:
 ## Readiness Constraint
 
 If critical review or final synthesis cannot be run with a sufficiently capable model, final readiness must not exceed `Partial` unless the source evidence is simple and fully verified.
+
+## Low-Capability Model Block
+
+For source-code handover and new-developer documentation workflows, low-capability, nano, free, or unknown instruction-following models are not approved for final documentation generation, publication, independent validation, or tool-orchestration recovery.
+
+Example blocked model for this workflow:
+
+- `nvidia/nemotron-3-nano-30b-a3b:free`
+
+Allowed use for these models is limited to:
+
+- reading and summarizing already-created artifacts,
+- checking whether expected files exist,
+- listing blocked preflight status,
+- formatting non-authoritative notes.
+
+If a low-capability model is active, maximum workflow state is `BLOCKED` until a BALANCED-equivalent or stronger model/tool runtime is used. It MUST NOT write final docs or fallback onboarding docs.
 <!-- END SOURCE: .ai/rules/08-model-routing-rules.md -->
 
 
@@ -2366,11 +2383,21 @@ rg --files -g '!bin/' -g '!obj/' -g '!node_modules/' -g '!dist/' -g '!build/'
 
 When running `source-code-handover` or `make-new-dev-docs`:
 
-1. Initialize the run with `.ai/scripts/init-source-code-handover-run.sh`.
-2. Agents 1-5 MUST discover from physical files and write inventory/findings artifacts.
-3. Agents 6-8 MUST re-open physical source slices and tool outputs before verifying claims.
-4. Agent 9 MUST write final docs from frozen evidence, not from vague model memory.
-5. Agent 10 MUST audit evidence coverage and mark weak sections `REJECT`, `PARTIAL`, or `NOT_VERIFIED`.
+1. Read `.ai/registry/triggers.yml`, the selected `SKILL.md`, `.ai/workflows/make-new-dev-docs.md`, and this runtime tool policy.
+2. Initialize the run with `.ai/scripts/init-source-code-handover-run.sh`.
+3. Agents 1-5 MUST discover from physical files and write inventory/findings artifacts.
+4. Agents 6-8 MUST re-open physical source slices and tool outputs before verifying claims.
+5. Agent 9 MUST write final docs from frozen evidence, not from vague model memory.
+6. Agent 10 MUST audit evidence coverage and mark weak sections `REJECT`, `PARTIAL`, or `NOT_VERIFIED`.
+
+If the selected skill/workflow cannot be read, if the run cannot be initialized, or if the runtime cannot access `.ai/`, the workflow MUST stop before writing deliverable docs.
+
+Forbidden fallback outputs:
+
+- `docs/onboarding.md`
+- `docs/NEW-DEVELOPER-ONBOARDING.md`
+- any direct `docs/*.md` handover file written without Agent 10 `PASS`
+- any generic setup guide based on model assumptions instead of current-repository evidence
 
 ## Runtime Limitation Recording
 
@@ -2395,6 +2422,7 @@ The limitation record MUST include:
 - Do not treat model context as evidence.
 - Do not mark generated docs `Ready` when build/test/runtime evidence is missing.
 - Do not publish final docs when required agent artifacts are absent.
+- Do not create generic onboarding documents as a fallback when `.ai` files, tools, or source scans fail.
 - Do not broaden filesystem or network access to compensate for poor prompt routing.
 <!-- END SOURCE: .ai/rules/15-agent-runtime-tool-policy.md -->
 
@@ -2417,6 +2445,38 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Cline.
 - Keep all tool access scoped to the project folder.
 - If an MCP server or tool is missing, record the limitation and ask the user before continuing with a weaker fallback.
 - Respond to the user in Vietnamese.
+
+## Cline Model Capability Gate
+
+For `source-code-handover` or `make-new-dev-docs`, do not run the full workflow with low-capability, nano, free, or unknown instruction-following models. This includes `nvidia/nemotron-3-nano-30b-a3b:free`.
+
+Those models may only run:
+
+- framework preflight checks,
+- file existence checks,
+- run status summaries,
+- summaries of already-created evidence.
+
+They MUST NOT:
+
+- create or publish `docs/` handover files,
+- write `docs/onboarding.md` as a fallback,
+- synthesize final documentation,
+- mark any documentation `Ready`,
+- bypass `.ai` because a file read or shell command failed.
+
+If Cline is using a low-capability/free model and the user asks to create onboarding/source-handover docs, stop with `model-capability-blocked` and ask the user to switch to a stronger model or run the workflow with Codex/Claude/Gemini High-equivalent tooling.
+
+## Cline Fatal Preflight Gate
+
+Before creating any source-handover artifact, Cline MUST successfully read all of:
+
+- `.ai/registry/triggers.yml`
+- `.ai/skills/source-code-handover/SKILL.md`
+- `.ai/workflows/make-new-dev-docs.md`
+- `.ai/rules/15-agent-runtime-tool-policy.md`
+
+If any required file cannot be read, Cline MUST STOP. It may report the blocked state in chat. If `.ai/runs/` is writable, it may write only a blocked report under `.ai/runs/source-code-handover/<run_id>/validation/blocked-report.md`. It MUST NOT write to `docs/`.
 
 ## Cline Tool-Call Safety
 
@@ -2460,4 +2520,12 @@ Cline `execute_command` shape:
 ```
 
 After this command, continue by filling the created Phase 0 inventory, evidence, findings, verification, drafting, final, validation, and publish artifacts. Do not create `.ai/runs/source-code-handover/` through repeated ad hoc shell commands.
+
+If Cline command execution is unreliable, first run a bounded preflight command:
+
+```bash
+pwd; test -f .ai/workflows/make-new-dev-docs.md; test -x .ai/scripts/init-source-code-handover-run.sh; rg --files .ai/workflows .ai/skills/source-code-handover .ai/rules | rg 'make-new-dev-docs|source-code-handover/SKILL|15-agent-runtime-tool-policy'
+```
+
+If this command times out or fails, stop and report the Cline tool limitation. Do not create fallback docs.
 <!-- END SOURCE: .ai/adapters/cline.md -->

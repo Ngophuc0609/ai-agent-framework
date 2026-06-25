@@ -43,3 +43,11 @@ If the runner does not support model routing:
 - If Agents 2/3/5/6/7/8/9/10 cannot run with at least a BALANCED-equivalent tier, maximum readiness is `Partial`.
 - If independent validation (Agent 10) cannot run, maximum readiness is `Blocked`.
 - In Antigravity, if the runner attempts to use Claude for this workflow, override to the Gemini-only matrix above and record the override in `STATUS.md`.
+
+## Blocked Low-Capability Models
+
+The following model class is not acceptable for executing the full workflow:
+
+- low-capability/free/nano models, including `nvidia/nemotron-3-nano-30b-a3b:free`.
+
+These models may summarize already-created artifacts but MUST NOT run Agents 1-10, generate final docs, publish to `docs/`, or recover from tool failures by writing generic onboarding content.

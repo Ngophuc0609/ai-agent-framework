@@ -68,6 +68,25 @@ This creates the canonical run directory, `STATUS.md`, metadata, inventory, evid
 
 For Cline, use the command above as a single `execute_command` call with `requires_approval=false`. Do not manually create the run tree through repeated ad hoc `mkdir` commands. If Cline reports a malformed `execute_command` call, retry once with both required fields (`command` and `requires_approval`); after that, stop and report the blocked tool-call limitation instead of looping.
 
+## Fatal Preflight Gates
+
+The coordinator MUST stop before Phase 0 when any of these conditions are true:
+
+- The selected `SKILL.md` cannot be read.
+- This workflow file cannot be read.
+- `.ai/rules/15-agent-runtime-tool-policy.md` cannot be read.
+- `.ai/scripts/init-source-code-handover-run.sh` cannot run successfully.
+- The active model/runtime is classified as too weak for source-handover execution by the active adapter.
+- Cline or another runtime cannot access `.ai/` reliably.
+
+When stopped by a fatal preflight gate:
+
+- MUST NOT create `docs/onboarding.md`.
+- MUST NOT create `docs/NEW-DEVELOPER-ONBOARDING.md`.
+- MUST NOT create or overwrite any final `docs/*.md` handover deliverable.
+- MUST NOT claim the workflow ran.
+- MUST report `BLOCKED` with exact failed file/tool/model/runtime evidence.
+
 ## Phase 0: Preflight + Deterministic Discovery
 Coordinator MUST create `.ai/runs/source-code-handover/<run_id>/inventory/` before Agent 1 runs.
 Mandatory JSON files:

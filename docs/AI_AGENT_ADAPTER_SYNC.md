@@ -84,6 +84,31 @@ Adapter-specific optimization profiles are maintained in `.ai/adapters/*.md`:
 
 Optional tool candidates for deeper workflows live in `.ai/registry/tool-candidates.json`. Keep mandatory bootstrap tools in `.ai/registry/tool-bootstrap.json`; do not auto-install cloud or production-facing tools by default.
 
+## Cline Source-Handover Failure Mode
+
+If Cline reports that `.ai/workflows/make-new-dev-docs.md` is missing while file listing shows it exists, or if Cline times out on `.ai/scripts/init-source-code-handover-run.sh`, treat the run as blocked. Do not let Cline write generic fallback files such as `docs/onboarding.md`.
+
+Common causes:
+
+- The target repository has not synced the latest `.ai` framework and generated `.clinerules`.
+- Cline workspace permissions or file filters prevent reliable access to hidden `.ai/` paths.
+- The active model is too weak for tool-following and workflow execution, such as `nvidia/nemotron-3-nano-30b-a3b:free`.
+- The model ignored fatal preflight gates after a tool timeout.
+
+Recommended recovery in the target repository:
+
+```bash
+/home/pc1503/Desktop/Workspace/work/ai-agent-framework/bin/ai-agent-sync --source /home/pc1503/Desktop/Workspace/work/ai-agent-framework/.ai --generate-adapters --adapter-agent cline --no-tools .
+```
+
+Then run a Cline preflight:
+
+```bash
+pwd; test -f .ai/workflows/make-new-dev-docs.md; test -x .ai/scripts/init-source-code-handover-run.sh; rg --files .ai/workflows .ai/skills/source-code-handover .ai/rules | rg 'make-new-dev-docs|source-code-handover/SKILL|15-agent-runtime-tool-policy'
+```
+
+Use a BALANCED-equivalent or stronger model for the actual source-handover workflow. Free/nano models may summarize existing artifacts but must stop with `model-capability-blocked` for full documentation generation.
+
 ## Recommended Sync Flow
 
 From the target repository:

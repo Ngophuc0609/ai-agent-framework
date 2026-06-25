@@ -14,6 +14,38 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Cline.
 - If an MCP server or tool is missing, record the limitation and ask the user before continuing with a weaker fallback.
 - Respond to the user in Vietnamese.
 
+## Cline Model Capability Gate
+
+For `source-code-handover` or `make-new-dev-docs`, do not run the full workflow with low-capability, nano, free, or unknown instruction-following models. This includes `nvidia/nemotron-3-nano-30b-a3b:free`.
+
+Those models may only run:
+
+- framework preflight checks,
+- file existence checks,
+- run status summaries,
+- summaries of already-created evidence.
+
+They MUST NOT:
+
+- create or publish `docs/` handover files,
+- write `docs/onboarding.md` as a fallback,
+- synthesize final documentation,
+- mark any documentation `Ready`,
+- bypass `.ai` because a file read or shell command failed.
+
+If Cline is using a low-capability/free model and the user asks to create onboarding/source-handover docs, stop with `model-capability-blocked` and ask the user to switch to a stronger model or run the workflow with Codex/Claude/Gemini High-equivalent tooling.
+
+## Cline Fatal Preflight Gate
+
+Before creating any source-handover artifact, Cline MUST successfully read all of:
+
+- `.ai/registry/triggers.yml`
+- `.ai/skills/source-code-handover/SKILL.md`
+- `.ai/workflows/make-new-dev-docs.md`
+- `.ai/rules/15-agent-runtime-tool-policy.md`
+
+If any required file cannot be read, Cline MUST STOP. It may report the blocked state in chat. If `.ai/runs/` is writable, it may write only a blocked report under `.ai/runs/source-code-handover/<run_id>/validation/blocked-report.md`. It MUST NOT write to `docs/`.
+
 ## Cline Tool-Call Safety
 
 Cline's `execute_command` tool requires BOTH fields every time:
@@ -56,3 +88,11 @@ Cline `execute_command` shape:
 ```
 
 After this command, continue by filling the created Phase 0 inventory, evidence, findings, verification, drafting, final, validation, and publish artifacts. Do not create `.ai/runs/source-code-handover/` through repeated ad hoc shell commands.
+
+If Cline command execution is unreliable, first run a bounded preflight command:
+
+```bash
+pwd; test -f .ai/workflows/make-new-dev-docs.md; test -x .ai/scripts/init-source-code-handover-run.sh; rg --files .ai/workflows .ai/skills/source-code-handover .ai/rules | rg 'make-new-dev-docs|source-code-handover/SKILL|15-agent-runtime-tool-policy'
+```
+
+If this command times out or fails, stop and report the Cline tool limitation. Do not create fallback docs.
