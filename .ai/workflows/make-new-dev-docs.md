@@ -56,6 +56,18 @@ Must create `.ai/runs/source-code-handover/<run_id>/STATUS.md` with:
 - Table mapping: Agent | Session ID/Subagent ID | Worktree | Canonical Artifact | Status | Gate
 If missing `session_id`, `subagent_id`, or `worktree`, Isolation Verified CANNOT be `yes`.
 
+## Run Initialization
+
+Preferred initialization command:
+
+```bash
+RUN_ID="run-$(date +%Y%m%d-%H%M%S)"; ./.ai/scripts/init-source-code-handover-run.sh "$RUN_ID"
+```
+
+This creates the canonical run directory, `STATUS.md`, metadata, inventory, evidence, findings, verification, drafting, final, validation, and publish directories.
+
+For Cline, use the command above as a single `execute_command` call with `requires_approval=false`. Do not manually create the run tree through repeated ad hoc `mkdir` commands. If Cline reports a malformed `execute_command` call, retry once with both required fields (`command` and `requires_approval`); after that, stop and report the blocked tool-call limitation instead of looping.
+
 ## Phase 0: Preflight + Deterministic Discovery
 Coordinator MUST create `.ai/runs/source-code-handover/<run_id>/inventory/` before Agent 1 runs.
 Mandatory JSON files:
