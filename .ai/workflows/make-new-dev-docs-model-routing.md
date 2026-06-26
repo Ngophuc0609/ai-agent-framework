@@ -52,7 +52,9 @@ The following model class is not acceptable for executing the full workflow:
 
 These models may summarize already-created artifacts but MUST NOT run Agents 1-10, generate final docs, publish to `docs/`, or recover from tool failures by writing generic onboarding content.
 
-Free pricing alone is not a block. If the runner must use free models, prefer this order:
+If the active model/runtime cannot meet the required capability class, the runner MUST stop as `BLOCKED_MODEL_CAPABILITY`. It MUST NOT produce a humorous refusal, invent non-technical reasons, or tell the user to write the documentation manually.
+
+Free pricing alone is not a block. The following are non-binding model-selection suggestions only; they are not a whitelist or required fallback order:
 
 1. `Qwen: Qwen3 Coder 480B A35B (free)` for code/repo/tool-heavy phases.
 2. `Qwen: Qwen3 Next 80B A3B Instruct (free)` for broad discovery and structured summaries.
@@ -66,7 +68,7 @@ When a free provider returns `429`, `temporarily rate-limited`, `retry_after_sec
 
 1. Wait for the provider retry interval when it is short.
 2. Retry the same model once.
-3. If the retry fails, move to the next approved free model in the fallback order above.
+3. If the retry fails, move to another available model in the same or stronger capability class.
 4. Record the original model, provider, error code, retry interval, fallback model, and readiness impact in `STATUS.md`.
 5. Do not fall back to a blocked/non-generative/random-router model.
 

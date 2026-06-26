@@ -1,7 +1,7 @@
 <!-- generated-by: ai-agent-adapter-sync -->
 # .ai Framework Instructions for cline
 
-Generated on: `2026-06-25`
+Generated on: `2026-06-26`
 Source of truth: `.ai/`
 
 ## Required Startup
@@ -1753,9 +1753,12 @@ For source-code handover and new-developer documentation workflows, low-capabili
 
 Free pricing alone does not block a model. A free model can be used only when it is explicitly capable enough for the assigned workflow phase and the selected adapter/runtime can reliably execute tools and read `.ai/` files.
 
+Any model not listed in the approved free fallback ladder or a repository-specific approved matrix is `UNAPPROVED_MODEL` for Agents 6, 7, 8, 9, and 10 until it has a recorded evaluation showing tool reliability, instruction following, long-context source synthesis, evidence discipline, and Vietnamese final-doc quality. This includes "flash", "mini", "lite", "fast", "chat", or experimental variants from any provider unless explicitly approved.
+
 Example blocked model for this workflow:
 
 - `nvidia/nemotron-3-nano-30b-a3b:free`
+- `DeepSeek V4 Flash` / `deepseek-v4-flash` for Agent 9 final docs, Agent 10 validation, and any full source-handover execution until an evaluation file explicitly approves it.
 
 Allowed use for these models is limited to:
 
@@ -1765,6 +1768,23 @@ Allowed use for these models is limited to:
 - formatting non-authoritative notes.
 
 If a blocked low-capability model is active, maximum workflow state is `BLOCKED` until a BALANCED-equivalent or stronger model/tool runtime is used. It MUST NOT write final docs or fallback onboarding docs.
+
+## Blocked-Model Response Contract
+
+When a model/runtime cannot execute the workflow because of capability, routing, tool access, rate limit, or instruction-following uncertainty, it MUST stop with a structured blocked status. It MUST NOT write a humorous refusal, non-technical excuse, encouragement for the user to do the work manually, or generic advice in place of workflow artifacts.
+
+Required blocked response:
+
+```text
+BLOCKED_MODEL_CAPABILITY
+Workflow: source-code-handover / make-new-dev-docs
+Requested model: <model name>
+Reason: <capability/routing/tool limitation>
+Required action: switch to an approved BALANCED/REASONING_STRONG/LONG_CONTEXT_STRONG model or run with Codex/Claude/Gemini High-equivalent tooling
+Artifacts preserved: <run dir or none>
+```
+
+If `.ai/runs/` is writable, also write the same information to `.ai/runs/source-code-handover/<run_id>/validation/blocked-report.md`.
 
 ## Free Model Suitability For Source Handover
 
@@ -2506,7 +2526,7 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Cline.
 
 ## Cline Model Capability Gate
 
-For `source-code-handover` or `make-new-dev-docs`, do not run the full workflow with low-capability, nano, random-router, non-generative, safety-only, embedding-only, rerank-only, or unknown instruction-following models. This includes `nvidia/nemotron-3-nano-30b-a3b:free`.
+For `source-code-handover` or `make-new-dev-docs`, do not run the full workflow with low-capability, nano, random-router, non-generative, safety-only, embedding-only, rerank-only, unapproved flash/mini/lite/fast/chat models, or unknown instruction-following models. This includes `nvidia/nemotron-3-nano-30b-a3b:free` and `DeepSeek V4 Flash` / `deepseek-v4-flash` unless an evaluation file explicitly approves the exact model for this workflow.
 
 Free pricing alone is not a blocker. Strong free models such as `Qwen: Qwen3 Coder 480B A35B (free)`, `Qwen: Qwen3 Next 80B A3B Instruct (free)`, `Google: Gemma 4 26B A4B (free)`, `Meta: Llama 3.3 70B Instruct (free)`, or verified-stable `Nous: Hermes 3 405B Instruct (free)` may be used for limited phases according to `.ai/rules/08-model-routing-rules.md`.
 
@@ -2535,7 +2555,18 @@ They MUST NOT:
 - mark any documentation `Ready`,
 - bypass `.ai` because a file read or shell command failed.
 
-If Cline is using a blocked low-capability model and the user asks to create onboarding/source-handover docs, stop with `model-capability-blocked` and ask the user to switch to a stronger model or run the workflow with Codex/Claude/Gemini High-equivalent tooling.
+If Cline is using a blocked low-capability/unapproved model and the user asks to create onboarding/source-handover docs, stop with `BLOCKED_MODEL_CAPABILITY` and ask the user to switch to a stronger model or run the workflow with Codex/Claude/Gemini High-equivalent tooling.
+
+Cline MUST NOT respond with a humorous refusal, non-technical excuse, or suggestion that the user should write the docs manually. If blocked, use this exact shape:
+
+```text
+BLOCKED_MODEL_CAPABILITY
+Workflow: source-code-handover / make-new-dev-docs
+Requested model: <model name>
+Reason: <capability/routing/tool limitation>
+Required action: switch to an approved BALANCED/REASONING_STRONG/LONG_CONTEXT_STRONG model or run with Codex/Claude/Gemini High-equivalent tooling
+Artifacts preserved: <run dir or none>
+```
 
 ## Cline Fatal Preflight Gate
 

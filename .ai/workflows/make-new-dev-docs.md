@@ -89,6 +89,8 @@ When stopped by a fatal preflight gate:
 - MUST NOT create or overwrite any final `docs/*.md` handover deliverable.
 - MUST NOT claim the workflow ran.
 - MUST report `BLOCKED` with exact failed file/tool/model/runtime evidence.
+- MUST NOT replace workflow execution with a humorous refusal, non-technical excuse, or advice that the user should write the documentation manually.
+- If the blocker is model capability or model routing, report `BLOCKED_MODEL_CAPABILITY` using `.ai/rules/08-model-routing-rules.md`.
 
 ## Phase 0: Preflight + Deterministic Discovery
 Coordinator MUST create `.ai/runs/source-code-handover/<run_id>/inventory/` before Agent 1 runs.

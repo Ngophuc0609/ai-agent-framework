@@ -132,6 +132,23 @@ TABLE_MAPPING_RE = re.compile(r"\b(?:ToTable|CreateTable)\s*\(\s*\"([^\"]+)\"")
 SECRET_VALUE_RE = re.compile(
     r"(?i)\b(?:password|pwd|secret|clientsecret|apikey|api_key|token|signingkey)\s*=\s*(?!<redacted>|redacted|\*\*\*|xxxx|xxxxx)[^;\s`\"']{8,}"
 )
+DOC_CONFIG_PATH_RE = re.compile(r"`?\"([A-Za-z0-9_.-]+(?::[A-Za-z0-9_.-]+)+)\"`?")
+URL_PATH_RE = re.compile(r"\bhttps?://[^`\s|)]+")
+GENERATED_OR_DOC_DIRS = {"bin", "obj", ".git", ".ai", ".agents", ".claude", ".cline", ".cursor", ".github", "docs"}
+
+UNCERTAIN_MARKERS = {
+    "[UNVERIFIED]",
+    "[BLOCKED]",
+    "[CONFLICT]",
+    "[NOT_APPLICABLE]",
+    "Not Verified",
+    "not verified",
+    "not_found_after_scan",
+    "unknown",
+    "Unknown",
+    "chưa xác minh",
+    "Chưa xác minh",
+}
 
 
 def split_front_matter(text: str) -> tuple[dict[str, str], str] | tuple[None, str]:
@@ -227,6 +244,15 @@ def find_inventory_dir(final_dir: Path) -> Path | None:
     return None
 
 
+def find_run_dir(final_dir: Path) -> Path | None:
+    if final_dir.name == "final":
+        return final_dir.parent
+    inventory_dir = find_inventory_dir(final_dir)
+    if inventory_dir is not None:
+        return inventory_dir.parent
+    return None
+
+
 def count_source_http_attributes(repo_root: Path) -> int:
     src = repo_root / "src"
     if not src.is_dir():
@@ -264,6 +290,137 @@ def line_has_upstream_reference(text: str, match_start: int) -> bool:
     prior_context_start = max(0, text.rfind("\n##", 0, match_start))
     prior_context = text[prior_context_start:match_start]
     return "[UPSTREAM_REFERENCE]" in prior_context
+
+
+def is_uncertain_text(text: str) -> bool:
+    return any(marker in text for marker in UNCERTAIN_MARKERS)
+
+
+def load_evidence_lookup(final_dir: Path) -> dict[str, str]:
+    run_dir = find_run_dir(final_dir)
+    if run_dir is None:
+        return {}
+    manifest = load_json(run_dir / "evidence" / "evidence-manifest.json")
+    lookup: dict[str, str] = {}
+    if isinstance(manifest, dict) and isinstance(manifest.get("evidence"), list):
+        for item in manifest["evidence"]:
+            if not isinstance(item, dict):
+                continue
+            evidence_id = str(item.get("evidence_id", ""))
+            if not EVIDENCE_RE.fullmatch(evidence_id):
+                continue
+            lookup[evidence_id] = " ".join(
+                str(item.get(key, ""))
+                for key in [
+                    "claim",
+                    "source_type",
+                    "source_path",
+                    "range_or_symbol",
+                    "verification_type",
+                    "status",
+                ]
+            )
+    return lookup
+
+
+def evidence_text_for_line(line: str, evidence_lookup: dict[str, str]) -> str:
+    evidence_ids = EVIDENCE_RE.findall(line)
+    return " ".join(evidence_lookup.get(evidence_id, "") for evidence_id in evidence_ids)
+
+
+def line_evidence_supports(line: str, evidence_lookup: dict[str, str], keywords: list[str]) -> bool:
+    evidence_text = evidence_text_for_line(line, evidence_lookup).lower()
+    return any(keyword.lower() in evidence_text for keyword in keywords)
+
+
+def line_has_evidence_prefix(line: str, prefixes: tuple[str, ...]) -> bool:
+    return any(evidence_id.startswith(prefixes) for evidence_id in EVIDENCE_RE.findall(line))
+
+
+def collect_config_keys(repo_root: Path | None) -> set[str]:
+    if repo_root is None:
+        return set()
+    keys: set[str] = set()
+    for path in repo_root.rglob("*.json"):
+        if any(part in GENERATED_OR_DOC_DIRS for part in path.parts):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        for match in re.finditer(r'"([^"]+)"\s*:', text):
+            key = match.group(1)
+            if key and not key.startswith("//"):
+                keys.add(key)
+    return keys
+
+
+def validate_documented_config_paths(final_dir: Path, errors: list[str]) -> None:
+    inventory_dir = find_inventory_dir(final_dir)
+    repo_root = find_repo_root_from_inventory(inventory_dir) if inventory_dir else None
+    config_keys = collect_config_keys(repo_root)
+    if not config_keys:
+        return
+    docs_to_check = [
+        "05_configuration_reference.md",
+        "09_api_catalog.md",
+        "12_external_integrations.md",
+        "14_operations_runbook.md",
+    ]
+    for doc_name in docs_to_check:
+        path = final_dir / doc_name
+        if not path.exists():
+            continue
+        for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            if is_uncertain_text(line):
+                continue
+            for match in DOC_CONFIG_PATH_RE.finditer(line):
+                config_path = match.group(1)
+                parts = [part for part in config_path.split(":") if part]
+                missing = [part for part in parts if part not in config_keys]
+                if missing:
+                    errors.append(
+                        f"{doc_name}:{line_no}: documented config path {config_path!r} contains keys not found in current config files: {', '.join(missing)}"
+                    )
+
+
+def source_contains_path(repo_root: Path | None, url_path: str) -> bool:
+    if repo_root is None:
+        return False
+    needle = "/" + url_path.lstrip("/").split("?", 1)[0].strip("/")
+    if needle == "/":
+        return True
+    path_pattern = re.compile(rf"(?<![A-Za-z0-9_/-]){re.escape(needle)}(?![A-Za-z0-9_-])")
+    for path in repo_root.rglob("*"):
+        if path.is_dir() or any(part in GENERATED_OR_DOC_DIRS for part in path.parts):
+            continue
+        if path.suffix.lower() not in {".cs", ".json", ".cshtml", ".md", ".yml", ".yaml"}:
+            continue
+        try:
+            if path_pattern.search(path.read_text(encoding="utf-8", errors="ignore")):
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def validate_runbook_url_commands(final_dir: Path, errors: list[str]) -> None:
+    inventory_dir = find_inventory_dir(final_dir)
+    repo_root = find_repo_root_from_inventory(inventory_dir) if inventory_dir else None
+    operations_path = final_dir / "14_operations_runbook.md"
+    if not operations_path.exists():
+        return
+    for line_no, line in enumerate(operations_path.read_text(encoding="utf-8").splitlines(), start=1):
+        if is_uncertain_text(line):
+            continue
+        for url in URL_PATH_RE.findall(line):
+            if "localhost" not in url and "127.0.0.1" not in url:
+                continue
+            path_part = re.sub(r"^https?://[^/]+", "", url)
+            if path_part and not source_contains_path(repo_root, path_part):
+                errors.append(
+                    f"14_operations_runbook.md:{line_no}: runbook command references {url!r}, but that path was not found in current source/config; mark it [UNVERIFIED] or provide evidence"
+                )
 
 
 def collect_evidence_index(final_dir: Path, errors: list[str]) -> set[str]:
@@ -660,6 +817,884 @@ def validate_document_capabilities(final_dir: Path, errors: list[str]) -> None:
             errors.append(f"{doc.name}: possible unredacted secret/credential literal in final documentation: {match.group(0)[:80]}")
 
 
+def validate_evidence_bound_claims(final_dir: Path, errors: list[str]) -> None:
+    evidence_lookup = load_evidence_lookup(final_dir)
+    if not evidence_lookup:
+        errors.append("cannot validate evidence-bound claims because evidence-manifest.json is unavailable")
+        return
+
+    semantic_rules = [
+        (
+            re.compile(r"\b(?:timeout|retry|retries|fallback|rate limit|req/min|requests/min|RetryAfter)\b", re.IGNORECASE),
+            ["timeout", "retry", "fallback", "rate", "ratelimit", "requesttimeout", "RetryAfter"],
+            "timeout/retry/fallback/rate-limit",
+        ),
+        (
+            re.compile(r"\b(?:Bearer|Authorization|JWT|token-based|auth header|ApiSecret|SigningKey)\b", re.IGNORECASE),
+            ["auth", "authorize", "authorization", "jwt", "bearer", "token", "signingkey", "ids4"],
+            "auth/header/token",
+        ),
+        (
+            re.compile(r"\b(?:401|403|404|502|504|status code|unauthorized|forbidden|not found|bad gateway|gateway timeout)\b", re.IGNORECASE),
+            ["status", "401", "403", "404", "502", "504", "exception", "error", "runtime", "health"],
+            "status/error behavior",
+        ),
+        (
+            re.compile(r"\b(?:Postman|OpenAPI|Swagger|integration test|unit tests|traffic sample)\b", re.IGNORECASE),
+            ["postman", "openapi", "swagger", "test", "traffic", "runtime", "contract"],
+            "contract/test artifact",
+        ),
+        (
+            re.compile(r"\b(?:Health endpoint|Health API|health check|Ping check|curl\s+-?i?)\b", re.IGNORECASE),
+            ["health", "runtime", "smoke", "curl", "test", "ops"],
+            "health/smoke command",
+        ),
+    ]
+
+    docs_to_check = [
+        "09_api_catalog.md",
+        "12_external_integrations.md",
+        "14_operations_runbook.md",
+        "15_deployment_and_cicd.md",
+        "16_testing_guide.md",
+    ]
+    for doc_name in docs_to_check:
+        path = final_dir / doc_name
+        if not path.exists():
+            continue
+        for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            stripped = line.strip()
+            if not stripped or stripped.startswith("|---") or stripped.lower().startswith("| api id ") or stripped.lower().startswith("| integration id ") or stripped.lower().startswith("| symptom "):
+                continue
+            if "[CONFIRMED]" not in stripped:
+                continue
+            if is_uncertain_text(stripped):
+                errors.append(
+                    f"{doc_name}:{line_no}: line mixes [CONFIRMED] with uncertainty markers; use a non-confirmed status for unverified cells"
+                )
+                continue
+            evidence_ids = EVIDENCE_RE.findall(stripped)
+            if not evidence_ids:
+                errors.append(f"{doc_name}:{line_no}: [CONFIRMED] operational/integration claim has no Evidence ID")
+                continue
+            for pattern, keywords, label in semantic_rules:
+                if pattern.search(stripped) and not line_evidence_supports(stripped, evidence_lookup, keywords):
+                    errors.append(
+                        f"{doc_name}:{line_no}: [CONFIRMED] {label} claim is not supported by same-line evidence; mark it [UNVERIFIED] or cite specific evidence"
+                    )
+
+            if re.search(r"\b(?:Owner|Team|Admin|Partner|DevOps|Release Manager|Security Admin|DB Admin)\b", stripped):
+                if not line_evidence_supports(stripped, evidence_lookup, ["owner", "team", "admin", "maintainer", "devops", "contact"]):
+                    errors.append(
+                        f"{doc_name}:{line_no}: [CONFIRMED] owner/escalation value is not source-backed; use Unknown/[UNVERIFIED] or cite owner evidence"
+                    )
+
+            if re.search(r"\b(?:AIMusicLab|external partner|REST JSON API contract|/api/songs)\b", stripped, flags=re.IGNORECASE):
+                if not line_evidence_supports(stripped, evidence_lookup, ["aimusiclab", "music-cluster", "destination", "external", "api/songs"]):
+                    errors.append(
+                        f"{doc_name}:{line_no}: [CONFIRMED] external API contract/path is not supported by same-line evidence"
+                    )
+
+            if re.search(r"\b(?:Database|DB)\b", stripped) and "N/A" in stripped:
+                if not line_has_evidence_prefix(stripped, ("EV-NEG-DB-",)):
+                    errors.append(
+                        f"{doc_name}:{line_no}: database N/A claim must cite EV-NEG-DB-* evidence"
+                    )
+
+
+def collect_background_job_inventory(final_dir: Path) -> list[dict[str, str]]:
+    inventory_dir = find_inventory_dir(final_dir)
+    if inventory_dir is None:
+        return []
+    data = load_json(inventory_dir / "background-jobs.json")
+    jobs: list[dict[str, str]] = []
+    for item in inventory_items(data):
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or item.get("class") or item.get("job") or "").strip()
+        if not name:
+            continue
+        jobs.append(
+            {
+                "name": name,
+                "handler": str(item.get("handler") or item.get("method") or "").strip(),
+                "schedule": str(item.get("schedule") or item.get("trigger") or item.get("cron") or "").strip(),
+                "source_path": str(item.get("source_path") or item.get("path") or item.get("file") or "").strip(),
+            }
+        )
+    return jobs
+
+
+def validate_background_job_detail(final_dir: Path, errors: list[str]) -> None:
+    jobs = collect_background_job_inventory(final_dir)
+    if not jobs:
+        return
+
+    doc_path = final_dir / "10_background_jobs.md"
+    if not doc_path.exists():
+        errors.append("10_background_jobs.md missing while background job inventory is non-empty")
+        return
+
+    text = doc_path.read_text(encoding="utf-8")
+    lowered = text.lower()
+    if "[NOT_APPLICABLE]" in text:
+        errors.append("10_background_jobs.md is [NOT_APPLICABLE] while background job inventory is non-empty")
+        return
+
+    if "required background jobs keywords" in lowered or "keywords checklist" in lowered:
+        errors.append("10_background_jobs.md contains validator keyword stuffing instead of real job documentation")
+
+    missing_names = [job["name"] for job in jobs if job["name"] not in text]
+    if missing_names:
+        preview = ", ".join(missing_names[:12])
+        suffix = "" if len(missing_names) <= 12 else f", ... (+{len(missing_names) - 12} more)"
+        errors.append(f"10_background_jobs.md missing discovered background jobs from inventory: {preview}{suffix}")
+
+    missing_handlers = [
+        f"{job['name']} -> {job['handler']}"
+        for job in jobs
+        if job["handler"] and job["handler"] not in text
+    ]
+    if missing_handlers:
+        preview = ", ".join(missing_handlers[:10])
+        suffix = "" if len(missing_handlers) <= 10 else f", ... (+{len(missing_handlers) - 10} more)"
+        errors.append(f"10_background_jobs.md missing discovered job handlers from inventory: {preview}{suffix}")
+
+    detailed_tokens = [
+        "Job ID",
+        "Job name",
+        "Registration source",
+        "Source path",
+        "Trigger",
+        "Schedule",
+        "Cron",
+        "Handler",
+        "Queue",
+        "Storage",
+        "Service",
+        "Repository",
+        "DB",
+        "Redis",
+        "External",
+        "Retry",
+        "Timeout",
+        "Idempotency",
+        "Failure",
+        "Logging",
+        "Shutdown",
+        "Evidence",
+        "Status",
+    ]
+    for token in detailed_tokens:
+        if token.lower() not in lowered:
+            errors.append(f"10_background_jobs.md missing per-job lifecycle detail token/column: {token}")
+
+    if "sequenceDiagram" not in text:
+        errors.append("10_background_jobs.md missing Mermaid sequenceDiagram for scheduler/worker/handler/data-store/failure flow")
+
+    job_table_rows = 0
+    for line in text.splitlines():
+        if not line.strip().startswith("|"):
+            continue
+        if any(job["name"] in line for job in jobs):
+            job_table_rows += 1
+    if job_table_rows < len(jobs):
+        errors.append(
+            f"10_background_jobs.md has {job_table_rows} job table rows but inventory discovered {len(jobs)} background jobs"
+        )
+
+
+def markdown_section_after_heading(text: str, heading_pattern: str) -> str:
+    match = re.search(heading_pattern, text, flags=re.IGNORECASE | re.MULTILINE)
+    if not match:
+        return ""
+    next_heading = re.search(r"\n#{2,6}\s+", text[match.end():])
+    if not next_heading:
+        return text[match.end():]
+    return text[match.end(): match.end() + next_heading.start()]
+
+
+def markdown_row_contains_token(section: str, token: str) -> bool:
+    token_patterns = [
+        f"`{token}`",
+        token,
+    ]
+    for line in section.splitlines():
+        if not line.strip().startswith("|"):
+            continue
+        if any(pattern in line for pattern in token_patterns):
+            return True
+    return False
+
+
+def collect_redis_store_inventory(final_dir: Path) -> list[dict[str, str]]:
+    inventory_dir = find_inventory_dir(final_dir)
+    if inventory_dir is None:
+        return []
+    data = load_json(inventory_dir / "redis-cache.json")
+    stores: list[dict[str, str]] = []
+    for item in inventory_items(data):
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or item.get("store") or item.get("key") or "").strip()
+        if not name:
+            continue
+        stores.append(
+            {
+                "name": name,
+                "type": str(item.get("type") or item.get("data_type") or "").strip(),
+                "purpose": str(item.get("purpose") or "").strip(),
+            }
+        )
+    return stores
+
+
+def validate_database_store_contract(final_dir: Path, errors: list[str]) -> None:
+    doc_path = final_dir / "07_database_reference.md"
+    if not doc_path.exists():
+        return
+    text = doc_path.read_text(encoding="utf-8")
+    lowered = text.lower()
+    inventory_dir = find_inventory_dir(final_dir)
+    if inventory_dir is None:
+        return
+
+    if "required database reference keywords" in lowered or "keywords checklist" in lowered:
+        errors.append("07_database_reference.md contains validator keyword stuffing instead of real database documentation")
+
+    sql_data = load_json(inventory_dir / "sql-metadata.json")
+    sql_tables = sql_data.get("tables") if isinstance(sql_data, dict) else None
+    if isinstance(sql_tables, list):
+        for table in sql_tables:
+            if not isinstance(table, dict):
+                continue
+            table_name = str(table.get("table") or "").strip()
+            if not table_name:
+                continue
+            table_section = markdown_section_after_heading(
+                text,
+                rf"^#+\s*(?:Table|Bảng)\s*:?\s*`?{re.escape(table_name)}`?",
+            )
+            if not table_section:
+                errors.append(f"07_database_reference.md missing detailed schema section for table {table_name}")
+                continue
+            columns = table.get("columns")
+            if not isinstance(columns, list):
+                continue
+            missing_columns = []
+            for column in columns:
+                if not isinstance(column, dict):
+                    continue
+                column_name = str(column.get("name") or "").strip()
+                if column_name and not markdown_row_contains_token(table_section, column_name):
+                    missing_columns.append(column_name)
+            if missing_columns:
+                preview = ", ".join(missing_columns[:12])
+                suffix = "" if len(missing_columns) <= 12 else f", ... (+{len(missing_columns) - 12} more)"
+                errors.append(f"07_database_reference.md table {table_name} missing column rows: {preview}{suffix}")
+
+    entity_items = inventory_items(load_json(inventory_dir / "entities.json"))
+    redis_entities = [
+        str(item.get("class") or item.get("entity"))
+        for item in entity_items
+        if isinstance(item, dict) and "redis" in str(item.get("mapped_table") or item.get("table") or "").lower()
+    ]
+    mongo_entities = [
+        str(item.get("class") or item.get("entity"))
+        for item in entity_items
+        if isinstance(item, dict) and "mongo" in str(item.get("mapped_table") or item.get("table") or "").lower()
+    ]
+    redis_stores = collect_redis_store_inventory(final_dir)
+
+    if redis_entities or redis_stores:
+        required_redis_tokens = [
+            "Redis key pattern",
+            "Key pattern",
+            "Data type",
+            "Key inputs",
+            "Field/member/value shape",
+            "Field/value shape",
+            "TTL",
+            "Producer/write path",
+            "Consumer/read path",
+            "Jobs/APIs affected",
+            "Rebuild/invalidation",
+            "SQL/Mongo",
+            "Drift risk",
+            "Data asset",
+            "Operation",
+            "Entry point",
+            "ID/key source",
+            "Field/value changed",
+            "Value source",
+            "Call chain",
+            "Also updates",
+            "Read consumers",
+            "Consistency rule",
+            "Debug query/command",
+        ]
+        for token in required_redis_tokens:
+            if token.lower() not in lowered:
+                errors.append(f"07_database_reference.md missing Redis database contract token/section: {token}")
+
+        missing_stores = [store["name"] for store in redis_stores if store["name"] not in text]
+        if missing_stores:
+            errors.append(
+                "07_database_reference.md missing discovered Redis stores from inventory: " + ", ".join(missing_stores[:12])
+            )
+
+        redis_contract_rows = 0
+        redis_names = set(redis_entities + [store["name"] for store in redis_stores])
+        for line in text.splitlines():
+            if line.strip().startswith("|") and any(name and name in line for name in redis_names):
+                if "key" in line.lower() or "redis" in line.lower() or "ttl" in line.lower():
+                    redis_contract_rows += 1
+        if redis_contract_rows < max(1, len(redis_stores)):
+            errors.append(
+                f"07_database_reference.md has {redis_contract_rows} Redis contract rows but inventory/source discovered {len(redis_stores)} Redis stores and {len(redis_entities)} Redis-backed entities"
+            )
+
+        weak_redis_patterns = ["None (Redis Hash)", "None (Redis ZSet)", "None (Redis List)", "Redis Hash)", "Redis ZSet)"]
+        if any(pattern in text for pattern in weak_redis_patterns) and "Key pattern" not in text:
+            errors.append("07_database_reference.md documents Redis storage labels without concrete Redis key patterns")
+
+        lineage_rows = 0
+        lineage_tokens = [
+            "operation",
+            "entry point",
+            "id/key source",
+            "field/value changed",
+            "value source",
+            "call chain",
+            "read consumers",
+        ]
+        for line in text.splitlines():
+            if not line.strip().startswith("|"):
+                continue
+            lowered_line = line.lower()
+            if any(name and name in line for name in redis_names) and sum(token in lowered_line for token in lineage_tokens) >= 2:
+                lineage_rows += 1
+        if lineage_rows < max(1, len(redis_stores)):
+            errors.append(
+                f"07_database_reference.md has {lineage_rows} Redis mutation lineage rows but inventory/source discovered {len(redis_stores)} Redis stores and {len(redis_entities)} Redis-backed entities"
+            )
+
+    if mongo_entities:
+        required_mongo_tokens = [
+            "Collection",
+            "Document model",
+            "Field path",
+            "Producer/write path",
+            "Consumer/read path",
+            "Index/retention",
+            "Data asset",
+            "Operation",
+            "Entry point",
+            "ID/key source",
+            "Field/value changed",
+            "Value source",
+            "Call chain",
+            "Read consumers",
+        ]
+        for token in required_mongo_tokens:
+            if token.lower() not in lowered:
+                errors.append(f"07_database_reference.md missing MongoDB document contract token/section: {token}")
+
+
+def inventory_has_items(final_dir: Path, filename: str) -> bool:
+    inventory_dir = find_inventory_dir(final_dir)
+    if inventory_dir is None:
+        return False
+    return bool(inventory_items(load_json(inventory_dir / filename)))
+
+
+def require_doc_tokens(doc_name: str, text: str, tokens: list[str], errors: list[str]) -> None:
+    if "[NOT_APPLICABLE]" in text:
+        return
+    lowered = text.lower()
+    for token in tokens:
+        if token.lower() not in lowered:
+            errors.append(f"{doc_name} missing behavior-depth token/section: {token}")
+
+
+def table_rows_with_route(section: str, routes: list[str]) -> set[str]:
+    found: set[str] = set()
+    for line in section.splitlines():
+        if not line.strip().startswith("|"):
+            continue
+        if line.strip().startswith("|---"):
+            continue
+        for route in routes:
+            if route and route in line:
+                found.add(route)
+    return found
+
+
+def table_header_contains(section: str, required_columns: list[str]) -> list[str]:
+    header = ""
+    for line in section.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("|") and not stripped.startswith("|---"):
+            header = stripped.lower()
+            break
+    return [column for column in required_columns if column.lower() not in header]
+
+
+def first_table_header(section: str) -> str:
+    for line in section.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("|") and not stripped.startswith("|---"):
+            return stripped
+    return ""
+
+
+def validate_per_route_api_contract_coverage(final_dir: Path, errors: list[str]) -> None:
+    inventory_dir = find_inventory_dir(final_dir)
+    if inventory_dir is None:
+        return
+    route_items = inventory_items(load_json(inventory_dir / "routes.json"))
+    routes = [
+        str(item.get("route")).strip()
+        for item in route_items
+        if isinstance(item, dict) and item.get("route")
+    ]
+    if not routes:
+        return
+    doc_path = final_dir / "09_api_catalog.md"
+    if not doc_path.exists():
+        return
+    text = doc_path.read_text(encoding="utf-8")
+    if "[NOT_APPLICABLE]" in text:
+        return
+
+    contract_section = markdown_section_after_heading(
+        text,
+        r"^#+\s*(?:API\s+Contract\s+Matrix|API\s+Matrix|Endpoint\s+Contract|Route\s+Contract)",
+    )
+    behavior_section = markdown_section_after_heading(
+        text,
+        r"^#+\s*(?:Behavior\s+Flow\s+Table|Business\s+Flow|Behavior\s+Flows?|Luồng\s+nghiệp\s+vụ)",
+    )
+    inventory_section = markdown_section_after_heading(
+        text,
+        r"^#+\s*(?:Complete\s+Discovered\s+Routes\s+and\s+Actions|Discovered\s+Routes)",
+    )
+
+    if inventory_section:
+        inventory_routes = table_rows_with_route(inventory_section, routes)
+        if len(inventory_routes) == len(routes):
+            contract_routes = table_rows_with_route(contract_section, routes)
+            behavior_routes = table_rows_with_route(behavior_section, routes)
+            if len(contract_routes) < len(routes):
+                missing = [route for route in routes if route not in contract_routes]
+                errors.append(
+                    "09_api_catalog.md Complete Discovered Routes covers "
+                    f"{len(routes)} routes but API Contract Matrix covers only {len(contract_routes)}; missing endpoint contracts: "
+                    + ", ".join(missing[:12])
+                    + ("" if len(missing) <= 12 else f", ... (+{len(missing) - 12} more)")
+                )
+            if len(behavior_routes) < len(routes):
+                missing = [route for route in routes if route not in behavior_routes]
+                errors.append(
+                    "09_api_catalog.md Complete Discovered Routes covers "
+                    f"{len(routes)} routes but Behavior Flow Table covers only {len(behavior_routes)}; missing behavior flows: "
+                    + ", ".join(missing[:12])
+                    + ("" if len(missing) <= 12 else f", ... (+{len(missing) - 12} more)")
+                )
+
+    required_contract_columns = [
+        "Route",
+        "Method",
+        "Action",
+        "Request fields",
+        "Request example",
+        "Response fields",
+        "Success example",
+        "Error example",
+        "Status codes",
+        "Validation",
+        "Auth",
+        "Header",
+        "Content type",
+        "DB",
+        "Redis",
+        "External",
+        "Evidence",
+        "Status",
+    ]
+    missing_contract_columns = table_header_contains(contract_section, required_contract_columns)
+    if missing_contract_columns:
+        errors.append(
+            "09_api_catalog.md API Contract Matrix missing endpoint-level columns: "
+            + ", ".join(missing_contract_columns)
+        )
+
+    contract_header = first_table_header(contract_section)
+    contract_header_lower = contract_header.lower()
+    forbidden_main_columns = [
+        "Client path",
+        "Versioning",
+        "Timeout",
+        "Retry",
+        "Idempotency",
+        "Rate limit",
+        "Postman",
+    ]
+    present_forbidden = [
+        column
+        for column in forbidden_main_columns
+        if re.search(rf"(?i)(?:^|\|)\s*{re.escape(column)}\s*(?:\||$)", contract_header)
+    ]
+    if present_forbidden:
+        errors.append(
+            "09_api_catalog.md API Contract Matrix contains policy/duplicate columns that must be moved out of the main matrix: "
+            + ", ".join(present_forbidden)
+        )
+    if "route" in contract_header_lower and "client path" in contract_header_lower:
+        errors.append("09_api_catalog.md API Contract Matrix duplicates Route and Client path; keep Route only unless a separate gateway mapping table has evidence")
+
+    required_behavior_columns = [
+        "Flow ID",
+        "Entry point",
+        "Actor/client",
+        "Trigger",
+        "Input/source data",
+        "Processing logic",
+        "Internal call chain",
+        "External/downstream calls",
+        "Data-store side effects",
+        "Operation",
+        "ID/key source",
+        "Field/value changed",
+        "Value source",
+        "Read consumers",
+        "Success/error behavior",
+        "Debug/smoke check",
+        "Evidence",
+        "Status",
+    ]
+    missing_behavior_columns = table_header_contains(behavior_section, required_behavior_columns)
+    if missing_behavior_columns:
+        errors.append(
+            "09_api_catalog.md Behavior Flow Table missing endpoint-level columns: "
+            + ", ".join(missing_behavior_columns)
+        )
+
+    synthetic_patterns = [
+        r"\bX-Secret-Key-\d+\b",
+        r"\bValidationRulesV\d+\b",
+        r"\bError\s+\d+\b",
+        r"\bRequest Body\s+\d+\s+data\b",
+        r"\bNone\s+\d+\b",
+        r"\bappsettings\.json\s*\(\d+\)",
+        r"\bnews_ids_\d+\b",
+        r"\bTotalView_\d+\b",
+        r"\bRedis Cache\s+\d+\b",
+        r"\bAPI Call\s+\d+\b",
+        r"\bPhản ánh DB\s+\d+\b",
+        r"\bv1\.\d+\b",
+        r"\b\d{4}ms\b",
+        r"\b\d{2,4}/min\b",
+    ]
+    for pattern in synthetic_patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            errors.append(
+                f"09_api_catalog.md contains synthetic/filler API contract value {match.group(0)!r}; use source/runtime evidence or mark the cell [UNVERIFIED]"
+            )
+            break
+
+    for line_no, line in enumerate(text.splitlines(), start=1):
+        if "[CONFIRMED]" not in line:
+            continue
+        if re.search(r"\|\s*[^|]*\.sln\s*\|\s*line\s+1\s*\|", line, flags=re.IGNORECASE):
+            errors.append(
+                f"09_api_catalog.md:{line_no}: [CONFIRMED] API evidence cites only a solution file line 1; use controller/action/DTO/service/test source paths"
+            )
+
+
+def validate_80_percent_understanding_contract(final_dir: Path, errors: list[str]) -> None:
+    docs = {path.name: path.read_text(encoding="utf-8") for path in final_dir.glob("*.md")}
+    combined = "\n".join(docs.values())
+
+    keyword_patterns = [
+        r"Required\s+[A-Za-z0-9 /_-]+\s+Keywords",
+        r"Keywords checklist",
+        r"for validation\)",
+        r"validation keyword",
+    ]
+    for doc_name, text in docs.items():
+        for pattern in keyword_patterns:
+            if re.search(pattern, text, flags=re.IGNORECASE):
+                errors.append(f"{doc_name} contains validator-facing keyword text instead of user-facing behavior documentation")
+                break
+
+    global_tokens = [
+        "Entry point",
+        "Actor/client",
+        "Trigger",
+        "Input/source data",
+        "Processing logic",
+        "Internal call chain",
+        "External/downstream calls",
+        "Data-store side effects",
+        "Config keys",
+        "Success/error behavior",
+        "Debug/smoke check",
+        "Evidence",
+        "Status",
+    ]
+    if not any(token.lower() in combined.lower() for token in ["Flow ID", "Business flow", "Behavior flow"]):
+        errors.append("final documentation set missing behavior-flow table/section")
+    for token in global_tokens:
+        if token.lower() not in combined.lower():
+            errors.append(f"final documentation set missing 80-percent-understanding token: {token}")
+
+    doc_requirements = {
+        "01_project_handover_full.md": [
+            "System purpose",
+            "Actor/client",
+            "Business capability",
+            "End-to-end flow",
+            "Data store",
+            "External system",
+            "Risk",
+        ],
+        "02_project_context.md": [
+            "Business capability",
+            "Actor/client",
+            "Source of truth",
+            "External system",
+            "Non-goal",
+            "Business rule",
+        ],
+        "03_repository_guide.md": [
+            "Project path",
+            "Project type",
+            "Entry point",
+            "Dependency direction",
+            "Generated",
+            "Manual code",
+        ],
+        "04_local_setup.md": [
+            "Working directory",
+            "Prerequisites",
+            "Required services",
+            "Environment",
+            "Port",
+            "Smoke",
+            "Expected log",
+            "Troubleshooting",
+        ],
+        "05_configuration_reference.md": [
+            "Key",
+            "Source file",
+            "Environment",
+            "Used by",
+            "Behavior impact",
+            "Reload/restart",
+            "Secret",
+            "Rotation",
+        ],
+        "06_architecture.md": [
+            "Runtime topology",
+            "Entry point",
+            "Request lifecycle",
+            "Data flow",
+            "Failure boundary",
+            "sequenceDiagram",
+            "DB",
+            "Redis",
+            "External",
+        ],
+        "08_auth_and_security.md": [
+            "Auth scheme",
+            "Header",
+            "Middleware",
+            "Filter",
+            "Claim",
+            "Permission",
+            "Failure status",
+            "Bypass risk",
+            "Secret",
+        ],
+        "09_api_catalog.md": [
+            "Controller",
+            "Service",
+            "Repository",
+            "Data source",
+            "Processing logic",
+            "External call",
+            "Downstream call",
+            "DB",
+            "Redis",
+            "Side effects",
+            "Operation",
+            "ID/key source",
+            "Field/value changed",
+            "Value source",
+            "Read consumers",
+            "sequenceDiagram",
+        ],
+        "14_operations_runbook.md": [
+            "Fault isolation",
+            "Likely layer",
+            "Verification command",
+            "Log",
+            "Query",
+            "Fix/next action",
+            "Rollback",
+            "Escalation",
+            "Redis",
+            "Database",
+            "External",
+        ],
+        "15_deployment_and_cicd.md": [
+            "Build",
+            "Test",
+            "Package",
+            "Deploy",
+            "Environment",
+            "Secret",
+            "Migration",
+            "Health gate",
+            "Rollback",
+        ],
+        "16_testing_guide.md": [
+            "Test asset",
+            "Command",
+            "Coverage",
+            "API",
+            "Background",
+            "Database",
+            "Redis",
+            "External",
+            "Gap",
+        ],
+        "17_known_risks.md": [
+            "Risk ID",
+            "Trigger",
+            "Impact",
+            "Detection",
+            "Mitigation",
+            "Owner",
+            "Evidence",
+        ],
+        "18_open_questions.md": [
+            "Question ID",
+            "Blocked area",
+            "Decision needed",
+            "Evidence needed",
+            "Owner",
+            "Impact",
+        ],
+        "20_documentation_coverage.md": [
+            "Discovered",
+            "Documented",
+            "Unresolved",
+            "Excluded",
+            "Gaps",
+            "Evidence",
+        ],
+    }
+    for doc_name, tokens in doc_requirements.items():
+        text = docs.get(doc_name)
+        if text:
+            require_doc_tokens(doc_name, text, tokens, errors)
+
+    if inventory_has_items(final_dir, "routes.json"):
+        require_doc_tokens(
+            "09_api_catalog.md",
+            docs.get("09_api_catalog.md", ""),
+            [
+                "Flow ID",
+                "Entry point",
+                "Input/source data",
+                "Processing logic",
+                "Internal call chain",
+                "External/downstream calls",
+                "Data-store side effects",
+                "Operation",
+                "ID/key source",
+                "Field/value changed",
+                "Value source",
+                "Read consumers",
+                "Config keys",
+                "Debug/smoke check",
+            ],
+            errors,
+        )
+
+    if inventory_has_items(final_dir, "background-jobs.json"):
+        require_doc_tokens(
+            "10_background_jobs.md",
+            docs.get("10_background_jobs.md", ""),
+            [
+                "Flow ID",
+                "Entry point",
+                "Trigger",
+                "Config keys",
+                "Processing logic",
+                "Internal call chain",
+                "External/downstream calls",
+                "Data-store side effects",
+                "Operation",
+                "ID/key source",
+                "Field/value changed",
+                "Value source",
+                "Read consumers",
+                "Success/error behavior",
+                "Debug/smoke check",
+            ],
+            errors,
+        )
+
+    if inventory_has_items(final_dir, "hubs.json") or inventory_has_items(final_dir, "realtime-events.json"):
+        require_doc_tokens(
+            "11_realtime_signalr_socket.md",
+            docs.get("11_realtime_signalr_socket.md", ""),
+            [
+                "Event contract",
+                "Producer",
+                "Consumer",
+                "Payload fields",
+                "Group/user mapping",
+                "Auth",
+                "Failure",
+                "sequenceDiagram",
+            ],
+            errors,
+        )
+
+    if inventory_has_items(final_dir, "integrations.json"):
+        require_doc_tokens(
+            "12_external_integrations.md",
+            docs.get("12_external_integrations.md", ""),
+            [
+                "Caller",
+                "Trigger",
+                "Request contract",
+                "Response contract",
+                "Data mapping",
+                "Auth",
+                "Timeout",
+                "Retry",
+                "Fallback",
+                "Failure mode",
+                "Debug/smoke check",
+            ],
+            errors,
+        )
+
+    if "sequenceDiagram" not in combined and (
+        inventory_has_items(final_dir, "routes.json")
+        or inventory_has_items(final_dir, "background-jobs.json")
+        or inventory_has_items(final_dir, "integrations.json")
+        or inventory_has_items(final_dir, "hubs.json")
+    ):
+        errors.append("final documentation set missing Mermaid sequenceDiagram for discovered behavioral flows")
+
+
 def validate_anti_skeleton(final_dir: Path, indexed_ids: set[str], errors: list[str]) -> None:
     docs = {path.name: path.read_text(encoding="utf-8") for path in final_dir.glob("*.md")}
     combined = "\n".join(docs.values())
@@ -757,10 +1792,6 @@ def validate_deep_document_requirements(final_dir: Path, errors: list[str]) -> N
             "Route",
             "Method",
             "Action",
-            "Client path",
-            "Gateway",
-            "Proxy",
-            "Upstream",
             "Request",
             "Response",
             "Success",
@@ -776,13 +1807,7 @@ def validate_deep_document_requirements(final_dir: Path, errors: list[str]) -> N
             "DB side effects",
             "Redis",
             "External",
-            "Versioning",
-            "Timeout",
-            "Retry",
-            "Idempotency",
-            "Rate limit",
             "Curl",
-            "Postman",
             "Smoke",
         ]
         for token in required_api_tokens:
@@ -943,7 +1968,14 @@ def main() -> int:
     validate_handover_links(final_dir, errors)
     validate_coverage(final_dir, errors)
     validate_inventory_backed_coverage(final_dir, errors)
+    validate_per_route_api_contract_coverage(final_dir, errors)
     validate_document_capabilities(final_dir, errors)
+    validate_evidence_bound_claims(final_dir, errors)
+    validate_documented_config_paths(final_dir, errors)
+    validate_runbook_url_commands(final_dir, errors)
+    validate_background_job_detail(final_dir, errors)
+    validate_database_store_contract(final_dir, errors)
+    validate_80_percent_understanding_contract(final_dir, errors)
     validate_anti_skeleton(final_dir, indexed_ids, errors)
     validate_deep_document_requirements(final_dir, errors)
 

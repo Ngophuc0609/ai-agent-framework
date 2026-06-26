@@ -5,7 +5,7 @@ applyTo: "**"
 <!-- generated-by: ai-agent-adapter-sync -->
 # .ai Framework Instructions for copilot
 
-Generated on: `2026-06-25`
+Generated on: `2026-06-26`
 Source of truth: `.ai/`
 
 ## Required Startup
@@ -1757,9 +1757,12 @@ For source-code handover and new-developer documentation workflows, low-capabili
 
 Free pricing alone does not block a model. A free model can be used only when it is explicitly capable enough for the assigned workflow phase and the selected adapter/runtime can reliably execute tools and read `.ai/` files.
 
+Any model not listed in the approved free fallback ladder or a repository-specific approved matrix is `UNAPPROVED_MODEL` for Agents 6, 7, 8, 9, and 10 until it has a recorded evaluation showing tool reliability, instruction following, long-context source synthesis, evidence discipline, and Vietnamese final-doc quality. This includes "flash", "mini", "lite", "fast", "chat", or experimental variants from any provider unless explicitly approved.
+
 Example blocked model for this workflow:
 
 - `nvidia/nemotron-3-nano-30b-a3b:free`
+- `DeepSeek V4 Flash` / `deepseek-v4-flash` for Agent 9 final docs, Agent 10 validation, and any full source-handover execution until an evaluation file explicitly approves it.
 
 Allowed use for these models is limited to:
 
@@ -1769,6 +1772,23 @@ Allowed use for these models is limited to:
 - formatting non-authoritative notes.
 
 If a blocked low-capability model is active, maximum workflow state is `BLOCKED` until a BALANCED-equivalent or stronger model/tool runtime is used. It MUST NOT write final docs or fallback onboarding docs.
+
+## Blocked-Model Response Contract
+
+When a model/runtime cannot execute the workflow because of capability, routing, tool access, rate limit, or instruction-following uncertainty, it MUST stop with a structured blocked status. It MUST NOT write a humorous refusal, non-technical excuse, encouragement for the user to do the work manually, or generic advice in place of workflow artifacts.
+
+Required blocked response:
+
+```text
+BLOCKED_MODEL_CAPABILITY
+Workflow: source-code-handover / make-new-dev-docs
+Requested model: <model name>
+Reason: <capability/routing/tool limitation>
+Required action: switch to an approved BALANCED/REASONING_STRONG/LONG_CONTEXT_STRONG model or run with Codex/Claude/Gemini High-equivalent tooling
+Artifacts preserved: <run dir or none>
+```
+
+If `.ai/runs/` is writable, also write the same information to `.ai/runs/source-code-handover/<run_id>/validation/blocked-report.md`.
 
 ## Free Model Suitability For Source Handover
 

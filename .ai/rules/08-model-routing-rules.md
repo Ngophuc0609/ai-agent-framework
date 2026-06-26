@@ -49,13 +49,19 @@ If critical review or final synthesis cannot be run with a sufficiently capable 
 
 ## Low-Capability Model Block
 
-For source-code handover and new-developer documentation workflows, low-capability, nano, random-router, non-generative, safety-only, embedding-only, rerank-only, or unknown instruction-following models are not approved for final documentation generation, publication, independent validation, or tool-orchestration recovery.
+For source-code handover and new-developer documentation workflows, low-capability, nano, random-router, non-generative, safety-only, embedding-only, rerank-only, or unproven instruction-following models are not approved for final documentation generation, publication, independent validation, or tool-orchestration recovery.
 
-Free pricing alone does not block a model. A free model can be used only when it is explicitly capable enough for the assigned workflow phase and the selected adapter/runtime can reliably execute tools and read `.ai/` files.
+Free pricing alone does not block a model. Model names are not a pass/fail gate. A model can be used when it satisfies the required capability class for the phase and the selected adapter/runtime can reliably execute tools, read `.ai/` files, follow the workflow, preserve evidence discipline, and produce the required structured artifacts.
 
-Example blocked model for this workflow:
+Do not hard-code exact free model names as required or forbidden in skill/workflow rules. Model names may be listed only as non-binding suggestions for the user. Runtime gates must be based on observed capability, tool reliability, phase risk, and validation output.
 
-- `nvidia/nemotron-3-nano-30b-a3b:free`
+Example blocked model classes for this workflow:
+
+- embedding-only or rerank-only models,
+- safety-classifier-only models,
+- random routers where the actual model cannot be pinned,
+- models that cannot read required `.ai` files or cannot reliably call required tools,
+- models that fail the preflight contract or replace workflow execution with generic/chatty content.
 
 Allowed use for these models is limited to:
 
@@ -64,19 +70,38 @@ Allowed use for these models is limited to:
 - listing blocked preflight status,
 - formatting non-authoritative notes.
 
-If a blocked low-capability model is active, maximum workflow state is `BLOCKED` until a BALANCED-equivalent or stronger model/tool runtime is used. It MUST NOT write final docs or fallback onboarding docs.
+If a blocked low-capability model/runtime is active, maximum workflow state is `BLOCKED` until a BALANCED-equivalent or stronger model/tool runtime is used. It MUST NOT write final docs or fallback onboarding docs.
 
-## Free Model Suitability For Source Handover
+## Blocked-Model Response Contract
 
-Recommended free models from the current evaluated list:
+When a model/runtime cannot execute the workflow because of capability, routing, tool access, rate limit, or instruction-following uncertainty, it MUST stop with a structured blocked status. It MUST NOT write a humorous refusal, non-technical excuse, encouragement for the user to do the work manually, or generic advice in place of workflow artifacts.
 
-| Model | Allowed role | Not allowed for | Notes |
-|---|---|---|---|
-| `Qwen: Qwen3 Coder 480B A35B (free)` | Best free choice for code discovery, API/database/source analysis, Agent 1-8, and draft synthesis when tool access is stable. | Final publish without Agent 10 evidence gate. | Strong code/tool/repo fit and very long context. |
-| `Qwen: Qwen3 Next 80B A3B Instruct (free)` | Good balanced choice for Agent 1-5 discovery, structured summaries, and moderate verification. | High-risk final validation on complex auth/payment/runtime repos unless no stronger free model is available. | Good instruction following and long context. |
-| `Google: Gemma 4 26B A4B (free)` | Good for structured extraction, long-context inventory, multimodal docs/images, and Agent 1/4 formatting-heavy work. | Sole final validator for complex repos. | Useful context and structured output support, but less code-specialized than Qwen Coder. |
-| `Meta: Llama 3.3 70B Instruct (free)` | Good general reasoning, Vietnamese summaries, and second-pass review. | Deep code/tool orchestration as primary model when Qwen Coder is available. | Strong general assistant; code/repo agent behavior may be less consistent. |
-| `Nous: Hermes 3 405B Instruct (free)` | Optional strong critique/synthesis model when the endpoint is stable. | Deterministic publish gate unless tool behavior is verified. | Potentially strong, but free endpoint reliability must be recorded. |
+Required blocked response:
+
+```text
+BLOCKED_MODEL_CAPABILITY
+Workflow: source-code-handover / make-new-dev-docs
+Requested model: <model name>
+Reason: <capability/routing/tool limitation>
+Required action: switch to an approved BALANCED/REASONING_STRONG/LONG_CONTEXT_STRONG model or run with Codex/Claude/Gemini High-equivalent tooling
+Artifacts preserved: <run dir or none>
+```
+
+If `.ai/runs/` is writable, also write the same information to `.ai/runs/source-code-handover/<run_id>/validation/blocked-report.md`.
+
+## Model Selection Guidance For Source Handover
+
+Model suggestions are advisory only. Users and runners may choose any model that meets the required capability class for the phase. If a local team maintains a list of preferred free or paid models, keep it as user-facing guidance and do not turn it into a hard workflow whitelist.
+
+Minimum capability expectations by phase:
+
+| Phase | Minimum model/runtime capability |
+|---|---|
+| Phase 0 / Agents 1, 4 | `FAST_CHEAP` or stronger when deterministic tools produce structured inventory. |
+| Agents 2, 3, 5 | `REASONING_STRONG` for auth, API, Redis, DB, jobs, migrations, and external integration claims. |
+| Agents 6, 7, 8 | `REASONING_STRONG` with reliable tool access and evidence discipline. |
+| Agent 9 | `LONG_CONTEXT_STRONG` or equivalent for final Vietnamese synthesis from frozen evidence. |
+| Agent 10 | `REASONING_STRONG` or equivalent for independent validation. |
 
 ## Free Model Rate-Limit Fallback
 
@@ -85,18 +110,16 @@ Free model endpoints often return provider-level `429` rate limits. When a model
 1. Record the failure in `STATUS.md` or the active run's model/tool limitation artifact.
 2. Respect `Retry-After` when it is short and the current step is safe to wait for.
 3. Retry the same model at most once after the wait.
-4. If it fails again, switch to the next approved model in the same or stronger capability class.
+4. If it fails again, switch to another available model in the same or stronger capability class.
 5. Do not downgrade a high-risk agent to a weak model just because it is available.
 6. If no approved model is available, stop the phase as `BLOCKED_MODEL_RATE_LIMIT`.
 
-Preferred free fallback ladder for source-code handover:
+Fallback is capability-based, not name-based:
 
 ```text
-Qwen3 Coder 480B A35B (free)
-  -> Qwen3 Next 80B A3B Instruct (free)
-  -> Gemma 4 26B A4B (free)
-  -> Llama 3.3 70B Instruct (free)
-  -> Hermes 3 405B Instruct (free, only if endpoint stability is verified)
+same model after Retry-After, once
+  -> another model with the same or stronger required capability class
+  -> stronger model/runtime if evidence is conflicting or the phase is high risk
   -> BLOCKED_MODEL_RATE_LIMIT
 ```
 
@@ -104,15 +127,12 @@ For Agents 6-10 on complex repositories, if the fallback drops below `REASONING_
 
 Do not use `OpenRouter Free Models Router` as a rate-limit fallback for this workflow because random model selection makes evidence quality non-reproducible.
 
-Not recommended for executing this workflow:
+Not recommended model classes for executing this workflow:
 
-| Model | Reason |
+| Model class | Reason |
 |---|---|
-| `OpenRouter Free Models Router` | Random model selection makes evidence quality and instruction following non-reproducible. |
-| `NVIDIA: Llama Nemotron Embed VL 1B V2 (free)` | Embedding/retrieval model, not a documentation writer/verifier. |
-| `NVIDIA: Llama Nemotron Rerank VL 1B V2 (free)` | Reranker, not a documentation writer/verifier. |
-| `NVIDIA: Nemotron 3.5 Content Safety (free)` | Safety classifier, not a source-handover model. |
-| `LiquidAI: LFM2.5-1.2B-Thinking (free)` | Too small for source-handover execution; may only classify/tidy existing artifacts. |
-| `LiquidAI: LFM2.5-1.2B-Instruct (free)` | Too small for source-handover execution; may only classify/tidy existing artifacts. |
-| `Meta: Llama 3.2 3B Instruct (free)` | Too small for reliable tool orchestration and source evidence synthesis. |
-| `Venice: Uncensored (free)` | Not suitable for controlled enterprise documentation because safety/alignment and instruction reliability are uncertain. |
+| Random router | Actual model is not pinned, so evidence quality and instruction following are non-reproducible. |
+| Embedding/retrieval/rerank model | Not a documentation writer or verifier. |
+| Safety-classifier-only model | Not a source-handover model. |
+| Very small instruction model | Usually too small for reliable tool orchestration and source evidence synthesis; may only classify/tidy existing artifacts. |
+| Uncontrolled/uncurated chat model | Not suitable unless it passes project preflight and validation. |

@@ -1,7 +1,7 @@
 <!-- generated-by: ai-agent-adapter-sync -->
 # .ai Framework Instructions for agents
 
-Generated on: `2026-06-25`
+Generated on: `2026-06-26`
 Source of truth: `.ai/`
 
 ## Required Startup

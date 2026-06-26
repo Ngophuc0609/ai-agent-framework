@@ -221,6 +221,53 @@ Evidence:
 - EV-OPS-009
 ```
 
+## Required 80 Percent Code Understanding Depth
+
+The final documentation set MUST explain enough behavior that a new developer can understand the main 80% of the repository without opening source files line-by-line. This is stricter than listing routes, projects, tables, jobs, and integrations.
+
+For each important API, worker, realtime path, integration, config-driven behavior, and data-store flow, final docs MUST include:
+
+- Entry point.
+- Actor/client.
+- Trigger.
+- Input/source data.
+- Processing logic and branch conditions.
+- Internal call chain.
+- External/downstream calls.
+- DB/Redis/Mongo/queue/realtime side effects.
+- Config keys that enable, schedule, route, or alter behavior.
+- Success state and error/failure behavior.
+- Debug/verification command, query, or log location when operationally relevant.
+- Evidence IDs and source paths.
+
+Use this behavior-flow table shape in the relevant docs:
+
+```md
+| Flow ID | Entry point | Actor/client | Trigger | Input/source data | Processing logic | Internal call chain | External/downstream calls | Data-store side effects | Config keys | Success/error behavior | Debug/smoke check | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+```
+
+Use Mermaid `sequenceDiagram` or `flowchart` for high-risk paths:
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant API
+  participant Service
+  participant External
+  participant Store
+  Client->>API: request / trigger
+  API->>Service: validate and map input
+  Service->>External: fetch/enrich data when applicable
+  Service->>Store: write SQL/Redis/Mongo side effects
+  Store-->>Service: result
+  Service-->>API: success or failure response
+```
+
+Agent 10 MUST reject docs that only say a component "manages", "handles", "uses", "calls", or "integrates with" something without the concrete source-to-sink data flow and business logic.
+
+Agent 10 MUST reject any final doc containing "Required ... Keywords", "Keywords checklist", or similar validator-facing text.
+
 ## Required System Overview Content
 
 `01_project_handover_full.md`, `02_project_context.md`, and `06_architecture.md` MUST collectively document:
@@ -516,7 +563,6 @@ Every endpoint MUST document:
 
 - Route.
 - HTTP method.
-- Module.
 - Authentication.
 - Required permission.
 - Request content type.
@@ -532,15 +578,8 @@ Every endpoint MUST document:
 - Redis side effects.
 - Jobs/events.
 - External API calls.
-- Idempotency.
-- Rate limit.
-- Client-facing path.
-- Gateway/proxy path and upstream path/service when proxied.
 - Auth header shape or explicit negative evidence.
 - Copy-pastable curl smoke command.
-- Postman/OpenAPI/test/traffic source or explicit negative evidence.
-- Versioning behavior.
-- Timeout and retry guidance.
 - Known quirks.
 - Evidence.
 - Status.
@@ -548,18 +587,24 @@ Every endpoint MUST document:
 Use this table shape:
 
 ```md
-| API ID | Route | Method | Module | Auth | Permission | Content type | Headers | Query | Request model | Validation | Response model | Success | Error | Status codes | DB side effects | Redis side effects | Jobs/events | External calls | Idempotency | Rate limit | Known quirks | Evidence | Status |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| API ID | Route | Method | Controller/action | Auth/header | Content type | Request DTO | Request fields | Request example | Response DTO | Response fields | Success example | Error example | Status codes | Validation/business rules | Data side effects | External calls | Known quirks | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 ```
 
-For systems used through an API Gateway or by another application, `09_api_catalog.md` MUST also include an application integration cookbook table:
+Do not put `Client path`, `Versioning`, `Timeout`, `Retry`, `Idempotency`, `Rate limit`, or `Postman` as repeated columns in the main API contract matrix. These fields caused agents to invent placeholder values. If they exist in source/config/runtime evidence, document them in a separate policy table:
 
 ```md
-| API ID | Client path | Gateway/proxy path | Upstream service/path | Method | Auth header | Required headers | Request example | Success example | Error example | Versioning | Timeout/retry | Idempotency/rate limit | Curl/Postman/OpenAPI | Smoke check | Evidence | Status |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Policy area | Applies to routes | Source/config/test artifact | Behavior | Client guidance | Evidence | Status |
+|---|---|---|---|---|---|---|
 ```
 
-Agent 10 MUST reject `09_api_catalog.md` when a developer from another app cannot determine the exact URL to call, required auth/headers, request/response/error shape, proxy/upstream mapping, retry behavior, and a safe smoke command.
+For systems used through an API Gateway or by another application, `09_api_catalog.md` MUST also include an application integration note only when gateway/proxy evidence exists. Route and client path are the same unless source/config proves a gateway rewrite. Do not duplicate `Route` and `Client path` in the same matrix.
+
+Agent 10 MUST reject `09_api_catalog.md` when a developer from another app cannot determine the exact URL to call, required auth/headers, request/response/error shape, proxy/upstream mapping when present, and a safe smoke command.
+
+Each API integration row MUST be evidence-bound. A row marked `[CONFIRMED]` MUST NOT contain invented or recommendation-only values for timeout, retry, fallback, rate limit, auth header, status/error behavior, success/error examples, `Curl/Postman/OpenAPI`, smoke command, owner, or upstream contract. If these values are not present in source config, OpenAPI/Postman/tests, runtime artifacts, or explicit negative evidence, mark the row or cell `[UNVERIFIED]`, `[INFERRED]`, `[NOT_APPLICABLE]`, or `[BLOCKED]`.
+
+Agent 10 MUST reject synthetic filler values in API docs, including numbered headers (`X-Secret-Key-1`), numbered validation rules (`ValidationRulesV1`), numbered generic errors (`Error 1`), numbered request/body placeholders (`Request Body 1 data`), fake config markers (`appsettings.json (1)`), generated status-code sequences, generated timeout/rate-limit sequences, or examples that cannot be traced to source/runtime evidence.
 
 ## Required Database Deep Detail
 
@@ -568,9 +613,13 @@ Agent 10 MUST reject `09_api_catalog.md` when a developer from another app canno
 - DbContext inventory with source path, owning project, registration point, connection string key, migration assembly, and target database when known.
 - DbSet/entity/table inventory with mapping source.
 - Field dictionary for important tables/entities, including column/property name, CLR type, DB type when available, nullable/required, default/max length, PK/FK/index/unique constraint, meaning, and read/write consumers.
+- Redis/cache data-store contract when Redis is present: store name, key prefix/pattern, data type, key inputs, field/member/value shape, serialized DTO shape, score meaning for sorted sets, TTL/expiry or no-expiry evidence, producer/write path, consumer/read path, jobs/APIs affected, rebuild/invalidation path, SQL/Mongo sync source, drift risk, evidence, and status.
+- Mongo/document-store contract when MongoDB is present: collection name, document model, source path, important fields including nested fields, ID/index/date/status semantics when available, producer/write path, consumer/read path, data volume/retention notes when source-visible or `[UNVERIFIED]`, evidence, and status.
 - Relationship map or ERD when relationships are found.
 - Migration/schema source coverage.
-- Table/API/job consumer map.
+- Table/API/job/cache consumer map across SQL, Redis, Mongo, queues, and background jobs.
+- Data consistency map: source of truth, sync direction, stale-data window/TTL, job/API/config that refreshes data, drift symptoms, reconciliation/rebuild procedure or explicit limitation.
+- Data mutation lineage matrix: every important SQL table, Mongo collection, Redis key family, queue, and realtime event must be traceable to the exact API/job/service entry points that create, update, delete, rebuild, invalidate, or read it. This must include ID/key source, field/value changed, value source, call chain, secondary side effects, consistency rule, debug query/command, evidence, and status.
 - Coverage row for entities/tables/columns using asset-level denominator.
 
 Use these table shapes:
@@ -584,11 +633,26 @@ Use these table shapes:
 
 | Table | Column | CLR type | DB type | Nullable | Key/index | Meaning/rule | Read/write path | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|---|
+
+| Store | Key pattern | Data type | Key inputs | Field/member/value shape | TTL | Producer/write path | Consumer/read path | Jobs/APIs affected | Rebuild/invalidation | Drift risk | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+
+| Collection | Document model | Field path | Type | Required/null | Meaning/rule | Producer/write path | Consumer/read path | Index/retention | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+
+| Data asset | Asset type | Operation | Entry point | Actor/client | ID/key source | Field/value changed | Value source | Call chain | Also updates | Read consumers | Consistency rule | Debug query/command | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 ```
 
-Agent 10 MUST reject `07_database_reference.md` when it only names `Clients`, connection string `IdentityServer4Admin`, or DbContexts without table/field coverage.
+Agent 10 MUST reject `07_database_reference.md` when it only names `Clients`, connection string `IdentityServer4Admin`, DbContexts, Redis stores, or Mongo collections without table/field/key/value coverage.
 
 Agent 10 MUST additionally compare `07_database_reference.md` against `inventory/dbsets.json`, `inventory/entities.json`, `inventory/sql-metadata.json`, and migration/table metadata. Every discovered `DbSet`, entity, mapped table, and important column must appear in the final document or be accounted as unresolved with evidence.
+
+Agent 10 MUST additionally compare `07_database_reference.md` against `inventory/redis-cache.json`, Redis source symbols, and queue/job inventories. Every discovered Redis store/key family must appear with a concrete key pattern or an explicit `[UNVERIFIED]` key-pattern gap. Redis cannot be documented only as `None (Redis Hash)` or `None (Redis ZSet)`.
+
+Agent 10 MUST reject when a developer cannot answer from the docs: which APIs/jobs mutate Redis key family A, which APIs/jobs read it, which request/route/header/config/external-response fields provide the key and value, which SQL/Mongo table or collection is also changed, how to verify the current value, and what drift or rebuild path exists.
+
+Agent 10 MUST reject database docs containing "Required Database Reference Keywords" or similar keyword checklists. These are validation artifacts, not handover documentation.
 
 ## Required API Discovery Completeness
 
@@ -603,6 +667,9 @@ It MUST include:
 - Validation source and error/status behavior.
 - Auth/permission source.
 - Side-effect map to DB/cache/job/external/audit/log.
+- Data mutation detail: table/key/collection name, operation (`read`, `insert`, `update`, `delete`, `upsert`, `increment`, `HashSet`, `SortedSetAdd`, enqueue, emit), ID/key source, field/value changed, value source, and read-after-write consumers.
+- Endpoint-level route coverage: every route/action discovered in `inventory/routes.json` must have its own API contract row and its own behavior flow row. A `Complete Discovered Routes and Actions` inventory table is only discovery coverage and MUST NOT count as request/response or behavior documentation.
+- Endpoint-level request/response detail: every route/action must include request fields, request example, response fields, success example, error example, status codes, validation, auth/header, content type, side effects, evidence, and status, or an explicit `[UNVERIFIED]`/`[BLOCKED]` gap with evidence.
 
 Use these table shapes:
 
@@ -617,6 +684,8 @@ Use these table shapes:
 Agent 10 MUST reject `09_api_catalog.md` when request/response is missing for discovered endpoints or when route coverage cannot be reconciled against Phase 0 inventory.
 
 Agent 10 MUST additionally compare `09_api_catalog.md` against `inventory/routes.json` and `inventory/api-contract-sources.json`. Every discovered route/action must appear in the final document with request/response fields or an explicit unresolved gap. A few representative API rows are not sufficient.
+
+Agent 10 MUST compare discovered route count to endpoint-level contract and behavior counts. If `Complete Discovered Routes and Actions` has all routes but `API Contract Matrix`, request/response details, or `Behavior Flow Table` covers only a subset, the document is `Partial` at best and the final quality gate must fail.
 
 ## Required External Integration Detail
 
@@ -646,6 +715,8 @@ Use this table shape:
 ```
 
 Agent 10 MUST reject `12_external_integrations.md` when it only says a system integrates with Consul/Redis/another service but does not identify caller, trigger, config keys, contract, failure behavior, and test strategy.
+
+`12_external_integrations.md` MUST NOT invent config paths, owners, timeout/retry/fallback values, health endpoints, or partner API contracts. Every config path such as `RedisDataProtection` or `ReverseProxy:Clusters:music-cluster` must match keys found in current configuration files, or the row must be marked `[UNVERIFIED]` with an open question.
 
 ## Required Operations Debug And Fault Isolation Detail
 
@@ -689,21 +760,29 @@ Minimum incident families to account for when relevant:
 
 Agent 10 MUST reject runbooks that only say "restart service" or list generic incidents without a verification command, layer isolation, fix/next action, rollback, and evidence.
 
+Runbook commands MUST be executable against routes, ports, log paths, or runtime artifacts discovered in the current repo. For example, do not document `GET /health` for an upstream service unless that endpoint exists in source/config/runtime evidence. Do not document Docker, Kubernetes, certificate, trace, owner, or rollback procedures as `[CONFIRMED]` unless the repository or runtime evidence contains them.
+
 ## Required Background Job Flow Diagrams
 
 `10_background_jobs.md` MUST include a flow diagram for each discovered job/worker family unless `[NOT_APPLICABLE]` negative evidence proves no jobs exist.
 
+The document MUST be inventory-backed. Every job, scheduler, hosted service, worker, queue producer, and queue consumer discovered in `inventory/background-jobs.json` MUST appear by exact source name in `10_background_jobs.md`, unless explicitly accounted for as `Excluded`, `[UNVERIFIED]`, `[CONFLICT]`, or `[BLOCKED]` with evidence and an open question.
+
 Each job MUST include:
 
+- Job ID and exact job/source name.
+- Source path.
 - Registration source.
 - Trigger/schedule.
+- Cron expression or explicit `[UNVERIFIED]`.
 - Producer.
 - Consumer/handler.
 - Queue/storage.
 - Service/repository calls.
 - DB/Redis/external side effects.
-- Retry/timeout/idempotency/failure/logging behavior or explicit `[UNVERIFIED]`.
-- Mermaid flowchart.
+- Retry/timeout/idempotency/failure/logging/shutdown behavior or explicit `[UNVERIFIED]`.
+- Evidence and status.
+- Mermaid flowchart plus Mermaid `sequenceDiagram` for scheduler/worker/handler/store/failure timing.
 
 Use this diagram shape:
 
@@ -717,6 +796,8 @@ flowchart TD
 ```
 
 Agent 10 MUST reject `10_background_jobs.md` when jobs are discovered but no Mermaid flowchart or lifecycle table exists.
+
+Agent 10 MUST also reject `10_background_jobs.md` when it contains validator keyword checklists, when the job table has fewer job rows than the discovered inventory count, when discovered job names/handlers are absent, or when it only documents a few representative jobs in a repository where business logic is mainly in background workers.
 
 ## Required Realtime Flow Diagrams
 

@@ -16,15 +16,15 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Cline.
 
 ## Cline Model Capability Gate
 
-For `source-code-handover` or `make-new-dev-docs`, do not run the full workflow with low-capability, nano, random-router, non-generative, safety-only, embedding-only, rerank-only, or unknown instruction-following models. This includes `nvidia/nemotron-3-nano-30b-a3b:free`.
+For `source-code-handover` or `make-new-dev-docs`, do not run the full workflow with low-capability, nano, random-router, non-generative, safety-only, embedding-only, rerank-only, or unproven instruction-following models. Do not hard-code exact free model names as required or forbidden in Cline rules; route by observed capability and phase risk.
 
-Free pricing alone is not a blocker. Strong free models such as `Qwen: Qwen3 Coder 480B A35B (free)`, `Qwen: Qwen3 Next 80B A3B Instruct (free)`, `Google: Gemma 4 26B A4B (free)`, `Meta: Llama 3.3 70B Instruct (free)`, or verified-stable `Nous: Hermes 3 405B Instruct (free)` may be used for limited phases according to `.ai/rules/08-model-routing-rules.md`.
+Free pricing alone is not a blocker. Any free or paid model may be used when it meets the required capability class and Cline can reliably read `.ai/`, run required tools, and preserve evidence.
 
 If Cline receives an OpenRouter/provider `429` for a free model, it MUST follow `.ai/rules/08-model-routing-rules.md` rate-limit fallback:
 
 - wait for `Retry-After` when short,
 - retry once,
-- switch to the next approved model,
+- switch to another model in the same or stronger capability class,
 - record the limitation,
 - stop as `BLOCKED_MODEL_RATE_LIMIT` if no approved model is available.
 
@@ -45,7 +45,18 @@ They MUST NOT:
 - mark any documentation `Ready`,
 - bypass `.ai` because a file read or shell command failed.
 
-If Cline is using a blocked low-capability model and the user asks to create onboarding/source-handover docs, stop with `model-capability-blocked` and ask the user to switch to a stronger model or run the workflow with Codex/Claude/Gemini High-equivalent tooling.
+If Cline is using a blocked low-capability or tool-unreliable model/runtime and the user asks to create onboarding/source-handover docs, stop with `BLOCKED_MODEL_CAPABILITY` and ask the user to switch to a stronger model or run the workflow with Codex/Claude/Gemini High-equivalent tooling.
+
+Cline MUST NOT respond with a humorous refusal, non-technical excuse, or suggestion that the user should write the docs manually. If blocked, use this exact shape:
+
+```text
+BLOCKED_MODEL_CAPABILITY
+Workflow: source-code-handover / make-new-dev-docs
+Requested model: <model name>
+Reason: <capability/routing/tool limitation>
+Required action: switch to an approved BALANCED/REASONING_STRONG/LONG_CONTEXT_STRONG model or run with Codex/Claude/Gemini High-equivalent tooling
+Artifacts preserved: <run dir or none>
+```
 
 ## Cline Fatal Preflight Gate
 

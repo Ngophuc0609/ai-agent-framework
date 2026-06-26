@@ -87,6 +87,8 @@ When this skill runs in Google Antigravity, route all model work through Gemini 
 
 This skill MUST NOT rely on loading the full repository into model context. The workflow must use indexing, search, semantic analysis, database metadata extraction, runtime artifacts, and evidence manifests to retrieve only the smallest relevant source slice required for each documentation claim.
 
+If the active model/runtime is not capable enough to execute this skill, the agent MUST stop with `BLOCKED_MODEL_CAPABILITY` according to `.ai/rules/08-model-routing-rules.md`. It MUST NOT produce a humorous refusal, non-technical excuse, motivational message telling the user to write the docs manually, or generic documentation advice in place of workflow artifacts.
+
 The pipeline is intentionally split into two levels:
 
 1. **Agent 1-5 broad physical discovery**: each agent runs in its own isolated session and scans the real project files to produce broad, structured inventories. These agents MUST prioritize completeness of discovered components over deep proof. They MUST record the commands, source roots, inventory counts, file paths, symbols, routes, tables, keys, jobs, configs, and unresolved gaps they physically observed. They MUST NOT turn shallow observations into final `[CONFIRMED]` behavior claims.
@@ -160,6 +162,51 @@ Agent 8 MUST:
 
 Agent 6-8 MUST run a second-pass deep verification for these domains whenever the first pass discovers related assets. Agent 9 MUST not write final docs for these domains from broad discovery alone, and Agent 10 MUST reject final docs that miss the required artifacts.
 
+#### 80 Percent Code Understanding Contract
+
+The final documentation set is not a surface inventory. It MUST let a new developer, operator, integrator, or AI coding agent understand at least the main 80% of business behavior without opening source files line-by-line.
+
+For every important API, background worker, realtime event, external integration, config-driven behavior, database/cache flow, deployment path, and operational incident, final docs MUST identify:
+
+- Entry point: route, scheduler, hosted service, event, command, startup hook, config key, or UI/client action.
+- Actor/client: who or what calls it.
+- Trigger: request, cron, queue message, config flag, startup, callback, manual operation, or external event.
+- Source data: request fields, headers, claims, config keys, SQL tables, Redis keys, Mongo collections, files, queues, third-party API response, or runtime artifact.
+- Processing logic: validation, branch conditions, transformations, filtering, mapping, aggregation, enrichment, deduplication, retry/idempotency, state transitions, and important business rules.
+- Downstream calls: internal service/repository method, external API, database query, Redis operation, queue/job enqueue, realtime emit, file/storage call, notification, audit/log.
+- Destination/side effects: exact table/collection/key/topic/event/API affected, write shape, success state, failure state, rollback/rebuild behavior, and consistency risk.
+- Failure/debug path: likely failing layer, log or query to inspect, command to verify, fallback behavior, retry/timeout behavior, and escalation/open question.
+- Evidence: narrow Evidence IDs and source paths proving each high-risk row, not broad document-level evidence.
+
+Agent 7 MUST produce behavior/data-flow maps that connect `API/job/realtime/integration -> service -> repository/client -> DB/Redis/Mongo/external -> downstream effect`. Agent 9 MUST turn those maps into Vietnamese final docs. Agent 10 MUST reject final docs that only name components without explaining how data moves and changes.
+
+Required final-document behavior depth by file:
+
+| Document | Must explain |
+|---|---|
+| `01_project_handover_full.md` | executive summary plus end-to-end business/runtime/data-store map and highest-risk flows |
+| `02_project_context.md` | business capabilities, actors, external systems, source-of-truth stores, module ownership, non-goals |
+| `03_repository_guide.md` | project/module map, entry points, dependency direction, generated/manual code boundaries |
+| `04_local_setup.md` | exact setup/run/smoke/debug path, required services, ports, env/config, expected logs, common startup failures |
+| `05_configuration_reference.md` | config key contract: source file/env, default/redacted value class, used-by code path, behavior impact, reload/restart, secret/rotation risk |
+| `06_architecture.md` | C1/C2/C3 plus sequence/data-flow diagrams for API/job/integration paths and failure boundaries |
+| `07_database_reference.md` | SQL/Mongo/Redis schema/key contracts, producers/consumers, sync direction, rebuild/drift risk |
+| `08_auth_and_security.md` | auth scheme, headers, middleware/filter, claims/roles/policies, route protection, failure codes, bypass/secret/logging risks |
+| `09_api_catalog.md` | every route's request/response/error/auth/logic/data source/external calls/side effects/curl/smoke |
+| `10_background_jobs.md` | every job's trigger/config/schedule/handler/business logic/data stores/external calls/retry/failure |
+| `11_realtime_signalr_socket.md` | every event path's producer, route, auth, payload, group/client mapping, consumer, failure/reconnect |
+| `12_external_integrations.md` | every integration's caller/trigger/request/response/data mapping/auth/timeout/retry/fallback/failure |
+| `13_frontend_guide.md` | client/screens if present, API dependencies, auth/session, state/data flow, error handling, build/runtime |
+| `14_operations_runbook.md` | isolate failures across client/API/auth/config/DB/Redis/job/realtime/external/deploy with commands |
+| `15_deployment_and_cicd.md` | build/test/package/release/deploy/rollback, env/config/secrets, migrations, health gates |
+| `16_testing_guide.md` | actual test assets/gaps mapped to APIs/jobs/data stores/integrations, smoke/regression commands |
+| `17_known_risks.md` | source-backed risk matrix with trigger, impact, detection, mitigation, owner/open question |
+| `18_open_questions.md` | unresolved decisions mapped to blocked docs/flows/evidence needed |
+| `19_evidence_index.md` | atomic evidence index that can be traced to source/runtime artifacts |
+| `20_documentation_coverage.md` | asset-level discovered/documented/unresolved coverage across all domains |
+
+Agent 9 MUST NOT add "required keywords" sections to pass validators. Agent 10 MUST reject any final doc that includes validator checklists instead of behavior-level content.
+
 #### Database Deep Verification
 
 Agent 6 MUST verify database structure from physical source and metadata, not only connection strings.
@@ -170,12 +217,18 @@ Required outputs:
 - DbSet inventory: every `DbSet<T>` and inferred table name.
 - Entity inventory: every mapped entity class, key, table/schema mapping, source path, and mapping source (`DataAnnotations`, `Fluent API`, convention, migration, SQL metadata).
 - Field inventory: every important entity/table column with CLR type, database type if available, nullable/required, default, max length, index/unique constraint, FK relationship, status/type/state meaning, and evidence.
+- Redis/cache inventory as database contract: every Redis store, key prefix/pattern, data type (`String`, `Hash`, `Set`, `SortedSet`, `List`, stream, lock), key composition inputs, field/member/value shape, serialized DTO shape, score meaning for sorted sets, TTL/expiry or explicit no-expiry evidence, producer, consumer, read path, write path, invalidation/rebuild/warmup path, and evidence.
+- Mongo/document-store inventory: every collection/document model, source path, field dictionary including nested important fields, ID/index/date/status semantics when available, producer/consumer, and evidence.
 - Migration/schema inventory: migration files and created/altered tables/columns; if a live SQL metadata export is unavailable, mark DB metadata confidence as source/migration-derived and record `EV-NEG-DB-*`.
-- Data access map: which repositories/services/controllers read/write each table.
+- Data access map: which repositories/services/controllers/jobs read/write each table, collection, and Redis key.
+- Data consistency map: SQL <-> Redis <-> Mongo source of truth, sync direction, background jobs or APIs that update each store, staleness window/TTL, drift risk, reconciliation/rebuild command or explicit `[UNVERIFIED]`.
+- Data mutation lineage: for each important SQL table, Mongo collection, Redis key family, queue, or realtime event, identify every API/job/service that can create, update, delete, rebuild, invalidate, or read it. The final docs must answer questions such as: "Redis key A is written by API A1 and job J2, read by API A3, field `total_view` comes from route/body parameter `id` plus an external IO/GA response, and table A is updated with `Id` from the API parameter."
 
 Agent 10 MUST reject `07_database_reference.md` if it only lists connection strings, DbContexts, or a few famous tables while entity/table/field coverage remains unaccounted.
 
 Agent 10 MUST also verify that every `DbSet`, entity class, and mapped table listed in Phase 0 inventory appears in `07_database_reference.md`, unless it is explicitly accounted as `Unresolved`, `N/A`, or `Excluded` in `20_documentation_coverage.md` with a linked open question/risk and evidence. The final database document MUST NOT claim `Ready` when discovered tables/entities are absent from the document body.
+
+Redis belongs in `07_database_reference.md`, not only in operations or integrations. When Redis is discovered, final documentation MUST let a developer operate without reading code: which keys exist, how keys are built, what values look like, who writes them, who reads them, which config/job/API changes affect them, how to rebuild them, and what can go wrong when Redis diverges from SQL or MongoDB.
 
 Good database documentation shape:
 
@@ -192,6 +245,33 @@ Good field dictionary shape:
 |---|---|---|---|---|---|---|---|---|---|
 | `Clients` | `ClientId` | `string` | `nvarchar(200)` | no | unique index | OAuth client identifier, must stay unique | `ClientsController.Create` -> `ClientService` -> `ConfigurationDbContext` | EV-DB-022, EV-API-033 | [CONFIRMED] |
 ```
+
+Good Redis data-store contract shape:
+
+```md
+| Store | Key pattern | Data type | Key inputs | Field/member/value shape | TTL | Producer/write path | Consumer/read path | Jobs/APIs affected | Rebuild/invalidation | Drift risk | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `ScheduleCacheStore` | `view_news_schedule:{siteCode}` | `SortedSet` | `siteCode`, article id | member=`ViewNewsSchedule` JSON, score=publish/update timestamp | no expiry detected | `NewsPublishUpdateBackgroundJob.ExecuteAsync` -> `IViewNewsScheduleRepository` | `NewsCollectViewIOBackgroundJob` | config `NewsPublishUpdate*CronExpression` controls refresh | rerun publish-update job or clear key with approval | stale schedule can skip/duplicate collection | EV-REDIS-012, EV-JOB-004 | [CONFIRMED] |
+```
+
+Good data mutation lineage shape:
+
+```md
+| Data asset | Asset type | Operation | Entry point | Actor/client | ID/key source | Field/value changed | Value source | Call chain | Also updates | Read consumers | Consistency rule | Debug query/command | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `data:viewnews_v2:{code}` | Redis Hash | update `total_view` | `POST /manual_AdjustViewNewsTotal` | internal admin/system | `code` from auth/site config, `news_id` from body | hash field=`news_id`, value=`ViewNewsModel_v2` JSON | `add_view` request + current Redis value | `ViewController.manual_AdjustViewNewsTotal` -> `IViewNewsRepository.AddViewTotalAsync` -> `HashSetAsync` | optional Mongo/SQL stats row if source path confirms it, otherwise `[UNVERIFIED]` | `manual_GetViewNewsTotal`, refresh jobs | lower incoming totals must not overwrite current total unless reset/bypass path is confirmed | `redis-cli HGET data:viewnews_v2:<code> <news_id>` | EV-API-041, EV-REDIS-009 | [CONFIRMED] |
+```
+
+Agent 10 MUST reject `07_database_reference.md`, `09_api_catalog.md`, and `10_background_jobs.md` when a discovered data store is documented without a mutation lineage row that connects exact API/job/service entry points to exact key/table/collection operations and field/value shapes.
+
+Bad database docs to reject:
+
+```md
+### Required Database Reference Keywords
+DbContext, DbSet, Entity, Table, Column, Redis, Backup, Restore.
+```
+
+Reject because it is validator keyword stuffing and does not document the actual schema, Redis key contract, producers, consumers, or operational risks.
 
 Bad database documentation to reject:
 
@@ -213,12 +293,19 @@ Required outputs:
 - Response DTO/wrapper fields: success shape, error shape, status codes, pagination wrapper, legacy quirks.
 - Auth/permission source: attribute, policy, middleware, filter, or negative evidence.
 - Side effects: DB read/write table, Redis mutation, job/event enqueue, external call, audit/log.
+- Per-route contract coverage: every discovered route/action MUST have its own contract row. A "Complete Discovered Routes and Actions" inventory table does not count as request/response documentation.
+- Per-route behavior coverage: every discovered route/action MUST have a behavior flow row unless explicitly marked `[UNVERIFIED]`, `[NOT_APPLICABLE]`, `[BLOCKED]`, or `Excluded` with evidence. A few representative flows are not sufficient.
+- Per-route request/response samples: each route must include request fields, request example, response fields, success example, error example, status codes, validation, auth/header, content type, side effects, evidence, and status. Generic "all APIs use X-Secret-Key" prose is not a substitute for endpoint-level contracts.
+- Main API matrix shape: keep the primary API matrix compact and endpoint-focused. Do not duplicate `Route` with `Client path` unless gateway rewrite evidence exists. Do not include `Versioning`, `Timeout`, `Retry`, `Idempotency`, `Rate limit`, or `Postman` as repeated main-matrix columns. Put these in a separate runtime/client policy table only when source/config/test/runtime evidence proves them, otherwise mark them `[UNVERIFIED]` or omit them.
+- Synthetic data guard: Agent 9 MUST NOT fill missing contract cells with generated sequences or placeholders such as `X-Secret-Key-1`, `ValidationRulesV1`, `Error 1`, `Request Body 1 data`, `appsettings.json (1)`, `news_ids_1`, `TotalView_1`, `Redis Cache 1`, `v1.1`, `5050ms`, or `105/min`. Missing evidence must be documented as `[UNVERIFIED]`, `[BLOCKED]`, or a concrete open question.
 - Evidence per endpoint, not one evidence ID for the whole API catalog.
-- Integration examples for application developers: required headers, auth header shape, route/query/body sample, success sample, error sample, curl command, Postman/OpenAPI/test source or explicit negative evidence, client-facing proxy path, upstream path, versioning behavior, timeout/retry guidance, idempotency/rate-limit notes, and smoke-test command.
+- Integration examples for application developers: required headers, auth header shape, route/query/body sample, success sample, error sample, curl command, OpenAPI/Postman/test source or explicit negative evidence, proxy/upstream mapping when present, runtime policy evidence when present, and smoke-test command.
 
 Agent 10 MUST reject `09_api_catalog.md` if it only lists a few management APIs or lacks request/response detail for discovered endpoints.
 
 Agent 10 MUST also verify that every route, controller/action, and endpoint handler listed in Phase 0 `routes.json` appears in `09_api_catalog.md`, unless it is explicitly accounted as `Unresolved`, `N/A`, or `Excluded` in `20_documentation_coverage.md` with linked evidence. If source-smoke scan finds many more `[HttpGet]`, `[HttpPost]`, `[HttpPut]`, `[HttpDelete]`, `[HttpPatch]`, or endpoint mappings than `routes.json`, the inventory is invalid and Agent 9 MUST NOT publish final docs.
+
+Agent 10 MUST compare route inventory count against `API Contract Matrix` route rows and `Behavior Flow Table` route rows. If `routes.json` contains 16 routes, `09_api_catalog.md` must contain 16 endpoint-level contract rows and 16 behavior flow rows, or explicit unresolved/excluded rows for the missing routes with evidence. Inventory rows alone do not satisfy this gate.
 
 #### Application Integration Contract
 
@@ -226,17 +313,25 @@ When any public API, gateway route, reverse-proxy route, callback, webhook, Sign
 
 Required outputs:
 
-- Client-facing API matrix: client path, gateway/proxy path, upstream service/path, method, auth header, required headers, query/body fields, response body, error body, status codes, content type, versioning behavior, timeout/retry/idempotency/rate-limit guidance, and evidence.
+- Client-facing API matrix: route, method, auth header, required headers, query/body fields, response body, error body, status codes, content type, side effects, and evidence. If gateway/proxy rewriting exists, add a separate route-mapping table with gateway/proxy path and upstream service/path.
 - Copy-pastable integration examples: curl command and Postman/OpenAPI/test reference when available; if unavailable, explicit negative evidence and a minimal curl smoke check generated from source evidence.
 - Proxy path mapping: how an external app calls the gateway, how YARP rewrites or forwards the path, which cluster/destination receives it, and which config key controls it.
 - Consumer safety notes: which behavior must not be changed, expected compatibility quirks, auth/token expiry assumptions, failure modes, and rollback/smoke-test checks.
+- Runtime/client policies: versioning, timeout, retry, idempotency, rate limit, and Postman/OpenAPI artifacts belong in a separate policy table only when source/config/test/runtime evidence exists. Do not repeat these as fake per-endpoint values.
+
+Evidence-bound rule:
+
+- Each row MUST cite evidence that proves the specific cells in that row, not only the existence of the route.
+- Values for timeout, retry, fallback, rate limit, auth header, status/error behavior, success/error example, Postman/OpenAPI/test source, owner, and curl/smoke command MUST come from source config, API contract artifacts, tests, runtime artifacts, or explicit negative evidence.
+- If a value is inferred or filled as an operational recommendation, the row MUST mark that cell or row `[UNVERIFIED]`, `[INFERRED]`, `[NOT_APPLICABLE]`, or `[BLOCKED]`; it MUST NOT use `[CONFIRMED]`.
+- Do not invent partner endpoints, owners, retry counts, timeout values, rate limits, health paths, Docker rollback steps, or API response examples to satisfy the table shape.
 
 Good application integration row:
 
 ```md
-| API ID | Client path | Gateway/proxy path | Upstream | Method | Auth header | Required headers | Request example | Success example | Error example | Versioning | Timeout/retry | Idempotency/rate limit | Curl/Postman | Evidence | Status |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| API-USER-001 | `/users-service/users` | `/users-service/{**catch-all}` | `User.Api` `/users` | GET | `Authorization: Bearer <token>` or `[NOT_APPLICABLE]` | `Accept: application/json` | query `filter` optional | `200`, user array | `401/403/5xx` from gateway/upstream | none detected | retry only on `502/504`; no retry on validation errors | safe read | `curl -H "Accept: application/json" ...` | EV-API-003, EV-AUTH-002 | [CONFIRMED] |
+| API ID | Route | Method | Auth/header | Required headers | Request example | Success example | Error example | Status codes | Side effects | Curl/smoke | Evidence | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| API-USER-001 | `/users-service/users` | GET | `Authorization: Bearer <token>` or `[NOT_APPLICABLE]` | `Accept: application/json` | query `filter` optional | `200`, user array | `401/403/5xx` from gateway/upstream | `200`, `401`, `403`, `5xx` | read-only | `curl -H "Accept: application/json" ...` | EV-API-003, EV-AUTH-002 | [CONFIRMED] |
 ```
 
 Bad integration docs to reject:
@@ -257,6 +352,11 @@ Required outputs:
 - Fault isolation matrix: symptom/status code, likely layer, first check, command/log/query to verify, fix/next action, rollback/escalation, evidence, and status.
 - Incident runbooks for common gateway/microservice failures: `401/403`, `404 route not matched`, `502/504 upstream unavailable`, Consul/config reload failure, Redis/cache/data-protection failure, database connectivity/query failure when DB exists, external API timeout, SignalR connection failure, background queue saturation, CORS/TLS/certificate failure, and deployment rollback.
 - Database operations when DB exists: full schema inventory, table/column dictionary, relationship map, migration/seed/runbook, read/write consumers, data-risk notes, and backup/restore or explicit limitation.
+
+Runbook evidence-bound rule:
+
+- Every verification command MUST reference a route/path/port/log/source artifact that exists in the current repository or runtime evidence.
+- If an upstream health endpoint, Docker command, Kubernetes command, certificate path, trace/correlation ID, owner, or rollback mechanism is not present in source/runtime artifacts, document it as `[UNVERIFIED]`, `[NOT_APPLICABLE]`, or an open question instead of `[CONFIRMED]`.
 
 Good fault isolation row:
 
@@ -296,9 +396,12 @@ When any hosted service, scheduler, worker, queue, Hangfire, Quartz, timer, chan
 
 Required outputs:
 
-- Job inventory: name, registration source, trigger, schedule/cron, producer, consumer/handler, queue/storage, retry/timeout, idempotency, failure handling, shutdown behavior, evidence.
-- Business flow diagram: trigger -> enqueue/schedule -> handler -> service/repository -> DB/Redis/external -> logging/alert/failure path.
+- Job inventory coverage: every discovered job class, scheduler class, hosted service, worker, queue producer, and queue consumer from `inventory/background-jobs.json` MUST appear in `10_background_jobs.md` by exact source name. Missing jobs are publish blockers.
+- Per-job lifecycle table: job ID, job name, source path, registration source, trigger source, schedule/cron expression or `[UNVERIFIED]`, producer, consumer/handler method, queue/storage, service/repository calls, DB/Redis/external side effects, retry, timeout, idempotency, failure/logging behavior, shutdown/concurrency behavior, evidence, and status.
+- Business flow diagrams: include a `flowchart` for component flow and a `sequenceDiagram` for scheduler/worker/handler/data-store/failure timing. Large repos may group related jobs by family, but every job in the family must be named in the table and linked to the diagram.
 - Runtime/ops evidence or explicit `EV-NEG-RT-*` limitation from Agent 8.
+
+Agent 9 MUST NOT add a "required keywords" checklist to satisfy validation. Agent 10 MUST reject keyword-stuffed docs and docs that mention only a few famous jobs while inventory contains more jobs.
 
 Good background job diagram:
 
@@ -312,6 +415,21 @@ flowchart TD
   Handler --> Failure["Retry / failure log path"]
 ```
 
+Good background job sequence:
+
+```mermaid
+sequenceDiagram
+  participant Scheduler as Scheduler / HostedService
+  participant Worker as Worker / Queue
+  participant Handler as Job handler
+  participant Store as SQL / Redis / External
+  Scheduler->>Worker: trigger or enqueue job
+  Worker->>Handler: call ExecuteAsync / handler method
+  Handler->>Store: read/write side effects
+  Handler-->>Worker: success or failure
+  Worker-->>Scheduler: retry/log/failure path
+```
+
 Bad background job docs to reject:
 
 ```md
@@ -319,6 +437,14 @@ Project has `BackgroundService`.
 ```
 
 Reject because it does not document trigger, handler, lifecycle, side effects, retry/failure behavior, or a flow diagram.
+
+Also reject:
+
+```md
+Required Background Jobs Keywords: Registration, Trigger, Handler, Side effects, Retry, Failure.
+```
+
+Reject because it is validator keyword stuffing and does not prove job coverage or behavior.
 
 #### Realtime / SignalR Deep Verification
 
