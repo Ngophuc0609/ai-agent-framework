@@ -51,7 +51,7 @@ The trigger registry is the routing source of truth. If a user-facing skill shou
 
 Tool bootstrap commands live in `.ai/registry/tool-bootstrap.json` and are used by `ai-agent-sync` when syncing this framework into another repository.
 Optional tool candidates for deep documentation, source evidence, large-repository analysis, and runtime verification live in `.ai/registry/tool-candidates.json`; these are selected by workflows when available and are not installed automatically by default.
-The MCP Memory bootstrap command was created on `2026-06-20`; agents must run `ai-agent-sync --install-tools --yes` before any work when `.ai/runtime/memory/memory.jsonl` or `.ai/runtime/mcp-servers.json` is missing.
+Normal task startup checks runtime state but does not install packages. Use `ai-agent-sync --install-tools --yes` only as an explicit bootstrap/maintenance action with runtime-appropriate approval.
 Native agent instruction files can be generated from `.ai/` with `ai-agent-adapter-sync`; see `docs/AI_AGENT_ADAPTER_SYNC.md`.
 
 ## Add A New Skillflow
@@ -67,12 +67,12 @@ Native agent instruction files can be generated from `.ai/` with `ai-agent-adapt
 
 ## Required Runtime Stack
 
-Required for source-reading, documentation, debugging, refactoring, and API-creation workflows:
+Preferred for source-reading, documentation, debugging, refactoring, and API-creation workflows:
 
 - MCP Memory
 - MCP Filesystem
 - MCP Git
-- CodeGraph or an explicit user-approved fallback
+- CodeGraph according to the risk matrix, with a documented source-search fallback
 
 Recommended:
 
@@ -88,8 +88,8 @@ For multi-agent orchestration:
 ## Important Rules
 
 - Resolve skills and workflows through `.ai/registry/`; do not hard-code triggers.
-- For a new AI tool/session, start by reading `.ai/BOOTSTRAP_ONCE.md`.
-- Run CodeGraph preflight before any source-code review.
+- Read `.ai/BOOTSTRAP_ONCE.md` only for first-time setup, smoke testing, or an explicit bootstrap request.
+- Apply CodeGraph according to task risk; localized work may continue with a documented fallback.
 - Apply `.ai/rules/15-agent-runtime-tool-policy.md` before shell commands, native agent tool calls, delegated agent actions, or source-code-handover runs.
 - Retrieve memory before editing or documenting a module.
 - Treat current source code as the source of truth when memory conflicts with code.

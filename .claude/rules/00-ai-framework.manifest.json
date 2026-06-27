@@ -1,0 +1,117 @@
+{
+  "agent": "claude",
+  "framework_version": "2",
+  "generator": {
+    "name": "ai-agent-adapter-sync",
+    "version": "2.0"
+  },
+  "mode": "pointer",
+  "schema_version": 1,
+  "source_commit": "8f4368225ac710990797ae174f2e9a911ac4829c",
+  "sources": [
+    {
+      "path": ".ai/README.md",
+      "sha256": "4c992d3d03bf3145d53524da0fde3084c6fd8ef2459427036cfa4d9a144e0b9a"
+    },
+    {
+      "path": ".ai/BOOTSTRAP_ONCE.md",
+      "sha256": "07ba0356c8769ddb6d9620eeaefb42d18a074ee4a6a0a8e36ea4311383d4ac18"
+    },
+    {
+      "path": ".ai/registry/adapters.yml",
+      "sha256": "eb8353d99e41cdfbd3a2dde80186cf9f0e8f3b42db54edef315c0740ca1a9db7"
+    },
+    {
+      "path": ".ai/registry/skills.yml",
+      "sha256": "451ed656cde721cceb2482844c4c97ada6ffcb5b5a47ba657e12d22d9bde97f7"
+    },
+    {
+      "path": ".ai/registry/workflows.yml",
+      "sha256": "989dacc5a540117b0bdfa521ab43889f192894ff6fbc8efa6df029665bd93173"
+    },
+    {
+      "path": ".ai/registry/triggers.yml",
+      "sha256": "1f5aa5e24d4ccdf11c8aca84aa0c4469c20b55bee9438ce69f5bd591686729c4"
+    },
+    {
+      "path": ".ai/registry/tool-bootstrap.json",
+      "sha256": "0ed43070d9880b1ef3179664aeb20d310ba7205a66863ce5562f26957d4814cc"
+    },
+    {
+      "path": ".ai/registry/tool-candidates.json",
+      "sha256": "e7cc0b1766eccee4aac354ea18bbbd2f5f94147168da50105e85c40715277e9b"
+    },
+    {
+      "path": ".ai/rules/00-global-rules.md",
+      "sha256": "d095fe1f3ede9d402efd945be0b2db17d64e87abefdfe52d0cd696150c5e78a0"
+    },
+    {
+      "path": ".ai/rules/01-documentation-skill.md",
+      "sha256": "f7887f842ad8c766eb122bdb480e3e22e12b2b2b82a27e9673e2d1729b3766b7"
+    },
+    {
+      "path": ".ai/rules/02-multi-agent-rules.md",
+      "sha256": "4e1517635abcb88880aad462552276282f7bf281294cd516ea273d6396f00d21"
+    },
+    {
+      "path": ".ai/rules/03-safety-rules.md",
+      "sha256": "c01ab5d34a77ecd33ec71cc05eec453f7cf35c7bc8716767d63b2fa5c9b86738"
+    },
+    {
+      "path": ".ai/rules/04-one-command-trigger.md",
+      "sha256": "ac33d15ecc9bd347cc2d582c690b74715e6acb8497b172a8535a63dcdab002ce"
+    },
+    {
+      "path": ".ai/rules/05-workflow-execution-rules.md",
+      "sha256": "c120939dcf55179ad805b249041cd1b436041c03c91b640f5baec0162d8fce69"
+    },
+    {
+      "path": ".ai/rules/06-quality-gates.md",
+      "sha256": "7324ee3d4d415d8a7cd7dc5b7a8fdcdcc04594f5e87d7319e5264901f6f2286e"
+    },
+    {
+      "path": ".ai/rules/07-agent-review-rules.md",
+      "sha256": "32739b67f3643868d9cb11f59ec116a14d3f1ab19f8df9f82c99644c31553e58"
+    },
+    {
+      "path": ".ai/rules/08-model-routing-rules.md",
+      "sha256": "a3478a8666f0b6f77206e3d24e08dcb921ddd2b5cdc681eaa443390628f43355"
+    },
+    {
+      "path": ".ai/rules/09-model-trigger-rules.md",
+      "sha256": "53294433519171f8b0f224e0d00f2140f5916aa5bef7612e5e704070819838fc"
+    },
+    {
+      "path": ".ai/rules/10-codegraph-first-rules.md",
+      "sha256": "70da7b2915df719a9e1cae0df297889f5855d0d2530c3bd5d4df0c5f52580406"
+    },
+    {
+      "path": ".ai/rules/11-skillflow-extension-rules.md",
+      "sha256": "0d597d0159c4c5436f04a0c4a14950273cd13fe26198f9e82c14b4dcd4bbdf44"
+    },
+    {
+      "path": ".ai/rules/12-memory-policy-rules.md",
+      "sha256": "64eb3afd23a10592cda917f872c983a47c3bd14ec3e4d675f30f230acb418b3a"
+    },
+    {
+      "path": ".ai/rules/13-efficiency-cost-policy-rules.md",
+      "sha256": "b3507de6addc77cf7719ee4aeaaeeb3a260742e506e1190223b666d7f8e82bba"
+    },
+    {
+      "path": ".ai/rules/14-tdd-first-feature-rules.md",
+      "sha256": "58e6a1591c59391b117ae76e191fbf57f573d5f1a373c0d3490d1ae795777f0e"
+    },
+    {
+      "path": ".ai/rules/15-agent-runtime-tool-policy.md",
+      "sha256": "55e60484a66dc275c2aef9036354e9756e3bbdf189f3b4a4f545c4c10d36cff2"
+    },
+    {
+      "path": ".ai/adapters/claude.md",
+      "sha256": "8b798c34214de9764d935f52e6b1c879439430d9459f13ada8e6876065baaabc"
+    },
+    {
+      "path": "bin/ai-agent-adapter-sync",
+      "sha256": "2b034ced10f6389e5be15c5f83cbffe0a3bab02f8d185d03b0fd72a609fa1b5d"
+    }
+  ]
+}

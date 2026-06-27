@@ -42,6 +42,8 @@ High-risk commands require explicit user approval or an approved workflow gate:
 - external network operations that upload code or data
 - package install commands when the environment policy requires approval
 
+Normal task startup must not invoke package or tool installation. Keep runtime-state checks separate from installation commands.
+
 ## Search And Scan Limits
 
 Do not start with unbounded repository scans such as `find .` without exclusions or max depth.
@@ -91,14 +93,15 @@ Every workflow that depends on tools MUST record missing or failed tools in a li
 - `.ai/runs/<skillflow_id>/<run_id>/validation/tool-orchestration-validation.md`
 - `.ai/runs/<skillflow_id>/<run_id>/STATUS.md`
 
-The limitation record MUST include:
+Use this common minimum schema in JSON, YAML, Markdown fields, or an equivalent workflow artifact:
 
-- tool name
-- expected role
-- attempted command or tool action
-- error/failure mode
-- impact on evidence quality
-- fallback used
+- `tool`: tool or capability name
+- `expected_role`: why the workflow needed it
+- `attempted_action`: safe command or tool action attempted
+- `failure_mode`: unavailable, denied, malformed call, timeout, or runtime error
+- `fallback`: replacement evidence/tool, or `none`
+- `confidence_impact`: none, reduced, or blocking
+- `readiness`: Ready, Partial, or Blocked
 
 ## Do Not
 

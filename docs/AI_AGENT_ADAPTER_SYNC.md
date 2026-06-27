@@ -24,6 +24,18 @@ Preview without writing:
 ai-agent-adapter-sync --dry-run
 ```
 
+Check generated files and manifest checksums without writing:
+
+```bash
+ai-agent-adapter-sync --check
+```
+
+Generate a full embedded bundle only for a restricted runtime that cannot read repository files:
+
+```bash
+ai-agent-adapter-sync --materialized
+```
+
 Generate only one or more agent targets:
 
 ```bash
@@ -41,20 +53,25 @@ ai-agent-adapter-sync --force
 | Agent | Generated path |
 |---|---|
 | Cross-tool / Codex | `AGENTS.md` |
+| Cross-tool / Codex | `.agents/00-ai-framework.manifest.json` |
 | Cross-tool / Codex | `.agents/skills/<skill>/SKILL.md` |
 | Cursor | `.cursor/rules/00-ai-framework.mdc` |
-| Cursor | `.cursor/rules/99-ai-framework-bundle.mdc` |
+| Cursor | `.cursor/rules/00-ai-framework.manifest.json` |
 | Cursor | `.agents/skills/<skill>/SKILL.md` |
 | GitHub Copilot | `.github/copilot-instructions.md` |
 | GitHub Copilot | `.github/instructions/ai-framework.instructions.md` |
+| GitHub Copilot | `.github/instructions/00-ai-framework.manifest.json` |
 | GitHub Copilot | `.github/skills/<skill>/SKILL.md` |
 | Claude Code | `CLAUDE.md` |
 | Claude Code | `.claude/rules/00-ai-framework.md` |
+| Claude Code | `.claude/rules/00-ai-framework.manifest.json` |
 | Claude Code | `.claude/skills/<skill>/SKILL.md` |
 | Cline | `.clinerules/00-ai-framework.md` |
+| Cline | `.clinerules/00-ai-framework.manifest.json` |
 | Cline | `.cline/skills/<skill>/SKILL.md` |
 | Google Antigravity | `GEMINI.md` |
 | Google Antigravity | `.agent/rules/00-ai-framework.md` |
+| Google Antigravity | `.agent/rules/00-ai-framework.manifest.json` |
 | Google Antigravity / managed agent | `.agents/AGENTS.md` |
 | Google Antigravity / portable skills | `.agents/skills/<skill>/SKILL.md` |
 
@@ -62,14 +79,17 @@ ai-agent-adapter-sync --force
 
 - `.ai/` remains the source of truth.
 - Native files are generated, not hand-maintained.
-- Compact entry files tell each agent how to initialize tools, route through `.ai/registry/`, and apply core rules.
-- Bundle files materialize `.ai/README.md`, `.ai/BOOTSTRAP_ONCE.md`, `.ai/registry/*`, `.ai/rules/*`, and the matching adapter file so rule systems that prefer native files can load the framework without a manual bootstrap prompt.
+- Pointer files define non-negotiable rules, progressive routing, a rule-loading matrix, runtime fallbacks, and the completion contract without copying framework sources.
+- Default pointer output is guarded at 250 lines and 12000 bytes and must not contain `Materialized .ai Rule Bundle`.
+- Each adapter manifest records framework version, generator version, mode, source commit, source paths, and SHA-256 checksums.
+- `--check` reports missing, stale, or obsolete generated outputs without writing.
+- `--materialized` embeds framework sources only for restricted runtimes that cannot read repository files.
 - Native Agent Skills are generated from `.ai/skills/*/SKILL.md` into the target agent's skill directory.
 - Existing user-authored files are not overwritten unless `--force` is passed.
 
 ## Runtime Tool Policy
 
-All generated native instructions include `.ai/rules/15-agent-runtime-tool-policy.md`. This rule prevents the class of failures where an agent emits malformed tool calls, repeats the same failed call, scans the whole repository without bounds, or writes source-code handover docs from model context instead of physical evidence.
+Generated native instructions point to `.ai/rules/15-agent-runtime-tool-policy.md` instead of embedding it. The current source rule remains authoritative.
 
 Adapter-specific optimization profiles are maintained in `.ai/adapters/*.md`:
 
@@ -113,11 +133,11 @@ If a free OpenRouter/provider model returns `429`, respect `Retry-After`, retry 
 
 ## Recommended Sync Flow
 
-From the target repository:
+From the target repository, generate adapters without installing tools:
 
 ```bash
-ai-agent-sync --install-tools --yes
 ai-agent-adapter-sync
+ai-agent-adapter-sync --check
 ```
 
 Or use the integrated one-command flow:
@@ -137,7 +157,7 @@ ai-agent-sync claude
 ai-agent-sync agy
 ```
 
-This first syncs and initializes `.ai`, MCP Memory, MCP Filesystem, MCP Git, and CodeGraph when available, then generates the native instruction structures for each agent.
+Agent shortcuts sync `.ai` and generate pointer adapters. Tool installation is a separate explicit bootstrap/maintenance action and must follow runtime approval policy.
 
 Skip native skills only when you intentionally want rule/instruction files without Agent Skills:
 
@@ -151,6 +171,7 @@ When `.ai/` rules, registry, bootstrap, or adapters change, rerun:
 
 ```bash
 ai-agent-adapter-sync
+ai-agent-adapter-sync --check
 ```
 
 Do not edit generated native files by hand unless you intend to stop regenerating them.

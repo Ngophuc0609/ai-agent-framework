@@ -6,7 +6,7 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Cursor.
 
 ## Runtime Instructions
 
-- Load `.ai/README.md`, `.ai/registry/`, and the selected skill/workflow.
+- Load `.ai/README.md`, `.ai/registry/triggers.yml`, and only the selected skill/workflow.
 - Keep Cursor rules thin; delegate workflow behavior to `.ai/rules/`.
 - Apply `.ai/rules/15-agent-runtime-tool-policy.md` before terminal commands, Composer edits, or agent-mode actions.
 - Use the current workspace as the filesystem boundary.
@@ -20,4 +20,4 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Cursor.
 - Prefer `rg --files`, symbol search, and IDE references over broad recursive scans.
 - For large documentation workflows, write artifacts under `.ai/runs/...` first and publish only after validation passes.
 - If the Cursor environment cannot run a required terminal/tool action, record the limitation and produce an explicit manual command instead of pretending verification happened.
-- Treat `.agents/skills` as a portable fallback skill surface; do not assume Cursor-native skill loading unless the active Cursor runtime confirms it.
+- Use `.agents/skills` as a Cursor-supported project skill surface; keep each `SKILL.md` compatible with the Agent Skills standard.

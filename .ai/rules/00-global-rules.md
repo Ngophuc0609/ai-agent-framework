@@ -25,18 +25,18 @@ This rule defines the baseline for `.ai`: use registries for skill/workflow sele
 - Keep loaded context minimal; load references only when needed.
 - Use `.ai/skills/routing-ai-task/SKILL.md` for skill selection when the request could match multiple skills or when no specialized skill is obvious.
 
-## CodeGraph First
+## Risk-Based CodeGraph
 
-Before any source-code review, source-code documentation, debugging, refactor planning, or API implementation:
+Apply `.ai/rules/10-codegraph-first-rules.md` according to task scope:
 
-1. Check whether CodeGraph is available for the current project.
-2. If unavailable, try the approved local setup command from `.ai/rules/10-codegraph-first-rules.md`.
-3. If setup fails, stop and ask the user whether to continue without CodeGraph or use another tool.
-4. Record any fallback in the run status and final response.
+- Attempt CodeGraph first for architecture, handover, cross-module, broad refactor, and dependency-tracing work.
+- Prefer but do not block on CodeGraph for localized source work.
+- Record fallbacks and confidence/readiness impact.
+- Never install tools automatically during normal startup.
 
 ## Memory First
 
-Before editing or documenting a module:
+Before editing or documenting a module when memory is available:
 
 1. Retrieve memory for the current project namespace and target module.
 2. Scan current source code.
@@ -46,6 +46,8 @@ Before editing or documenting a module:
 6. Store only verified, durable findings back to memory.
 
 Never store secrets, tokens, passwords, private keys, temporary logs, unverified guesses, large raw source code, or full stack traces in memory.
+
+When memory is unavailable, use the repository-document fallback from `.ai/rules/12-memory-policy-rules.md` and record the limitation.
 
 ## Evidence
 

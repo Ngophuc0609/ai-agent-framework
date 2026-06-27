@@ -9,13 +9,20 @@ Default target:
 from __future__ import annotations
 
 import argparse
-from datetime import date
+import hashlib
+import json
 from pathlib import Path
+import subprocess
 
 
 GENERATED_MARKER = "<!-- generated-by: ai-agent-adapter-sync -->"
+GENERATOR_NAME = "ai-agent-adapter-sync"
+GENERATOR_VERSION = "2.0"
+FRAMEWORK_VERSION = "2"
+MAX_POINTER_LINES = 250
+MAX_POINTER_BYTES = 12000
+MATERIALIZED_HEADING = "## Materialized .ai Rule Bundle"
 DEFAULT_AGENTS = [
-    "agents",
     "codex",
     "cursor",
     "copilot",
@@ -23,6 +30,8 @@ DEFAULT_AGENTS = [
     "cline",
     "antigravity",
 ]
+
+SUPPORTED_AGENTS = ["agents", *DEFAULT_AGENTS]
 
 CORE_FILES = [
     ".ai/README.md",
@@ -70,6 +79,20 @@ SKILL_TARGET_DIRS = {
     "antigravity": [".agents/skills"],
 }
 
+MANIFEST_PATHS = {
+    "agents": ".agents/00-ai-framework.manifest.json",
+    "codex": ".agents/00-ai-framework.manifest.json",
+    "cursor": ".cursor/rules/00-ai-framework.manifest.json",
+    "copilot": ".github/instructions/00-ai-framework.manifest.json",
+    "claude": ".claude/rules/00-ai-framework.manifest.json",
+    "cline": ".clinerules/00-ai-framework.manifest.json",
+    "antigravity": ".agent/rules/00-ai-framework.manifest.json",
+}
+
+POINTER_OBSOLETE_PATHS = {
+    "cursor": [".cursor/rules/99-ai-framework-bundle.mdc"],
+}
+
 
 def resolve_path(value: str | Path) -> Path:
     return Path(value).expanduser().resolve()
@@ -82,7 +105,16 @@ def read_text(path: Path) -> str:
 def existing_generated(path: Path) -> bool:
     if not path.exists() or not path.is_file():
         return False
-    return GENERATED_MARKER in read_text(path)
+    content = read_text(path)
+    if GENERATED_MARKER in content:
+        return True
+    if path.name.endswith(".manifest.json"):
+        try:
+            manifest = json.loads(content)
+        except json.JSONDecodeError:
+            return False
+        return manifest.get("generator", {}).get("name") == GENERATOR_NAME
+    return False
 
 
 def write_generated(path: Path, content: str, force: bool, dry_run: bool) -> str:
@@ -102,8 +134,13 @@ def available_files(repo: Path, paths: list[str]) -> list[str]:
     return [path for path in paths if (repo / path).is_file()]
 
 
+def source_files(repo: Path, tool: str) -> list[str]:
+    paths = CORE_FILES + ADAPTER_FILES.get(tool, []) + ["bin/ai-agent-adapter-sync"]
+    return available_files(repo, paths)
+
+
 def source_bundle(repo: Path, tool: str) -> str:
-    files = available_files(repo, CORE_FILES + ADAPTER_FILES.get(tool, []))
+    files = source_files(repo, tool)
     sections = []
     for rel_path in files:
         path = repo / rel_path
@@ -123,69 +160,111 @@ def source_bundle(repo: Path, tool: str) -> str:
     return "\n".join(sections).strip()
 
 
-def compact_header(tool: str, generated_on: str) -> str:
+def compact_header(tool: str) -> str:
     return "\n".join(
         [
             GENERATED_MARKER,
             f"# .ai Framework Instructions for {tool}",
             "",
-            f"Generated on: `{generated_on}`",
             "Source of truth: `.ai/`",
+            "Mode: pointer-only; do not treat this generated file as a policy copy.",
             "",
-            "## Required Startup",
+            "## Progressive Startup",
             "",
             "Before any coding, documentation, debugging, review, refactor, commit, or analysis task:",
             "",
             "1. Verify `.ai/` exists in this repository.",
-            "2. Initialize runtime tools when `.ai/runtime/memory/memory.jsonl` or `.ai/runtime/mcp-servers.json` is missing:",
+            "2. Read `.ai/README.md`, `.ai/rules/00-global-rules.md`, and `.ai/rules/15-agent-runtime-tool-policy.md`.",
+            "3. Inspect runtime state using safe local checks. Do not install tools or packages automatically.",
+            f"4. Read `.ai/adapters/{tool}.md` when native tool constraints are relevant and the file exists.",
+            "5. Read `.ai/registry/triggers.yml` and match the user intent.",
+            "6. Read only the selected `SKILL.md`, selected workflow, and their directly referenced rules.",
+            "7. Execute with bounded source scope and validate only applicable quality gates.",
+            "8. Record tool fallbacks, confidence/readiness impact, and evidence paths.",
             "",
-            "   ```bash",
-            "   ai-agent-sync --install-tools --yes",
-            "   ```",
+            "The one-time bootstrap document is setup-only. Do not load it during normal tasks.",
             "",
-            "   If `ai-agent-sync` is not in `PATH`, run:",
+            "## Non-Negotiable Rules",
             "",
-            "   ```bash",
-            "   bin/ai-agent-sync --install-tools --yes",
-            "   ```",
+            "- `.ai/` is canonical; this file only points to current policy.",
+            "- Keep filesystem access within the active repository.",
+            "- Never expose secrets or store unverified/raw source in memory.",
+            "- Package/tool installation and other high-risk actions require runtime-appropriate approval.",
+            "- Current source and executable evidence override memory and generated documentation.",
+            "- New backend features/APIs/jobs/webhooks/integrations require brainstorm, contract, acceptance criteria, and tests before production code.",
+            "- Respond to the Vietnamese-speaking user in Vietnamese unless another language is requested.",
             "",
-            "3. Follow `.ai/registry/triggers.yml` before choosing a skill or workflow.",
-            "4. Read the selected `SKILL.md` and workflow before acting.",
-            "5. Apply CodeGraph-first, MCP Memory-first, safety, quality gates, and TDD-first rules from `.ai/rules/`.",
-            "6. For new backend APIs/features/jobs/webhooks/integration flows, route to `developing-backend-feature-tdd` and define brainstorm, contract, acceptance criteria, and tests before production code.",
-            "7. For workflows listing required agents, create every required agent output or mark it not applicable with evidence before final synthesis.",
-            "8. Keep chat responses to the Vietnamese-speaking user in Vietnamese unless another language is requested.",
+            "## Rule Loading Matrix",
             "",
-            "## Canonical Files To Read",
+            "- Every task: `00-global-rules.md`, `03-safety-rules.md`, `15-agent-runtime-tool-policy.md`.",
+            "- Skill/workflow routing: `triggers.yml`, then only the selected skill and workflow. Read `skills.yml` or `workflows.yml` only when metadata resolution requires them.",
+            "- Localized source work: apply `10-codegraph-first-rules.md` and `12-memory-policy-rules.md` as preferred, non-blocking preflight with documented fallback.",
+            "- Architecture, source handover, cross-module analysis, broad refactor, dependency tracing: attempt CodeGraph first; block only when the selected workflow requires graph evidence.",
+            "- New backend behavior: `14-tdd-first-feature-rules.md` and `developing-backend-feature-tdd`.",
+            "- Source handover: load its selected skill/workflow and required agent/evidence rules exactly.",
+            "- Model routing: load `08-model-routing-rules.md` and `09-model-trigger-rules.md` only for model selection/routing tasks.",
             "",
-            "- `.ai/README.md`",
-            "- `.ai/BOOTSTRAP_ONCE.md`",
-            "- `.ai/registry/triggers.yml`",
-            "- `.ai/registry/skills.yml`",
-            "- `.ai/registry/workflows.yml`",
-            "- `.ai/registry/tool-bootstrap.json`",
-            "- `.ai/rules/00-global-rules.md`",
-            "- `.ai/rules/05-workflow-execution-rules.md`",
-            "- `.ai/rules/06-quality-gates.md`",
-            "- `.ai/rules/10-codegraph-first-rules.md`",
-            "- `.ai/rules/12-memory-policy-rules.md`",
-            "- `.ai/rules/13-efficiency-cost-policy-rules.md`",
-            "- `.ai/rules/14-tdd-first-feature-rules.md`",
-            "- `.ai/rules/15-agent-runtime-tool-policy.md`",
+            "## Runtime Fallbacks",
+            "",
+            "- Missing Memory: use `docs/PROJECT_CONTEXT.md`, `docs/FINDINGS.md`, and `docs/DECISIONS.md`; record the limitation and do not claim a memory write.",
+            "- Missing CodeGraph on localized work: use `rg`, IDE/LSP references, and narrow source slices; downgrade confidence/readiness.",
+            "- Missing required workflow evidence: stop that workflow rather than fabricate output.",
+            "",
+            "## Completion Contract",
+            "",
+            "Before completion, report changed files, validations run, fallbacks/limitations, and readiness. Run `ai-agent-adapter-sync --check` when framework or adapter sources changed.",
         ]
     )
 
 
-def full_bundle(tool: str, repo: Path, generated_on: str) -> str:
+def full_bundle(tool: str, repo: Path) -> str:
     return "\n\n".join(
         [
-            compact_header(tool, generated_on),
-            "## Materialized .ai Rule Bundle",
+            compact_header(tool),
+            MATERIALIZED_HEADING,
             "",
             "This section is generated from `.ai/` so native agent rule systems can load the framework without a manual bootstrap prompt.",
             source_bundle(repo, tool),
         ]
     )
+
+
+def validate_pointer_content(content: str) -> None:
+    line_count = len(content.splitlines())
+    byte_count = len(content.encode("utf-8"))
+    if line_count > MAX_POINTER_LINES:
+        raise ValueError(f"Pointer adapter exceeds {MAX_POINTER_LINES} lines: {line_count}")
+    if byte_count > MAX_POINTER_BYTES:
+        raise ValueError(f"Pointer adapter exceeds {MAX_POINTER_BYTES} bytes: {byte_count}")
+    if MATERIALIZED_HEADING in content:
+        raise ValueError("Pointer adapter contains the forbidden materialized bundle heading")
+
+
+def source_commit(repo: Path) -> str | None:
+    completed = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip() if completed.returncode == 0 else None
+
+
+def manifest_content(repo: Path, agent: str, materialized: bool) -> str:
+    sources = []
+    for relative_path in source_files(repo, agent):
+        digest = hashlib.sha256((repo / relative_path).read_bytes()).hexdigest()
+        sources.append({"path": relative_path, "sha256": digest})
+    manifest = {
+        "schema_version": 1,
+        "agent": agent,
+        "mode": "materialized" if materialized else "pointer",
+        "generator": {"name": GENERATOR_NAME, "version": GENERATOR_VERSION},
+        "framework_version": FRAMEWORK_VERSION,
+        "source_commit": source_commit(repo),
+        "sources": sources,
+    }
+    return json.dumps(manifest, indent=2, sort_keys=True)
 
 
 def insert_marker_after_frontmatter(content: str) -> str:
@@ -221,12 +300,23 @@ def target_skill_files(repo: Path, agent: str) -> list[tuple[Path, str]]:
 
 
 def cursor_mdc(title: str, body: str, always: bool) -> str:
+    metadata = (
+        ["---", "alwaysApply: true", "---"]
+        if always
+        else ["---", f"description: {title}", "alwaysApply: false", "---"]
+    )
+    return "\n".join(
+        metadata + ["", body]
+    )
+
+
+def claude_rule(body: str) -> str:
     return "\n".join(
         [
             "---",
-            f"description: {title}",
-            "globs: *",
-            f"alwaysApply: {'true' if always else 'false'}",
+            "paths:",
+            '  - ".ai/**/*"',
+            '  - "bin/ai-agent-*"',
             "---",
             "",
             body,
@@ -234,11 +324,11 @@ def cursor_mdc(title: str, body: str, always: bool) -> str:
     )
 
 
-def copilot_instruction(body: str) -> str:
+def copilot_instruction(body: str, apply_to: str) -> str:
     return "\n".join(
         [
             "---",
-            'applyTo: "**"',
+            f'applyTo: "{apply_to}"',
             "---",
             "",
             body,
@@ -246,9 +336,10 @@ def copilot_instruction(body: str) -> str:
     )
 
 
-def target_files(repo: Path, agent: str, generated_on: str) -> list[tuple[Path, str]]:
-    compact = compact_header(agent, generated_on)
-    bundle = full_bundle(agent, repo, generated_on)
+def target_files(repo: Path, agent: str, materialized: bool) -> list[tuple[Path, str]]:
+    compact = compact_header(agent)
+    bundle = full_bundle(agent, repo)
+    deep_content = bundle if materialized else compact
     targets: dict[str, list[tuple[str, str]]] = {
         "agents": [
             ("AGENTS.md", compact),
@@ -258,26 +349,65 @@ def target_files(repo: Path, agent: str, generated_on: str) -> list[tuple[Path, 
         ],
         "cursor": [
             (".cursor/rules/00-ai-framework.mdc", cursor_mdc("Always apply .ai framework routing and startup rules", compact, True)),
-            (".cursor/rules/99-ai-framework-bundle.mdc", cursor_mdc("Full .ai framework bundle for deep framework, registry, and rule work", bundle, False)),
         ],
         "copilot": [
             (".github/copilot-instructions.md", compact),
-            (".github/instructions/ai-framework.instructions.md", copilot_instruction(bundle)),
+            (
+                ".github/instructions/ai-framework.instructions.md",
+                copilot_instruction(deep_content, ".ai/**,bin/ai-agent-*"),
+            ),
         ],
         "claude": [
             ("CLAUDE.md", compact),
-            (".claude/rules/00-ai-framework.md", bundle),
+            (".claude/rules/00-ai-framework.md", claude_rule(deep_content)),
         ],
         "cline": [
-            (".clinerules/00-ai-framework.md", bundle),
+            (".clinerules/00-ai-framework.md", deep_content),
         ],
         "antigravity": [
             ("GEMINI.md", compact),
-            (".agent/rules/00-ai-framework.md", bundle),
+            (".agent/rules/00-ai-framework.md", deep_content),
             (".agents/AGENTS.md", compact),
         ],
     }
-    return [(repo / path, content) for path, content in targets[agent]]
+    if agent == "cursor" and materialized:
+        targets[agent].append(
+            (
+                ".cursor/rules/99-ai-framework-bundle.mdc",
+                cursor_mdc("Full .ai framework bundle for deep framework, registry, and rule work", bundle, False),
+            )
+        )
+    resolved = [(repo / path, content) for path, content in targets[agent]]
+    if not materialized:
+        for _, content in resolved:
+            validate_pointer_content(content)
+    resolved.append(
+        (repo / MANIFEST_PATHS[agent], manifest_content(repo, agent, materialized))
+    )
+    return resolved
+
+
+def remove_obsolete_pointer_files(repo: Path, agent: str, dry_run: bool) -> list[str]:
+    results = []
+    for relative_path in POINTER_OBSOLETE_PATHS.get(agent, []):
+        path = repo / relative_path
+        if not path.exists() or not existing_generated(path):
+            continue
+        if dry_run:
+            results.append(f"DRY-RUN would remove generated legacy file: {path}")
+        else:
+            path.unlink()
+            results.append(f"REMOVED generated legacy file: {path}")
+    return results
+
+
+def check_generated(path: Path, expected: str) -> str | None:
+    if not path.is_file():
+        return f"DRIFT missing: {path}"
+    actual = path.read_text(encoding="utf-8", errors="replace").rstrip()
+    if actual != expected.rstrip():
+        return f"DRIFT content: {path}"
+    return None
 
 
 def parse_args() -> argparse.Namespace:
@@ -293,7 +423,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--agent",
         action="append",
-        choices=sorted(DEFAULT_AGENTS),
+        choices=sorted(SUPPORTED_AGENTS),
         help="Generate one adapter target. Can be repeated. Defaults to all.",
     )
     parser.add_argument(
@@ -311,6 +441,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Only generate native rule/instruction files; skip native Agent Skills.",
     )
+    parser.add_argument(
+        "--materialized",
+        action="store_true",
+        help="Embed the full .ai source bundle for restricted runtimes. Pointer-only is the default.",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Report generated output or source-manifest drift without writing files.",
+    )
     return parser.parse_args()
 
 
@@ -326,19 +466,42 @@ def main() -> int:
         return 2
 
     agents = args.agent or DEFAULT_AGENTS
-    generated_on = date.today().isoformat()
     exit_code = 0
     written_paths: set[Path] = set()
 
     for agent in agents:
         print(f"Agent adapter: {agent}")
-        generated_targets = target_files(repo, agent, generated_on)
+        generated_targets = target_files(repo, agent, args.materialized)
         if not args.no_skills:
             generated_targets.extend(target_skill_files(repo, agent))
+
+        if not args.materialized:
+            for relative_path in POINTER_OBSOLETE_PATHS.get(agent, []):
+                obsolete = repo / relative_path
+                if not obsolete.exists():
+                    continue
+                if args.check and existing_generated(obsolete):
+                    print(f"- DRIFT obsolete generated file: {obsolete}")
+                    exit_code = 1
+                elif not existing_generated(obsolete):
+                    print(f"- SKIP obsolete user file: {obsolete}")
+                    exit_code = 1
+            if not args.check:
+                for result in remove_obsolete_pointer_files(repo, agent, args.dry_run):
+                    print(f"- {result}")
 
         for path, content in generated_targets:
             if path in written_paths:
                 print(f"- SKIP duplicate target already handled: {path}")
+                continue
+            if args.check:
+                drift = check_generated(path, content)
+                if drift:
+                    print(f"- {drift}")
+                    exit_code = 1
+                else:
+                    print(f"- OK {path}")
+                written_paths.add(path)
                 continue
             result = write_generated(path, content, args.force, args.dry_run)
             print(f"- {result}")

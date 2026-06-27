@@ -10,7 +10,7 @@ Adapter này mô tả cách dùng framework `.ai/` với Google Antigravity IDE/
 - Treat `.ai/registry/` as the source of truth for skill and workflow routing.
 - Apply `.ai/rules/15-agent-runtime-tool-policy.md` before terminal commands, workspace edits, browser/MCP calls, or delegated agent actions.
 - For Antigravity environments that support mounted `AGENTS.md`, follow the repository root `AGENTS.md` as the cross-tool fallback.
-- Run or verify `ai-agent-sync --install-tools --yes` before source-reading or code-changing tasks when runtime state is missing.
+- Inspect runtime state without installing packages; use documented fallbacks unless the selected workflow requires the missing evidence.
 - Keep filesystem and external tool access scoped to the active workspace.
 - Do not expose secrets in generated instructions, memory, artifacts, or chat responses.
 - Respond to the Vietnamese-speaking user in Vietnamese unless another language is requested.

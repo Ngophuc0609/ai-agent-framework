@@ -19,8 +19,8 @@ Before finishing any workflow, verify:
 
 For source-code reading, documentation, debugging, refactoring, or API creation:
 
-- CodeGraph preflight was attempted.
-- If CodeGraph was unavailable, user-approved fallback was used.
+- CodeGraph preflight was attempted when required by the task-risk matrix or selected workflow.
+- If CodeGraph was unavailable, the fallback and confidence/readiness impact were recorded.
 - Memory was retrieved before module analysis when memory tools were available.
 - Project summary docs were read before deeper source reads when present.
 - File reads were narrowed to the current task scope.

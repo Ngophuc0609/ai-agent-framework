@@ -1,40 +1,31 @@
-# 10 CodeGraph-First Rules
+# 10 CodeGraph Risk-Based Rules
 
 ## Summary
 
-This rule requires checking and using CodeGraph before source-code review. If CodeGraph is unavailable and cannot be initialized, the agent must ask before using a weaker fallback.
+This rule scales CodeGraph usage to task risk. Graph evidence is mandatory only when the selected workflow or breadth of analysis requires it.
 
-## Requirement
+## Requirement Matrix
 
-For any task that scans, documents, debugs, refactors, or changes source code, run CodeGraph preflight before broad source-code review.
+- Required first attempt: architecture analysis, source handover, cross-module flows, broad refactors, dependency tracing, and workflows that explicitly require graph evidence.
+- Preferred but non-blocking: localized bug fixes, targeted endpoint analysis, single-module edits, focused test changes, and diff reviews.
+- Not required: documentation formatting, registry-only edits, generated-file checks, or tasks that do not inspect source relationships.
 
 ## Preflight
 
-1. Check whether CodeGraph tooling is available in the current agent environment.
-2. Check whether the project has an initialized CodeGraph index.
-3. If the index is missing, initialize it using the available CodeGraph setup command.
-4. If initialization succeeds, use CodeGraph exploration/search before raw file search for architecture and symbol-level understanding.
-5. If CodeGraph is unavailable or initialization fails, stop and ask the user whether to continue without CodeGraph or use another tool.
+1. Check whether CodeGraph is available and indexed for the current project.
+2. When graph evidence is required and the index is missing, initialize it only when the setup is local and does not install packages or require unapproved network access.
+3. Use CodeGraph before raw search for architecture and symbol-relationship claims.
+4. If CodeGraph is unavailable, follow the fallback policy below.
 
-## Approved Fallback Behavior
+## Fallback Policy
 
-Only use `rg`, language server search, IDE search, or manual file reads as a replacement after:
+For preferred/non-blocking tasks, continue with `rg`, language-server or IDE references, tests, git diff, and narrow source slices. Record the limitation, fallback, and confidence/readiness impact.
 
-- CodeGraph was attempted, and
-- The limitation was recorded, and
-- The user approved continuing without CodeGraph when correctness may be affected.
+For required graph tasks, block only when the selected workflow explicitly requires graph evidence or the requested claim cannot be supported reliably with available source evidence. Otherwise continue with reduced confidence/readiness and state the limitation.
 
 ## Documentation Integrity
 
-When CodeGraph is unavailable:
-
-- Mark the output as having reduced confidence.
-- Cite the fallback tools used.
-- Avoid broad architecture claims unless independently verified from source.
-
-## Do Not
-
-- Do not pretend CodeGraph was used when it was not.
-- Do not fabricate symbol relationships.
-- Do not skip CodeGraph because `rg` is faster.
-- Do not continue silently after automatic CodeGraph setup fails.
+- Cite the fallback tools and physical source slices used.
+- Avoid broad architecture or dependency-completeness claims from text search alone.
+- Never pretend CodeGraph was used when it was unavailable.
+- Never install CodeGraph or another package without runtime-appropriate approval.

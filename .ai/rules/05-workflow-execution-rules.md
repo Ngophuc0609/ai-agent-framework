@@ -12,8 +12,8 @@ Rule này quy định thứ tự chạy workflow, preflight, output và fallback
 4. Read the selected workflow.
 5. Read referenced rules.
 6. Create or select a run namespace.
-7. Search memory and project summary docs before detailed source reads.
-8. Run CodeGraph preflight when source code is involved.
+7. Search memory when available; otherwise use project summary docs and record the fallback.
+8. Apply risk-based CodeGraph preflight from `.ai/rules/10-codegraph-first-rules.md`.
 9. Limit file reads to the smallest useful scope.
 10. Execute the workflow.
 11. Run validation and quality gates.

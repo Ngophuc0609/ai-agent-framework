@@ -22,13 +22,15 @@ Tài liệu này là baseline để chuẩn hóa `.ai` thành một nguồn sự
 - `.ai/rules/` contains durable framework rules and should stay canonical.
 - `.ai/skills/<skill>/SKILL.md` already matches the Agent Skills directory pattern for most skills.
 - `bin/ai-agent-sync` handles the one-command bootstrap flow and agent shortcuts.
-- `bin/ai-agent-adapter-sync` generates native instruction files and now also materializes native Agent Skills.
+- `bin/ai-agent-adapter-sync` generates compact native pointer instructions, checksum manifests, and native Agent Skills.
 
 ## Standardization Rules
 
 - Keep `.ai/` as the only hand-maintained source.
 - Keep always-on native files compact because they consume prompt context.
-- Put full framework bundles in scoped/deep-reference native files where the agent supports them.
+- Keep pointer adapters under 250 lines and 12000 bytes; do not copy registry/rule sources into default outputs.
+- Reserve full materialization for explicit `--materialized` compatibility mode.
+- Detect drift with generated manifests and `--check`.
 - Generate native skill directories from `.ai/skills/*/SKILL.md`.
 - Mark generated files with `generated-by: ai-agent-adapter-sync`.
 - Skip existing user-authored native files unless `--force` is provided.
@@ -42,7 +44,7 @@ Tài liệu này là baseline để chuẩn hóa `.ai` thành một nguồn sự
 | Cline | `ai-agent-sync cline` | `.clinerules/00-ai-framework.md` | `.cline/skills/<skill>/SKILL.md` |
 | Copilot | `ai-agent-sync copilot` | `.github/copilot-instructions.md`, `.github/instructions/ai-framework.instructions.md` | `.github/skills/<skill>/SKILL.md` |
 | Claude | `ai-agent-sync claude` | `CLAUDE.md`, `.claude/rules/00-ai-framework.md` | `.claude/skills/<skill>/SKILL.md` |
-| Cursor | `ai-agent-sync cursor` | `.cursor/rules/00-ai-framework.mdc`, `.cursor/rules/99-ai-framework-bundle.mdc` | `.agents/skills/<skill>/SKILL.md` |
+| Cursor | `ai-agent-sync cursor` | `.cursor/rules/00-ai-framework.mdc`, `.cursor/rules/00-ai-framework.manifest.json` | `.agents/skills/<skill>/SKILL.md` |
 | Antigravity | `ai-agent-sync agy` | `GEMINI.md`, `.agent/rules/00-ai-framework.md`, `.agents/AGENTS.md` | `.agents/skills/<skill>/SKILL.md` |
 
 ## Maintenance Flow
@@ -55,5 +57,5 @@ Tài liệu này là baseline để chuẩn hóa `.ai` thành một nguồn sự
 
 ## Known Fallbacks
 
-- Cursor native skills are mapped to portable `.agents/skills` because the verified Cursor source in this pass covered rules, not a Cursor-specific skill directory.
+- Cursor supports `.agents/skills` as a project skill directory.
 - Antigravity skills are mapped to portable `.agents/skills` because the framework targets Gemini/agent-style conventions and portable Agent Skills compatibility.
