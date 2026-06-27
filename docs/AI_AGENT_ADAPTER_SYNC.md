@@ -159,6 +159,13 @@ ai-agent-sync agy
 
 Agent shortcuts sync `.ai` and generate pointer adapters. Tool installation is a separate explicit bootstrap/maintenance action and must follow runtime approval policy.
 
+For Cline, the shortcut creates the officially discovered workspace locations:
+
+- Rules: `.clinerules/00-ai-framework.md`
+- Skills: `.cline/skills/<skill>/SKILL.md`
+
+Cline discovers these files automatically. Because Skills is currently experimental, enable `Settings > Features > Enable Skills` in Cline when the Skills panel does not list them.
+
 Skip native skills only when you intentionally want rule/instruction files without Agent Skills:
 
 ```bash

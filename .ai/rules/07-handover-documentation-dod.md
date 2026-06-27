@@ -1,50 +1,31 @@
-# Documentation Definition of Done (DoD)
+# Developer Handover Documentation Definition of Done
 
-Every agent participating in the Source Code Handover workflow MUST follow this standard.
+## Audience
 
-## 0. Mandatory Quality Checklist
+Published handover documentation is for developers who need to understand and work on the current system. It is not an analysis report or an audit trail.
 
-Every final document MUST also comply with `.ai/rules/08-source-code-handover-quality-checklist.md`.
-If front matter, common sections, Evidence Index, coverage manifest, negative evidence, or forbidden-content checks are missing or invalid, Agent 10 MUST return `REJECT_REQUIRES_REVISION` or `BLOCKED`, never `PASS`.
+## Published Set
 
-## 1. General Rule: Every Claim Needs Evidence
-- Status: `[CONFIRMED]`, `[INFERRED]`, `[UNVERIFIED]`, `[CONFLICT]`, `[NOT_APPLICABLE]`, `[BLOCKED]`, `[DECISION]`
-- Every `[CONFIRMED]` claim MUST have an Evidence ID.
-- Every `[DECISION]` item MUST include the decision owner or required owner confirmation.
+The final and published directories contain exactly documents `01` through `20` defined in `.ai/rules/08-source-code-handover-quality-checklist.md`.
 
-## 2. Target Document Set (20 lowercase files with numeric prefixes)
-- `01_project_handover_full.md`
-- `02_project_context.md`
-- `03_repository_guide.md`
-- `04_local_setup.md`
-- `05_configuration_reference.md`
-- `06_architecture.md`
-- `07_database_reference.md`
-- `08_auth_and_security.md`
-- `09_api_catalog.md`
-- `10_background_jobs.md`
-- `11_realtime_signalr_socket.md`
-- `12_external_integrations.md`
-- `13_frontend_guide.md`
-- `14_operations_runbook.md`
-- `15_deployment_and_cicd.md`
-- `16_testing_guide.md`
-- `17_known_risks.md`
-- `18_open_questions.md`
-- `19_evidence_index.md`
-- `20_documentation_coverage.md`
+Documents `17` through `20` centralize risks, open questions, evidence mapping, and coverage. Documents `01` through `16` must not repeat those sections.
 
-## 3. Mandatory Coverage Rule
-Coverage math denominator MUST come from Phase 0 inventory.
-`accounted = documented + unresolved + not_applicable_with_negative_evidence + excluded_with_explicit_reason`
+## Content Standard
 
-## 4. Documentation Coverage Manifest (20_documentation_coverage.md)
-Must use structural tables grouping by domain (Repository, Database, API, Background Jobs, Realtime) listing: `discovered`, `documented`, `accounted`, `unresolved`, `status`, `gaps`.
+- Explain the current system from verified source facts.
+- Cover setup, repository map, architecture, important business flows, data stores, auth, APIs, jobs, realtime, integrations, frontend, operations, deployment, and testing when present.
+- Show where developers start for common changes.
+- Include executable commands with working directory and expected result.
+- Use real paths, symbols, routes, configuration keys, schemas, and examples.
+- Omit subjects that cannot be verified from topic documents instead of publishing uncertainty commentary.
+- Keep Evidence IDs, claim labels, readiness/coverage, risks, limitations, and open questions out of documents `01` through `16`.
 
-## 5. Negative Evidence Rule
-`[NOT_APPLICABLE]` is ONLY valid when documented with: Component/scope, source roots, search patterns, tools used, results, impact, and negative evidence ID. It cannot be used if status is `scan_failed` or `tool_unavailable`.
+## Publish Gate
 
-## 6. Standardized Evidence Index
-`19_evidence_index.md` MUST contain table:
-`Evidence ID | Topic | Claim | Source Path | Line/Method | Verification Type | Source Commit | Status`
-Valid ID patterns: `EV-REPO-###`, `EV-CONFIG-###`, `EV-DB-###`, `EV-MIGRATION-###`, `EV-AUTH-###`, `EV-API-###`, `EV-JOB-###`, `EV-RT-###`, `EV-OPS-###`, `EV-TEST-###`, `EV-CICD-###`, `EV-NEG-###`.
+- Exactly 20 expected files exist.
+- Current source commit is recorded in front matter.
+- Technical content matches current source and internal evidence.
+- Vietnamese prose is clear and developer-oriented.
+- Links and commands are valid.
+- Secret scan passes.
+- Deterministic quality validation and Agent 10 verdict pass.

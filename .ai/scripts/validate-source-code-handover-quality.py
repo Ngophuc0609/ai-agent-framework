@@ -38,20 +38,19 @@ REQUIRED_FRONT_MATTER = [
     "run_id",
     "source_commit",
     "source_branch",
-    "status",
-    "primary_owner_agent",
-    "evidence_ids",
     "last_verified_at",
 ]
 
-REQUIRED_SECTIONS = [
-    "## Phạm vi",
+REQUIRED_SECTIONS: list[str] = []
+
+TOPIC_FORBIDDEN_HEADINGS = [
     "## Trạng thái",
     "## Nguồn dữ liệu / Evidence",
-    "## Nội dung chính",
     "## Hạn chế",
     "## Câu hỏi mở",
     "## Rủi ro",
+    "## Readiness",
+    "## Coverage",
 ]
 
 ALLOWED_LABELS = {
@@ -520,6 +519,16 @@ def validate_document(path: Path, final_dir: Path, indexed_ids: set[str], errors
         if section not in body:
             errors.append(f"{path.name}: missing section {section}")
 
+    is_topic_document = int(path.name[:2]) <= 16
+    if is_topic_document:
+        for heading in TOPIC_FORBIDDEN_HEADINGS:
+            if heading in body:
+                errors.append(f"{path.name}: topic document contains centralized mapping section {heading}")
+        if LABEL_RE.search(body):
+            errors.append(f"{path.name}: topic document contains internal claim labels")
+        if EVIDENCE_RE.search(body):
+            errors.append(f"{path.name}: topic document contains internal Evidence IDs")
+
     validate_repetition_and_line_shape(path, text, body, errors)
 
     for label in LABEL_RE.findall(text):
@@ -545,9 +554,9 @@ def validate_document(path: Path, final_dir: Path, indexed_ids: set[str], errors
             f"{path.name}: likely skeleton document; {word_count} words is below minimum smoke threshold {min_words}"
         )
 
-    if status == "Ready":
+    if status == "Ready" and not is_topic_document:
         if len(used_ids) < 3 and path.name not in {"18_open_questions.md", "19_evidence_index.md", "20_documentation_coverage.md"}:
-            errors.append(f"{path.name}: Ready document has too few Evidence IDs for non-trivial handover content")
+            errors.append(f"{path.name}: Ready mapping document has too few Evidence IDs")
 
     if "[NOT_APPLICABLE]" in text:
         if "EV-NEG" not in text:
@@ -982,8 +991,6 @@ def validate_background_job_detail(final_dir: Path, errors: list[str]) -> None:
         "Failure",
         "Logging",
         "Shutdown",
-        "Evidence",
-        "Status",
     ]
     for token in detailed_tokens:
         if token.lower() not in lowered:
@@ -1319,8 +1326,6 @@ def validate_per_route_api_contract_coverage(final_dir: Path, errors: list[str])
         "DB",
         "Redis",
         "External",
-        "Evidence",
-        "Status",
     ]
     missing_contract_columns = table_header_contains(contract_section, required_contract_columns)
     if missing_contract_columns:
@@ -1370,8 +1375,6 @@ def validate_per_route_api_contract_coverage(final_dir: Path, errors: list[str])
         "Read consumers",
         "Success/error behavior",
         "Debug/smoke check",
-        "Evidence",
-        "Status",
     ]
     missing_behavior_columns = table_header_contains(behavior_section, required_behavior_columns)
     if missing_behavior_columns:
@@ -1441,8 +1444,6 @@ def validate_80_percent_understanding_contract(final_dir: Path, errors: list[str
         "Config keys",
         "Success/error behavior",
         "Debug/smoke check",
-        "Evidence",
-        "Status",
     ]
     if not any(token.lower() in combined.lower() for token in ["Flow ID", "Business flow", "Behavior flow"]):
         errors.append("final documentation set missing behavior-flow table/section")
@@ -1515,7 +1516,6 @@ def validate_80_percent_understanding_contract(final_dir: Path, errors: list[str
             "Claim",
             "Permission",
             "Failure status",
-            "Bypass risk",
             "Secret",
         ],
         "09_api_catalog.md": [
@@ -1569,7 +1569,6 @@ def validate_80_percent_understanding_contract(final_dir: Path, errors: list[str
             "Database",
             "Redis",
             "External",
-            "Gap",
         ],
         "17_known_risks.md": [
             "Risk ID",
@@ -1741,9 +1740,10 @@ def validate_anti_skeleton(final_dir: Path, indexed_ids: set[str], errors: list[
         gram, count = sorted(repeated_cross_doc, key=lambda item: item[1], reverse=True)[0]
         errors.append(f"final documentation repeats the same 30-word block {count} times across docs: {gram[:120]}")
 
+    coverage_doc = docs.get("20_documentation_coverage.md", "")
     for dimension in READINESS_DIMENSIONS:
-        if dimension not in combined:
-            errors.append(f"final documentation missing readiness dimension: {dimension}")
+        if dimension not in coverage_doc:
+            errors.append(f"20_documentation_coverage.md missing readiness dimension: {dimension}")
 
     local_setup = docs.get("04_local_setup.md", "")
     for token in ["Prerequisites", "Working directory", "Command", "Expected", "Smoke", "Troubleshooting"]:
@@ -1824,8 +1824,6 @@ def validate_deep_document_requirements(final_dir: Path, errors: list[str]) -> N
             "Reset",
             "Backup",
             "Restore",
-            "Data risk",
-            "Coverage",
         ]
         for token in extra_database_tokens:
             if token.lower() not in database.lower():

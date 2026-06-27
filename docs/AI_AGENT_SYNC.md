@@ -130,17 +130,17 @@ ai-agent-sync /path/to/target-repo --install-tools maintaining-existing-apis --t
 - Target defaults to the current working directory.
 - Default mode is mirror sync: target `.ai` becomes an exact copy of the source `.ai`.
 - If target `.ai` already exists, the command creates `.ai.backup.<timestamp>` before replacing it.
-- After sync, the command automatically bootstraps all detected required tools.
-- After successful tool detection/install, the command writes `.ai/runtime/mcp-servers.json`.
-- For MCP Memory, the command creates `.ai/runtime/memory/memory.jsonl` and configures `MEMORY_FILE_PATH` in `.ai/runtime/mcp-servers.json`.
+- Normal sync does not bootstrap tools. Use `--check-tools` or `--install-tools` explicitly.
+- After an explicit successful tool detection/install, the command writes `.ai/runtime/mcp-servers.json`.
+- For an explicit MCP Memory installation, the command creates `.ai/runtime/memory/memory.jsonl` and configures `MEMORY_FILE_PATH` in `.ai/runtime/mcp-servers.json`.
 - Run `ai-agent-adapter-sync` after this command when you want native instruction files and Agent Skills for Codex, Cursor, Copilot, Claude, Cline, Antigravity, and cross-tool `AGENTS.md` consumers.
 - Use `--no-delete` when a repo intentionally keeps local-only files inside `.ai`.
-- Use `--no-tools` to skip automatic tool install and repo initialization.
+- Use `--no-tools` to suppress tool operations when composing commands that may otherwise include explicit tool options.
 - Use `--no-tool-init` to install missing tools but skip repo-local initialization.
 - `--check-tools` scans skill/workflow/rule text and reports missing runtime tools.
-- `--install-tools` runs configured install commands for missing tools.
+- `--install-tools` explicitly runs configured install commands for missing tools. Normal sync and agent shortcuts do not install or initialize tools automatically.
 - `--tool <id>` limits check/install to a specific tool. It can be repeated.
-- `--generate-adapters` runs `ai-agent-adapter-sync` after `.ai` sync/tool bootstrap, including native Agent Skills unless `ai-agent-adapter-sync --no-skills` is run separately.
+- `--generate-adapters` runs `ai-agent-adapter-sync` after `.ai` sync and any explicitly requested tool operation, including native Agent Skills unless `ai-agent-adapter-sync --no-skills` is run separately.
 - `--adapter-agent <id>` limits generated native instruction files to one agent target. It can be repeated.
 - `--force-adapters` lets generated adapter files overwrite existing user-authored instruction files.
 

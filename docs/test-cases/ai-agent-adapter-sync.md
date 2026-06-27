@@ -30,3 +30,10 @@ the same `AGENTS.md` path and the first writer suppresses the second as a duplic
 | ADAPTER-CHECK-001 | Run `--check` immediately after generation | Exit successfully without writing files | Implemented |
 | ADAPTER-CHECK-002 | Change a checksummed `.ai` source after generation | Exit non-zero and report source/output drift | Implemented |
 | ADAPTER-MATERIALIZED-001 | Generate with `--materialized` | Full source bundle remains available as an explicit compatibility mode | Implemented |
+
+## Cline shortcut integration
+
+| ID | Scenario | Expected result | Status |
+|---|---|---|---|
+| SYNC-CLINE-001 | Run `ai-agent-sync cline` in a repository | Sync `.ai`, generate `.clinerules/00-ai-framework.md`, manifest, and `.cline/skills/*/SKILL.md` without automatic tool installation | Implemented |
+| SYNC-CLINE-002 | Complete Cline adapter generation | Print a concise discovery summary for the rule and skills directories | Implemented |

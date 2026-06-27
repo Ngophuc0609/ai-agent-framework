@@ -371,6 +371,13 @@ def run_adapter_sync(
     print(f"Adapter sync command: {' '.join(shlex.quote(part) for part in command)}")
     sys.stdout.flush()
     completed = subprocess.run(command, cwd=repo_path, check=False)
+    selected_agents = set(adapter_agents or ADAPTER_AGENT_ALIASES.values())
+    if completed.returncode == 0 and "cline" in selected_agents and not dry_run:
+        skill_count = len(list((repo_path / ".cline" / "skills").glob("*/SKILL.md")))
+        print("Cline auto-discovery outputs:")
+        print("- Cline rule: .clinerules/00-ai-framework.md")
+        print(f"- Cline skills: .cline/skills/ ({skill_count} skills)")
+        print("- Enable Settings > Features > Enable Skills in Cline if skills are not visible.")
     return completed.returncode
 
 
@@ -627,7 +634,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-tools",
         action="store_true",
-        help="Only sync .ai; skip automatic tool install and repo initialization.",
+        help="Only sync .ai; ignore explicit tool check/install and repo initialization options.",
     )
     parser.add_argument(
         "--no-tool-init",
@@ -695,11 +702,10 @@ def main() -> int:
         print(f"Target repository directory does not exist: {repo_path}", file=sys.stderr)
         return 2
 
-    auto_tools = not args.no_tools and not args.check_tools and not args.install_tools
-    tool_scope = args.install_tools or args.check_tools or ("all" if auto_tools else None)
-    should_install_tools = bool(args.install_tools or auto_tools)
+    tool_scope = None if args.no_tools else (args.install_tools or args.check_tools)
+    should_install_tools = bool(args.install_tools and not args.no_tools)
     should_init_tools = should_install_tools and not args.no_tool_init
-    assume_yes = args.yes or auto_tools
+    assume_yes = args.yes
     if tool_scope and same_path(source_ai, target_ai):
         exit_code = check_and_install_tools(
             source_ai,

@@ -10,6 +10,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SYNC_SCRIPT = REPO_ROOT / "bin" / "ai-agent-adapter-sync"
+FRAMEWORK_SYNC_SCRIPT = REPO_ROOT / "bin" / "ai-agent-sync"
 
 
 class AdapterSyncTestCase(unittest.TestCase):
@@ -293,6 +294,30 @@ class AdapterSyncPointerModeTests(AdapterSyncTestCase):
         self.assertEqual(1, result.returncode)
         self.assertIn("SKIP obsolete user file", result.stdout)
         self.assertEqual("# User rule\n", bundle.read_text(encoding="utf-8"))
+
+
+class ClineShortcutIntegrationTests(unittest.TestCase):
+    def test_cline_shortcut_generates_auto_discovered_files_without_tool_bootstrap(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            target = Path(temporary_directory)
+            result = subprocess.run(
+                [str(FRAMEWORK_SYNC_SCRIPT), "cline"],
+                cwd=target,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertNotIn("Tool scope:", result.stdout)
+            self.assertTrue((target / ".clinerules/00-ai-framework.md").is_file())
+            self.assertTrue(
+                (target / ".clinerules/00-ai-framework.manifest.json").is_file()
+            )
+            skills = list((target / ".cline/skills").glob("*/SKILL.md"))
+            self.assertGreater(len(skills), 0)
+            self.assertIn("Cline rule: .clinerules/00-ai-framework.md", result.stdout)
+            self.assertIn("Cline skills: .cline/skills/", result.stdout)
 
 
 if __name__ == "__main__":
