@@ -158,6 +158,30 @@ skills:
     user_description_vi: "Duy trì hoặc chỉnh API/endpoint/route đã tồn tại."
     status: active
 
+  - id: dotnet-parity-migration
+    skill_path: .ai/skills/dotnet-parity-migration/SKILL.md
+    workflow_id: dotnet-parity-migration
+    user_description_vi: "Migrate .NET legacy sang .NET 8+ theo chuẩn 1:1 contract và behavior parity."
+    status: active
+
+  - id: dotnet-baseline-capture
+    skill_path: .ai/skills/dotnet-baseline-capture/SKILL.md
+    workflow_id: dotnet-parity-migration
+    user_description_vi: "Tạo legacy baseline và Golden Master trước khi migrate .NET."
+    status: active
+
+  - id: dotnet-compatibility-port
+    skill_path: .ai/skills/dotnet-compatibility-port/SKILL.md
+    workflow_id: dotnet-parity-migration
+    user_description_vi: "Port code .NET legacy sang .NET 8+ bằng compatibility adapter, giữ nguyên behavior."
+    status: active
+
+  - id: dotnet-contract-regression
+    skill_path: .ai/skills/dotnet-contract-regression/SKILL.md
+    workflow_id: dotnet-parity-migration
+    user_description_vi: "So sánh output .NET 8+ với Golden Master legacy và phân loại khác biệt."
+    status: active
+
   - id: using-superpowers
     skill_path: .ai/skills/using-superpowers/SKILL.md
     workflow_id: null

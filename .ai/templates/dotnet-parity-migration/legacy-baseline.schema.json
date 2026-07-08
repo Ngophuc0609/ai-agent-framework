@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legacy Baseline Schema",
+  "type": "object",
+  "required": ["system", "endpoints", "views", "risks", "unknowns"],
+  "properties": {
+    "system": {
+      "type": "object",
+      "required": ["name", "legacyFramework", "targetFramework", "analysisStatus"],
+      "properties": {
+        "name": { "type": "string" },
+        "legacyFramework": { "type": "string" },
+        "targetFramework": { "type": "string" },
+        "generatedAt": { "type": "string" },
+        "analysisStatus": { "enum": ["PARTIAL", "COMPLETE", "BLOCKED"] }
+      }
+    },
+    "endpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "method", "legacyUrl", "verificationLevel"],
+        "properties": {
+          "id": { "type": "string" },
+          "method": { "type": "string" },
+          "legacyUrl": { "type": "string" },
+          "controller": { "type": "string" },
+          "action": { "type": "string" },
+          "authRequired": { "type": "boolean" },
+          "request": { "type": "object" },
+          "response": { "type": "object" },
+          "sideEffects": { "type": "object" },
+          "verificationLevel": {
+            "enum": ["DISCOVERED", "CODE_VERIFIED", "RUNTIME_VERIFIED", "TEST_VERIFIED", "UNKNOWN"]
+          },
+          "sourceReferences": { "type": "array" },
+          "migrationRisks": { "type": "array" }
+        }
+      }
+    },
+    "views": { "type": "array" },
+    "risks": { "type": "array" },
+    "unknowns": { "type": "array" }
+  }
+}

@@ -256,6 +256,64 @@ triggers:
       - sửa api hiện có
       - chỉnh endpoint hiện có
 
+  - workflow_id: dotnet-parity-migration
+    skill_id: dotnet-parity-migration
+    trigger_phrases_en:
+      - migrate dotnet legacy to dotnet 8
+      - dotnet parity migration
+      - migrate asp.net mvc to asp.net core
+      - port legacy dotnet preserving contract
+      - upgrade dotnet framework to dotnet 8 without behavior changes
+    trigger_phrases_vi:
+      - migrate .net legacy sang .net 8
+      - migration .net 1:1 parity
+      - migrate asp.net mvc sang asp.net core
+      - port legacy .net giữ nguyên contract
+      - nâng cấp .net framework lên .net 8 không đổi behavior
+      - chạy skill dotnet-parity-migration
+
+  - workflow_id: dotnet-parity-migration
+    skill_id: dotnet-baseline-capture
+    trigger_phrases_en:
+      - create legacy baseline
+      - capture golden master
+      - create baseline before migration
+      - analyze legacy endpoint before porting
+    trigger_phrases_vi:
+      - tạo legacy baseline
+      - capture golden master
+      - tạo baseline trước khi migrate
+      - phân tích endpoint legacy trước khi port
+      - chạy skill dotnet-baseline-capture
+
+  - workflow_id: dotnet-parity-migration
+    skill_id: dotnet-compatibility-port
+    trigger_phrases_en:
+      - port endpoint to dotnet 8
+      - port view to asp.net core
+      - migrate code using baseline
+      - use compatibility adapter for legacy behavior
+    trigger_phrases_vi:
+      - port endpoint này sang .net 8
+      - port view này sang asp.net core
+      - sửa code migration theo baseline
+      - dùng compatibility adapter cho legacy behavior
+      - chạy skill dotnet-compatibility-port
+
+  - workflow_id: dotnet-parity-migration
+    skill_id: dotnet-contract-regression
+    trigger_phrases_en:
+      - compare with golden master
+      - review contract regression
+      - compare dotnet 8 output with legacy
+      - classify migration differences
+    trigger_phrases_vi:
+      - so sánh với golden master
+      - review contract regression
+      - kiểm tra output .net 8 so với legacy
+      - phân loại khác biệt migration
+      - chạy skill dotnet-contract-regression
+
   - workflow_id: null
     skill_id: generating-backend-tests
     trigger_phrases_en:

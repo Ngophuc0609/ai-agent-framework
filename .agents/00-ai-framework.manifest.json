@@ -7,7 +7,7 @@
   },
   "mode": "pointer",
   "schema_version": 1,
-  "source_commit": "6130cc5823b8eba55b89e3873c82216ad8840c03",
+  "source_commit": "4e60b56f52f0704ed114cbffe18c6f9f5a27abcb",
   "sources": [
     {
       "path": ".ai/README.md",
@@ -23,15 +23,15 @@
     },
     {
       "path": ".ai/registry/skills.yml",
-      "sha256": "451ed656cde721cceb2482844c4c97ada6ffcb5b5a47ba657e12d22d9bde97f7"
+      "sha256": "244eb3a64592f9246e15ace32a1ea67145a2e301a26e6c9d7234a5ba5f2cc290"
     },
     {
       "path": ".ai/registry/workflows.yml",
-      "sha256": "989dacc5a540117b0bdfa521ab43889f192894ff6fbc8efa6df029665bd93173"
+      "sha256": "0da8551f34ee20d2ebe0c8083a7fc34338ddc4f1425146f839b76b9cfcdbd9e1"
     },
     {
       "path": ".ai/registry/triggers.yml",
-      "sha256": "1f5aa5e24d4ccdf11c8aca84aa0c4469c20b55bee9438ce69f5bd591686729c4"
+      "sha256": "26f659bb0345d475f78ffd2f59019c23c255b2f9aee633b618acf1e37c403b45"
     },
     {
       "path": ".ai/registry/tool-bootstrap.json",
@@ -106,12 +106,16 @@
       "sha256": "55e60484a66dc275c2aef9036354e9756e3bbdf189f3b4a4f545c4c10d36cff2"
     },
     {
+      "path": ".ai/rules/16-dotnet-parity-migration-rules.md",
+      "sha256": "0f2c3dbfef04602b6184311ed5e15b03d54369eb757d9237ef05f9f52237690c"
+    },
+    {
       "path": ".ai/adapters/codex.md",
       "sha256": "34b7080a7ef2dcd4ecc78c81b6378620fad2d20f740e27bb255c556171ef4b70"
     },
     {
       "path": "bin/ai-agent-adapter-sync",
-      "sha256": "2b034ced10f6389e5be15c5f83cbffe0a3bab02f8d185d03b0fd72a609fa1b5d"
+      "sha256": "2a637661cae2cf1b9981fd87461f680e90f1541747c6183503796fa7fc3c70e4"
     }
   ]
 }

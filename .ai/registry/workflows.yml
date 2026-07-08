@@ -36,6 +36,13 @@ workflows:
     default_output_namespace: api-changes
     status: active
 
+  - id: dotnet-parity-migration
+    path: .ai/workflows/dotnet-parity-migration.md
+    skill_id: dotnet-parity-migration
+    user_description_vi: "Workflow migrate .NET legacy sang .NET 8+ theo 1:1 parity."
+    default_output_namespace: dotnet-parity-migration
+    status: active
+
   - id: standardizing-ai-agent-framework
     path: .ai/workflows/standardizing-ai-agent-framework.md
     skill_id: standardizing-ai-agent-framework
