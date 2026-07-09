@@ -7,6 +7,7 @@ Name:
 URL/View:
 Owner:
 Priority: P0/P1/P2/P3
+Migration Unit Status: NOT_STARTED / BASELINE_READY / TEST_SPEC_READY / BASE_PROJECT_READY / CONVERTING / REGRESSION_RUNNING / PASS / FAIL / BLOCKED / DEFERRED
 ```
 
 ## Baseline
@@ -26,8 +27,10 @@ Priority: P0/P1/P2/P3
 
 ## Test First
 
+- [ ] `03_UNIT_TEST_SPEC_FROM_LEGACY_BASELINE.md` exists and is derived from legacy baseline evidence.
 - [ ] .NET 8+ test project exists before production behavior code.
 - [ ] Tests are derived from legacy source and runtime evidence.
+- [ ] Tests were not generated from migrated .NET 8+ output.
 - [ ] Tests cover request inputs.
 - [ ] Tests cover business outcome.
 - [ ] Tests cover exact response status, headers, cookies, content type, field names, data types, object shape, and body.
@@ -36,12 +39,16 @@ Priority: P0/P1/P2/P3
 
 ## Migration
 
+- [ ] `07_ENDPOINT_VIEW_MIGRATION_TRACKER.md` status was updated for this slice.
 - [ ] Corresponding .NET 8+ files were scaffolded only after baseline and tests existed.
 - [ ] Minimal compatibility change only.
 - [ ] No business rule change.
 - [ ] No DTO/contract change.
 - [ ] No view output change.
+- [ ] `Request.Params` behavior uses verified compatibility logic, not method-based mapping.
+- [ ] `Json(responseString)` behavior is based on Golden Master raw-object versus escaped-string evidence.
 - [ ] Latent bugs and optimization opportunities were documented separately, not fixed during parity migration.
+- [ ] Deferred issues were recorded in `15_DEFERRED_ISSUES_REPORT.md`.
 - [ ] No secret leakage.
 
 ## Regression
@@ -56,6 +63,6 @@ Priority: P0/P1/P2/P3
 ## Decision
 
 ```text
-PASS / FAIL / BLOCKED
+PASS / FAIL / BLOCKED / PARTIAL / DEFERRED
 Reason:
 ```

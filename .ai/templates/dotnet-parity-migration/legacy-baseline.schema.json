@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Legacy Baseline Schema",
   "type": "object",
-  "required": ["system", "endpoints", "views", "risks", "unknowns"],
+  "required": ["system", "migrationUnits", "endpoints", "views", "risks", "unknowns"],
   "properties": {
     "system": {
       "type": "object",
@@ -13,6 +13,68 @@
         "targetFramework": { "type": "string" },
         "generatedAt": { "type": "string" },
         "analysisStatus": { "enum": ["PARTIAL", "COMPLETE", "BLOCKED"] }
+      }
+    },
+    "deliverables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "status"],
+        "properties": {
+          "path": {
+            "enum": [
+              "00_MIGRATION_SCOPE.md",
+              "01_LEGACY_INVENTORY.md",
+              "02_LEGACY_BASELINE.md",
+              "03_UNIT_TEST_SPEC_FROM_LEGACY_BASELINE.md",
+              "04_COMPATIBILITY_DESIGN.md",
+              "05_NEW_PROJECT_BASELINE.md",
+              "06_NEW_PROJECT_TEST_SCAFFOLD.md",
+              "07_ENDPOINT_VIEW_MIGRATION_TRACKER.md",
+              "08_CONTRACT_REGRESSION_REPORT.md",
+              "09_VIEW_UI_REGRESSION_REPORT.md",
+              "10_MIGRATION_RISK_REGISTER.md",
+              "11_ACCEPTANCE_CHECKLIST.md",
+              "15_DEFERRED_ISSUES_REPORT.md",
+              "legacy-baseline.json"
+            ]
+          },
+          "status": { "enum": ["NOT_STARTED", "PARTIAL", "COMPLETE", "BLOCKED", "NOT_APPLICABLE"] },
+          "evidence": { "type": "array", "items": { "type": "string" } },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "migrationUnits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "name", "status"],
+        "properties": {
+          "id": { "type": "string" },
+          "kind": { "enum": ["endpoint", "view", "job", "integration", "business-flow", "other"] },
+          "name": { "type": "string" },
+          "status": {
+            "enum": [
+              "NOT_STARTED",
+              "BASELINE_READY",
+              "TEST_SPEC_READY",
+              "BASE_PROJECT_READY",
+              "CONVERTING",
+              "REGRESSION_RUNNING",
+              "PASS",
+              "FAIL",
+              "BLOCKED",
+              "DEFERRED"
+            ]
+          },
+          "acceptanceStatus": { "enum": ["PASS", "FAIL", "BLOCKED", "PARTIAL", "DEFERRED"] },
+          "legacyBaselinePath": { "type": "string" },
+          "testSpecPath": { "type": "string" },
+          "regressionReportPath": { "type": "string" },
+          "deferredIssues": { "type": "array", "items": { "type": "string" } },
+          "blockingReason": { "type": "string" }
+        }
       }
     },
     "endpoints": {

@@ -8,6 +8,8 @@ Workflow này migrate .NET legacy sang .NET 8+ bằng baseline, compatibility po
 
 Migrate .NET legacy systems to .NET 8+ while preserving 1:1 external behavior.
 
+This workflow is a parity workflow. It must not be used as a modernization, cleanup, or bug-fixing workflow unless a separate approved change explicitly exits parity mode.
+
 ## Trigger
 
 Registered in:
@@ -47,6 +49,7 @@ Runtime state should use:
 Recommended subdirectories:
 
 ```text
+migration-docs/
 baseline/
 contracts/
 golden-master/
@@ -55,6 +58,26 @@ scaffold/
 regression/
 risks/
 validation/
+deferred/
+```
+
+Required deliverables:
+
+```text
+migration-docs/00_MIGRATION_SCOPE.md
+migration-docs/01_LEGACY_INVENTORY.md
+migration-docs/02_LEGACY_BASELINE.md
+migration-docs/03_UNIT_TEST_SPEC_FROM_LEGACY_BASELINE.md
+migration-docs/04_COMPATIBILITY_DESIGN.md
+migration-docs/05_NEW_PROJECT_BASELINE.md
+migration-docs/06_NEW_PROJECT_TEST_SCAFFOLD.md
+migration-docs/07_ENDPOINT_VIEW_MIGRATION_TRACKER.md
+migration-docs/08_CONTRACT_REGRESSION_REPORT.md
+migration-docs/09_VIEW_UI_REGRESSION_REPORT.md
+migration-docs/10_MIGRATION_RISK_REGISTER.md
+migration-docs/11_ACCEPTANCE_CHECKLIST.md
+migration-docs/15_DEFERRED_ISSUES_REPORT.md
+migration-docs/legacy-baseline.json
 ```
 
 ## Execution
@@ -69,30 +92,32 @@ validation/
 4. Retrieve project memory when available. If memory is unavailable, use repository docs fallback and record the limitation.
 5. Attempt CodeGraph for broad source inventory or dependency tracing. For localized endpoint work, use `rg`, IDE/LSP references, and narrow source reads when CodeGraph is unavailable.
 6. Identify the target app type and target slice.
-7. If baseline is missing, stop porting and run `dotnet-baseline-capture`.
-8. If baseline is partial, continue only for endpoints whose required baseline evidence exists; otherwise mark the endpoint `BLOCKED`.
-9. If baseline conflicts, record the conflict and ask for clarification or runtime evidence.
-10. Create baseline documentation before production migration code:
+7. Create or update `00_MIGRATION_SCOPE.md` and `07_ENDPOINT_VIEW_MIGRATION_TRACKER.md`; every endpoint/view/business capability starts as `NOT_STARTED`.
+8. If baseline is missing, stop porting and run `dotnet-baseline-capture`.
+9. If baseline is partial, continue only for slices whose required evidence exists; otherwise mark the slice `BLOCKED: Missing legacy baseline/runtime evidence`.
+10. If baseline conflicts, record the conflict and ask for clarification or runtime evidence.
+11. Create baseline documentation before production migration code:
    - current architecture and module map.
    - endpoint/view/job inventory.
    - business logic summaries per API or capability.
    - request/response contracts including field names, object shapes, data types, status codes, headers, cookies, and dynamic fields.
    - database, external API, file, auth, and session side effects.
-11. Create or update .NET 8+ unit/integration/snapshot test projects before production migration code.
-12. For each API or business capability, create tests from legacy evidence first:
+12. Create `03_UNIT_TEST_SPEC_FROM_LEGACY_BASELINE.md` from the legacy baseline before creating or accepting .NET 8+ behavior.
+13. Create or update .NET 8+ unit/integration/snapshot test projects before production migration code and document them in `06_NEW_PROJECT_TEST_SCAFFOLD.md`.
+14. For each API or business capability, create tests from legacy evidence first:
    - request input parameters from query, route, form, body, header, and cookie.
    - expected business outcome.
    - exact response status, headers, content type, field names, data types, object shape, null/date/enum/numeric behavior, and body text or JSON.
    - database, external API, file, auth, session, and cookie side effects when applicable.
-13. Scaffold corresponding .NET 8+ files for the selected slice only after baseline and test assets exist.
-14. Design compatibility adapters before editing production behavior.
-15. Convert only one API or business capability at a time.
-16. Preserve legacy behavior exactly. Do not add features, fix latent bugs, or optimize behavior during parity migration.
-17. If a latent bug, cleanup opportunity, or optimization is found, write it to `docs/dotnet-parity-migration/post-migration-findings.md` or the run risk report and continue preserving legacy behavior.
-18. Run build, baseline-derived tests, and contract comparison.
-19. Classify every difference as `MATCH`, `DYNAMIC_MATCH`, `APPROVED_BREAKING_CHANGE`, `MIGRATION_BUG`, or `BLOCKED`.
-20. Mark the slice complete only when baseline-derived tests and contract regression pass.
-21. Report readiness per endpoint or view.
+15. Scaffold corresponding .NET 8+ files for the selected slice only after baseline and test assets exist; mark it `BASE_PROJECT_READY` or `CONVERTING` as appropriate.
+16. Design compatibility adapters before editing production behavior and document them in `04_COMPATIBILITY_DESIGN.md`.
+17. Convert only one endpoint, view, job, integration, or business capability at a time.
+18. Preserve legacy behavior exactly. Do not add features, fix latent bugs, or optimize behavior during parity migration.
+19. If a latent bug, cleanup opportunity, security risk, or optimization is found, write it to `15_DEFERRED_ISSUES_REPORT.md` and continue preserving legacy behavior.
+20. Run build, baseline-derived tests, and contract/view comparison.
+21. Classify every difference as `MATCH`, `DYNAMIC_MATCH`, `APPROVED_BREAKING_CHANGE`, `MIGRATION_BUG`, or `BLOCKED`.
+22. Mark the slice `PASS` only when baseline-derived tests and contract/view regression pass with no unapproved difference.
+23. Report readiness per endpoint or view.
 
 ## Phase Prompts
 
@@ -112,7 +137,8 @@ Use after porting to compare .NET 8+ output with legacy Golden Master snapshots.
 
 - [ ] Skill, workflow, and trigger were resolved through `.ai/registry/`.
 - [ ] `.ai/rules/16-dotnet-parity-migration-rules.md` was applied.
-- [ ] Legacy baseline exists or the task is explicitly `BLOCKED`.
+- [ ] Required deliverables are created or explicitly marked not applicable with evidence.
+- [ ] Legacy baseline exists or the task is explicitly `BLOCKED: Missing legacy baseline/runtime evidence`.
 - [ ] P0/P1 endpoints or views have Golden Master evidence before porting.
 - [ ] Baseline documents preserve architecture, current business logic, request/response contracts, and side effects for the target slice.
 - [ ] Unit/integration/snapshot tests were created from legacy evidence before production migration code.
@@ -120,6 +146,7 @@ Use after porting to compare .NET 8+ output with legacy Golden Master snapshots.
 - [ ] Compatibility risks were listed before source edits.
 - [ ] No business rule refactor or unapproved contract change was introduced.
 - [ ] Latent bugs, cleanup opportunities, and optimizations were documented but not fixed unless explicitly approved.
+- [ ] `15_DEFERRED_ISSUES_REPORT.md` exists when any deferred issue is found.
 - [ ] Build/test/regression commands were run or explicitly blocked with reason.
 - [ ] All differences were classified.
 - [ ] Secrets were not exposed.
@@ -138,14 +165,16 @@ Use after porting to compare .NET 8+ output with legacy Golden Master snapshots.
 Report:
 
 ```text
-Status: PASS / FAIL / BLOCKED / PARTIAL
+Status: PASS / FAIL / BLOCKED / PARTIAL / DEFERRED
 Endpoint/View:
 Legacy evidence:
 Baseline status:
 Baseline-derived tests:
+Migration unit status:
 Changes made:
 Compatibility risks:
 Contract differences:
+Deferred issues:
 Tests run:
 Fallbacks/limitations:
 Next required action:

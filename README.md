@@ -92,3 +92,45 @@ ai-agent-sync --install-tools --yes --generate-adapters
 ai-agent-sync agy
 ai-agent-sync cursor
 ```
+
+## Quy trình skill pack migration .NET 1:1 parity
+
+Khi dùng các skill `.NET Framework -> .NET 8+`, mặc định phải chạy theo parity, không phải modernization:
+
+```text
+Baseline bản cũ
+-> Sinh Unit Test / Contract Test từ baseline cũ
+-> Tạo base project bản mới
+-> Tạo test scaffold cho bản mới
+-> Convert từng endpoint/màn hình/nghiệp vụ 1:1
+-> Regression bản mới với baseline cũ
+-> Ghi deferred issues, không sửa bug legacy trong phase parity
+```
+
+Các skill chính:
+
+- `dotnet-parity-migration`: điều phối toàn bộ phase.
+- `dotnet-baseline-capture`: tạo inventory, Golden Master, `legacy-baseline.json`, và test spec từ legacy.
+- `dotnet-compatibility-port`: port tối thiểu từng slice sau khi baseline và test spec đã sẵn sàng.
+- `dotnet-contract-regression`: so bản .NET 8+ với baseline cũ, không so với output tự sinh từ bản mới.
+
+Deliverables nên nằm trong `migration-docs/` hoặc run namespace:
+
+```text
+00_MIGRATION_SCOPE.md
+01_LEGACY_INVENTORY.md
+02_LEGACY_BASELINE.md
+03_UNIT_TEST_SPEC_FROM_LEGACY_BASELINE.md
+04_COMPATIBILITY_DESIGN.md
+05_NEW_PROJECT_BASELINE.md
+06_NEW_PROJECT_TEST_SCAFFOLD.md
+07_ENDPOINT_VIEW_MIGRATION_TRACKER.md
+08_CONTRACT_REGRESSION_REPORT.md
+09_VIEW_UI_REGRESSION_REPORT.md
+10_MIGRATION_RISK_REGISTER.md
+11_ACCEPTANCE_CHECKLIST.md
+15_DEFERRED_ISSUES_REPORT.md
+legacy-baseline.json
+```
+
+Nếu thiếu baseline/runtime evidence thì agent phải đánh dấu `BLOCKED`, không tự tạo mock response, không tự đoán DTO/field, không tự sửa bug legacy. Một slice chỉ được coi là xong khi regression pass với baseline cũ và trạng thái là `PASS`.

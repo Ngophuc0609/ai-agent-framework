@@ -7,7 +7,7 @@
   },
   "mode": "pointer",
   "schema_version": 1,
-  "source_commit": "3d9c9ffbdb4328ccd4c5214e1d852c0be217d905",
+  "source_commit": "8300d8e93ec57ebb2e9741a216a1eb9e1b45ceb9",
   "sources": [
     {
       "path": ".ai/README.md",
@@ -107,7 +107,7 @@
     },
     {
       "path": ".ai/rules/16-dotnet-parity-migration-rules.md",
-      "sha256": "0f2c3dbfef04602b6184311ed5e15b03d54369eb757d9237ef05f9f52237690c"
+      "sha256": "754d3339206fe0934343a8650078b914333320b9f3ed9e236d2ce4d4cb2879f0"
     },
     {
       "path": ".ai/adapters/codex.md",
@@ -115,7 +115,7 @@
     },
     {
       "path": "bin/ai-agent-adapter-sync",
-      "sha256": "2a637661cae2cf1b9981fd87461f680e90f1541747c6183503796fa7fc3c70e4"
+      "sha256": "3ba5e086ea1ee263f4c4fbc0db278e0f66f74e1a1301eb244c99c34286a1a35b"
     }
   ]
 }

@@ -23,6 +23,8 @@ Skill này so sánh output .NET 8+ với Golden Master legacy sau khi port.
 
 Verify that converted .NET 8+ code behaves the same as legacy code for every observable contract.
 
+The comparison source is the legacy baseline and Golden Master snapshots. Do not compare the migrated application against expectations generated from the migrated application itself.
+
 ## Compare All Observable Behavior
 
 For each endpoint or view, compare:
@@ -41,6 +43,18 @@ For each endpoint or view, compare:
 - Database, external API, and file side effects.
 - Auth and session behavior.
 
+For JSON bodies, compare exact property names, casing, nested object/array shape, primitive data types, nullable/missing/empty behavior, DateTime format/timezone, enum representation, numeric precision, escaped-string versus raw-object behavior, and branch-specific schemas.
+
+For views, compare rendered HTML, layout/partial output, ViewBag/ViewData/Model-driven values, form action/method/input names, script order, CSS order, static paths, image/font paths, React root element, client-side route fallback, and browser refresh behavior when baseline exists.
+
+## Dynamic Field Masking
+
+Dynamic values may be masked only when the legacy baseline includes an approved rule in `dynamic-fields.json` or equivalent documentation.
+
+Valid masks include timestamps, GUIDs, random IDs, CSRF tokens, OTPs, signed links, environment-specific hostnames, and generated correlation IDs. A mask must still validate type, format, presence, nullability, and placement.
+
+Do not mask field-name changes, type changes, missing fields, added fields, casing changes, response wrapper changes, status/content-type drift, cookie/session drift, or business-rule differences.
+
 ## Difference Classification
 
 Every difference must be classified:
@@ -50,6 +64,14 @@ Every difference must be classified:
 - `APPROVED_BREAKING_CHANGE`: explicitly documented and approved.
 - `MIGRATION_BUG`: unintended difference.
 - `BLOCKED`: cannot verify due to missing baseline, environment, tooling, or data.
+
+Map final acceptance to:
+
+- `PASS`: all required comparisons are `MATCH` or approved `DYNAMIC_MATCH`.
+- `FAIL`: at least one unapproved parity difference exists.
+- `BLOCKED`: required baseline, environment, test data, or tooling is missing.
+- `PARTIAL`: only a subset of scoped slices has complete evidence.
+- `DEFERRED`: a legacy issue was found and recorded for later, without changing parity behavior.
 
 ## Completion Rule
 
@@ -62,7 +84,7 @@ If baseline-derived tests were not created or were not run, the migrated slice i
 ## Report Format
 
 ```text
-Regression Result: PASS / FAIL / BLOCKED
+Regression Result: PASS / FAIL / BLOCKED / PARTIAL / DEFERRED
 Endpoint/View:
 Legacy baseline path:
 New output path:
@@ -70,5 +92,7 @@ Baseline-derived tests:
 Matches:
 Differences:
 Bug classification:
+Dynamic masks:
+Deferred issues:
 Required fix:
 ```

@@ -33,6 +33,19 @@ The one-time bootstrap document is setup-only. Do not load it during normal task
 - New backend features/APIs/jobs/webhooks/integrations require brainstorm, contract, acceptance criteria, and tests before production code.
 - Respond to the Vietnamese-speaking user in Vietnamese unless another language is requested.
 
+## .NET Parity Migration Guardrails
+
+When the task is .NET Framework or legacy .NET migration to .NET 8+:
+
+- Treat the work as 1:1 parity migration, not modernization.
+- Baseline legacy behavior before production code conversion.
+- Generate unit/contract tests from the legacy baseline before using migrated output.
+- Convert one endpoint, view, job, integration, or business flow at a time.
+- Do not change request/response contracts, status codes, content types, JSON casing, data types, object structure, cookies, session, redirects, views, static assets, side effects, or business rules.
+- Do not fix latent legacy bugs during the parity phase; record them in `15_DEFERRED_ISSUES_REPORT.md`.
+- Do not mechanically map `Request.Params` by HTTP method or mechanically convert `Json(responseString)` to `Content(responseString, "application/json")`.
+- Use `PASS`, `FAIL`, `BLOCKED`, `PARTIAL`, and `DEFERRED`; missing baseline/evidence means `BLOCKED`, not guessed output.
+
 ## Rule Loading Matrix
 
 - Every task: `00-global-rules.md`, `03-safety-rules.md`, `15-agent-runtime-tool-policy.md`.

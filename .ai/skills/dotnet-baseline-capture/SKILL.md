@@ -46,6 +46,25 @@ Generate or update the applicable artifacts under the migration output namespace
 
 Templates live in `.ai/templates/dotnet-parity-migration/`.
 
+Use the current parity deliverable names from `.ai/rules/16-dotnet-parity-migration-rules.md`. The legacy artifact names above may be folded into:
+
+- `00_MIGRATION_SCOPE.md`
+- `01_LEGACY_INVENTORY.md`
+- `02_LEGACY_BASELINE.md`
+- `03_UNIT_TEST_SPEC_FROM_LEGACY_BASELINE.md`
+- `04_COMPATIBILITY_DESIGN.md`
+- `05_NEW_PROJECT_BASELINE.md`
+- `06_NEW_PROJECT_TEST_SCAFFOLD.md`
+- `07_ENDPOINT_VIEW_MIGRATION_TRACKER.md`
+- `08_CONTRACT_REGRESSION_REPORT.md`
+- `09_VIEW_UI_REGRESSION_REPORT.md`
+- `10_MIGRATION_RISK_REGISTER.md`
+- `11_ACCEPTANCE_CHECKLIST.md`
+- `15_DEFERRED_ISSUES_REPORT.md`
+- `legacy-baseline.json`
+
+Baseline capture owns the legacy evidence and the test specification source. New-project files may be created as stubs only when they clearly state `NOT_STARTED` or `BLOCKED`; do not present them as completed implementation artifacts.
+
 ## Required Endpoint Fields
 
 For every endpoint, capture:
@@ -71,6 +90,42 @@ For every endpoint, capture:
 - React/view/third-party consumer when detected.
 - Verification level: `DISCOVERED`, `CODE_VERIFIED`, `RUNTIME_VERIFIED`, `TEST_VERIFIED`, or `UNKNOWN`.
 - Analysis status: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
+
+## Baseline-First Test Specification
+
+After each endpoint, view, or business capability reaches `BASELINE_READY`, create or update `03_UNIT_TEST_SPEC_FROM_LEGACY_BASELINE.md`.
+
+The test specification must be sourced from legacy evidence only and must include:
+
+- Exact request inputs from route, query, form, body, header, cookie, and session where applicable.
+- Expected response status, headers, content-type, cookies, redirects, body text, JSON property names, casing, data types, object structure, null/missing/empty behavior, date/time format, enum representation, and dynamic field rules.
+- Business branch conditions and expected branch outcomes.
+- Database, file, external API, auth, permission, session, and cookie side effects.
+- View contracts when applicable: rendered HTML, layout/partial, ViewBag/ViewData/Model, form names, script/CSS order, static asset paths, and browser refresh/deep-link behavior.
+
+Do not generate unit or contract expectations from the new .NET implementation.
+
+## Auth, Session, Cookie Baseline Contract
+
+Capture these fields when auth/session/cookies affect the slice:
+
+- Cookie name, domain, path, timeout, sliding expiration, SameSite, Secure, HttpOnly.
+- LoginPath, AccessDeniedPath, unauthorized behavior, logout behavior.
+- Principal, claims, role, SysAdmin, or custom permission mapping.
+- Session key, value type, serialization format, timeout, captcha/OTP temporary state.
+
+If production uses multiple instances or a load balancer, record that in the baseline and flag in-memory session as local/dev only unless legacy evidence proves otherwise.
+
+## View/UI/Static Baseline Contract
+
+For views or UI-backed endpoints, capture:
+
+- Rendered HTML and layout/partial composition.
+- ViewBag/ViewData/Model fields and types.
+- Form action, method, and input names.
+- Script order, CSS order, static file paths, image/font paths.
+- React root element or client-side route fallback when present.
+- Browser refresh/F5 and deep-link behavior.
 
 ## Manual Source Trace Requirement
 

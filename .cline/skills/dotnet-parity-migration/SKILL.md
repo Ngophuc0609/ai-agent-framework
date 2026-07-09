@@ -40,21 +40,61 @@ This is not a feature project and not a refactor project.
 
 The migration must be baseline-first and test-first. Production migration code must not be treated as complete until tests derived from the legacy behavior pass against the .NET 8+ implementation.
 
+## Required Deliverables
+
+Create or update these files under `migration-docs/` or the selected run namespace:
+
+- `00_MIGRATION_SCOPE.md`
+- `01_LEGACY_INVENTORY.md`
+- `02_LEGACY_BASELINE.md`
+- `03_UNIT_TEST_SPEC_FROM_LEGACY_BASELINE.md`
+- `04_COMPATIBILITY_DESIGN.md`
+- `05_NEW_PROJECT_BASELINE.md`
+- `06_NEW_PROJECT_TEST_SCAFFOLD.md`
+- `07_ENDPOINT_VIEW_MIGRATION_TRACKER.md`
+- `08_CONTRACT_REGRESSION_REPORT.md`
+- `09_VIEW_UI_REGRESSION_REPORT.md`
+- `10_MIGRATION_RISK_REGISTER.md`
+- `11_ACCEPTANCE_CHECKLIST.md`
+- `15_DEFERRED_ISSUES_REPORT.md`
+- `legacy-baseline.json`
+
+Do not treat a blank template as a deliverable. Each file must contain evidence-backed content or an explicit `BLOCKED`/`NOT_APPLICABLE` reason.
+
 ## Required Execution Flow
 
+0. Define migration scope and initialize the tracker.
 1. Identify the app type: ASP.NET MVC, Web API, WebForms, WCF, Worker, Console, Desktop, or mixed.
-2. Build a baseline document set that preserves the current legacy state: architecture, routing, configuration, authentication, session/cookies, request/response contracts, business rules, database and external side effects, views/static assets, and known risks.
-3. Build or inspect Golden Master evidence before migration code changes. P0/P1 APIs require request input, response output, field names, data types, object shapes, status codes, headers, cookies, and side effects.
-4. Create or update the .NET 8+ unit/integration/snapshot test project before production migration code. Tests must be derived from legacy source and runtime evidence, not invented desired behavior.
-5. For each API or business capability, write tests that verify 1:1 behavior from request parameters through business logic to response body and side effects.
-6. Scaffold the corresponding .NET 8+ files needed for the target slice only after baseline and test assets exist.
-7. Identify compatibility risks: request binding, JSON, model binding, auth, session, crypto, view rendering, file paths, database behavior, and external APIs.
-8. Design the smallest compatibility adapter plan.
-9. Convert one API or business capability at a time, preserving legacy behavior exactly.
-10. Run build, tests, and contract regression.
-11. Compare the new output to the legacy baseline.
-12. If a latent bug, cleanup opportunity, or optimization is detected, document it in a report and do not fix it during parity migration unless the user explicitly approves a breaking or behavior-changing change.
-13. Report `PASS`, `FAIL`, `BLOCKED`, or `PARTIAL` per endpoint or view.
+2. Build a legacy inventory: architecture, routing, configuration, authentication, session/cookies, views/static assets, jobs, integrations, and current risks.
+3. Build or inspect Golden Master baseline evidence before migration code changes. P0/P1 APIs require request input, response output, field names, data types, object shapes, status codes, headers, cookies, and side effects.
+4. Create `03_UNIT_TEST_SPEC_FROM_LEGACY_BASELINE.md` from the legacy baseline. Do not derive tests from the new .NET 8+ output.
+5. Create or update the .NET 8+ base project and test scaffold. Tests must exist before production behavior conversion.
+6. For each endpoint, view, or business capability, write tests that verify 1:1 behavior from request parameters through business logic to response body and side effects.
+7. Scaffold the corresponding .NET 8+ files needed for the target slice only after baseline and test assets exist.
+8. Identify compatibility risks: request binding, JSON, model binding, auth, session, crypto, view rendering, file paths, database behavior, and external APIs.
+9. Design the smallest compatibility adapter plan.
+10. Convert one endpoint, view, job, integration, or business capability at a time, preserving legacy behavior exactly.
+11. Run build, tests, and contract/view regression against the legacy baseline.
+12. Compare the new output to the legacy baseline, not to expected behavior invented from the new code.
+13. If a latent bug, cleanup opportunity, security risk, or optimization is detected, document it in `15_DEFERRED_ISSUES_REPORT.md` and do not fix it during parity migration unless the user explicitly approves a breaking or behavior-changing change.
+14. Report `PASS`, `FAIL`, `BLOCKED`, `PARTIAL`, or `DEFERRED` per endpoint or view.
+
+## Migration Unit Status
+
+Every endpoint, view, job, integration, or business capability must use one of:
+
+```text
+NOT_STARTED
+BASELINE_READY
+TEST_SPEC_READY
+BASE_PROJECT_READY
+CONVERTING
+REGRESSION_RUNNING
+PASS
+FAIL
+BLOCKED
+DEFERRED
+```
 
 ## Compatibility Adapters To Prefer
 
@@ -78,6 +118,8 @@ The migration must be baseline-first and test-first. Production migration code m
 - Do not replace escaped JSON string responses with raw JSON object responses unless the Golden Master proves legacy returned raw JSON.
 - Do not mechanically replace `Request.Params` with only `Request.Form` or only `Request.Query`.
 - Do not clean up old DTO property names when frontend or integration consumers depend on them.
+- Do not mark a generated endpoint list or a blank template as a completed baseline.
+- Do not mark a slice `PASS` when the response body is documented only as `object`, `dynamic`, `anonymous object`, `var`, or unresolved `data`.
 
 ## Output Template
 
@@ -86,10 +128,12 @@ Migration Step:
 Target:
 Legacy evidence:
 Baseline status:
+Migration unit status:
 Risk areas:
 Test assets:
 Change plan:
 Files changed:
 Verification:
-Result: PASS / FAIL / BLOCKED / PARTIAL
+Deferred issues:
+Result: PASS / FAIL / BLOCKED / PARTIAL / DEFERRED
 ```
