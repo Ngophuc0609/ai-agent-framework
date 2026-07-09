@@ -1,19 +1,20 @@
 <!-- generated-by: ai-agent-adapter-sync -->
 # .ai Framework Instructions for antigravity
 
-Source of truth: `.ai/`
-Mode: pointer-only; do not treat this generated file as a policy copy.
+Native entrypoints: `GEMINI.md` and `.agents/skills/<skill>/SKILL.md`.
+Canonical source/resources: `.ai/`.
+Mode: Antigravity isolated native mode; do not eagerly load `.ai/`.
 
 ## Progressive Startup
 
-Before any coding, documentation, debugging, review, refactor, commit, or analysis task:
+Before coding, documentation, debugging, review, refactor, commit, or analysis:
 
-1. Verify `.ai/` exists in this repository.
-2. Read `.ai/README.md`, `.ai/rules/00-global-rules.md`, and `.ai/rules/15-agent-runtime-tool-policy.md`.
-3. Inspect runtime state using safe local checks. Do not install tools or packages automatically.
-4. Read `.ai/adapters/antigravity.md` when native tool constraints are relevant and the file exists.
-5. Read `.ai/registry/triggers.yml` and match the user intent.
-6. Read only the selected `SKILL.md`, selected workflow, and their directly referenced rules.
+1. Use Antigravity native skill discovery from `.agents/skills/`.
+2. Select skills by slash command or by matching the `description` in each `SKILL.md`.
+3. Read only the selected `SKILL.md` and its directly referenced files.
+4. Do not read `.ai/README.md`, `.ai/registry/*`, or all `.ai/rules/*` during normal startup.
+5. Read `.ai/` files only when the selected skill or this file directly references them.
+6. Inspect runtime state using safe local checks. Do not install tools or packages automatically.
 7. Execute with bounded source scope and validate only applicable quality gates.
 8. Record tool fallbacks, confidence/readiness impact, and evidence paths.
 
@@ -21,7 +22,8 @@ The one-time bootstrap document is setup-only. Do not load it during normal task
 
 ## Non-Negotiable Rules
 
-- `.ai/` is canonical; this file only points to current policy.
+- `.agents/skills/` is the native Antigravity project skill surface.
+- `.ai/` is canonical source/reference material, not an always-on policy bundle.
 - Keep filesystem access within the active repository.
 - Never expose secrets or store unverified/raw source in memory.
 - Package/tool installation and other high-risk actions require runtime-appropriate approval.
@@ -42,18 +44,9 @@ When the task is .NET Framework or legacy .NET migration to .NET 8+:
 - Do not mechanically map `Request.Params` by HTTP method or mechanically convert `Json(responseString)` to `Content(responseString, "application/json")`.
 - Use `PASS`, `FAIL`, `BLOCKED`, `PARTIAL`, and `DEFERRED`; missing baseline/evidence means `BLOCKED`, not guessed output.
 
-## Rule Loading Matrix
-
-- Every task: `00-global-rules.md`, `03-safety-rules.md`, `15-agent-runtime-tool-policy.md`.
-- Skill/workflow routing: `triggers.yml`, then only the selected skill and workflow. Read `skills.yml` or `workflows.yml` only when metadata resolution requires them.
-- Localized source work: apply `10-codegraph-first-rules.md` and `12-memory-policy-rules.md` as preferred, non-blocking preflight with documented fallback.
-- Architecture, source handover, cross-module analysis, broad refactor, dependency tracing: attempt CodeGraph first; block only when the selected workflow requires graph evidence.
-- New backend behavior: `14-tdd-first-feature-rules.md` and `developing-backend-feature-tdd`.
-- Source handover: load its selected skill/workflow and required agent/evidence rules exactly.
-- Model routing: load `08-model-routing-rules.md` and `09-model-trigger-rules.md` only for model selection/routing tasks.
-
 ## Runtime Fallbacks
 
+- Missing native skill: inspect `.ai/registry/triggers.yml` only as a routing fallback.
 - Missing Memory: use `docs/PROJECT_CONTEXT.md`, `docs/FINDINGS.md`, and `docs/DECISIONS.md`; record the limitation and do not claim a memory write.
 - Missing CodeGraph on localized work: use `rg`, IDE/LSP references, and narrow source slices; downgrade confidence/readiness.
 - Missing required workflow evidence: stop that workflow rather than fabricate output.

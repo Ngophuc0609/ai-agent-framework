@@ -1,17 +1,19 @@
 {
-  "agent": "antigravity",
-  "framework_version": "2",
+  "agent": "claude",
+  "deep_rules": false,
+  "framework_version": "3",
   "generator": {
     "name": "ai-agent-adapter-sync",
-    "version": "2.0"
+    "version": "2.1"
   },
   "mode": "pointer",
+  "profile": "isolated",
   "schema_version": 1,
-  "source_commit": "8300d8e93ec57ebb2e9741a216a1eb9e1b45ceb9",
+  "source_commit": "ef03d511e2ee98ab272c29561894efa338f6e233",
   "sources": [
     {
       "path": ".ai/README.md",
-      "sha256": "4c992d3d03bf3145d53524da0fde3084c6fd8ef2459427036cfa4d9a144e0b9a"
+      "sha256": "bf8aef0d44c2ba60b8029274672395412d62d414f0b49e792450fae112e3d2ce"
     },
     {
       "path": ".ai/BOOTSTRAP_ONCE.md",
@@ -110,12 +112,16 @@
       "sha256": "754d3339206fe0934343a8650078b914333320b9f3ed9e236d2ce4d4cb2879f0"
     },
     {
-      "path": ".ai/adapters/antigravity.md",
-      "sha256": "17728c3adc9dd0b5bd3f80be25e606d4f6297c658ff81c0c32efab644e35ba35"
+      "path": ".ai/rules/17-agent-targeted-sync-rules.md",
+      "sha256": "4e2536815980f1bc45fbaf229d04d238aaa29a0103497da85c8b67d1dcb7abd0"
+    },
+    {
+      "path": ".ai/adapters/claude.md",
+      "sha256": "b3931cbb6613914e865a3be278c60052128750791eaf0236cc6d26b2b444251f"
     },
     {
       "path": "bin/ai-agent-adapter-sync",
-      "sha256": "3ba5e086ea1ee263f4c4fbc0db278e0f66f74e1a1301eb244c99c34286a1a35b"
+      "sha256": "2c00294fd56595f784b3653f16f92a3eac7360796e0917a0e441b70403b61e35"
     }
   ]
 }

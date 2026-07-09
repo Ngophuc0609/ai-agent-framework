@@ -22,3 +22,4 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Claude.
 - Do not let long reasoning replace build/test/source evidence; claims must point back to files, commands, or evidence IDs.
 - For `source-code-handover`, Claude is well-suited for Agent 7 cross-layer conflict analysis and Agent 10 independent critique, but must not rewrite weak evidence as final certainty.
 - Avoid storing raw source in memory; store only verified summaries, decisions, and reusable findings.
+- In isolated sync, use `CLAUDE.md` plus `.claude/skills` as the default native surfaces. Generate `.claude/rules` only when deep/path-scoped rules are explicitly requested.

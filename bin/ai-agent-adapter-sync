@@ -17,11 +17,13 @@ import subprocess
 
 GENERATED_MARKER = "<!-- generated-by: ai-agent-adapter-sync -->"
 GENERATOR_NAME = "ai-agent-adapter-sync"
-GENERATOR_VERSION = "2.0"
-FRAMEWORK_VERSION = "2"
+GENERATOR_VERSION = "2.1"
+FRAMEWORK_VERSION = "3"
 MAX_POINTER_LINES = 250
 MAX_POINTER_BYTES = 12000
 MATERIALIZED_HEADING = "## Materialized .ai Rule Bundle"
+DEFAULT_PROFILE = "isolated"
+SUPPORTED_PROFILES = ["isolated", "portable", "legacy-all"]
 DEFAULT_AGENTS = [
     "codex",
     "cursor",
@@ -59,6 +61,7 @@ CORE_FILES = [
     ".ai/rules/14-tdd-first-feature-rules.md",
     ".ai/rules/15-agent-runtime-tool-policy.md",
     ".ai/rules/16-dotnet-parity-migration-rules.md",
+    ".ai/rules/17-agent-targeted-sync-rules.md",
 ]
 
 ADAPTER_FILES = {
@@ -70,14 +73,18 @@ ADAPTER_FILES = {
     "antigravity": [".ai/adapters/antigravity.md"],
 }
 
-SKILL_TARGET_DIRS = {
+VERIFIED_SKILL_TARGET_DIRS = {
     "agents": [".agents/skills"],
     "codex": [".agents/skills"],
-    "cursor": [".agents/skills"],
+    "cursor": [],
     "copilot": [".github/skills"],
     "claude": [".claude/skills"],
     "cline": [".cline/skills"],
     "antigravity": [".agents/skills"],
+}
+
+PORTABLE_SKILL_TARGET_DIRS = {
+    "cursor": [".agents/skills"],
 }
 
 MANIFEST_PATHS = {
@@ -85,13 +92,25 @@ MANIFEST_PATHS = {
     "codex": ".agents/00-ai-framework.manifest.json",
     "cursor": ".cursor/rules/00-ai-framework.manifest.json",
     "copilot": ".github/instructions/00-ai-framework.manifest.json",
-    "claude": ".claude/rules/00-ai-framework.manifest.json",
+    "claude": ".claude/00-ai-framework.manifest.json",
     "cline": ".clinerules/00-ai-framework.manifest.json",
-    "antigravity": ".agent/rules/00-ai-framework.manifest.json",
+    "antigravity": "GEMINI.ai-framework.manifest.json",
 }
 
 POINTER_OBSOLETE_PATHS = {
     "cursor": [".cursor/rules/99-ai-framework-bundle.mdc"],
+}
+
+PROFILE_FALLBACK_PATHS = {
+    "claude": [
+        ".claude/rules/00-ai-framework.md",
+        ".claude/rules/00-ai-framework.manifest.json",
+    ],
+    "antigravity": [
+        ".agent/rules/00-ai-framework.md",
+        ".agent/rules/00-ai-framework.manifest.json",
+        ".agents/AGENTS.md",
+    ],
 }
 
 
@@ -162,6 +181,8 @@ def source_bundle(repo: Path, tool: str) -> str:
 
 
 def compact_header(tool: str) -> str:
+    if tool == "antigravity":
+        return antigravity_compact_header()
     return "\n".join(
         [
             GENERATED_MARKER,
@@ -231,6 +252,69 @@ def compact_header(tool: str) -> str:
     )
 
 
+def antigravity_compact_header() -> str:
+    return "\n".join(
+        [
+            GENERATED_MARKER,
+            "# .ai Framework Instructions for antigravity",
+            "",
+            "Native entrypoints: `GEMINI.md` and `.agents/skills/<skill>/SKILL.md`.",
+            "Canonical source/resources: `.ai/`.",
+            "Mode: Antigravity isolated native mode; do not eagerly load `.ai/`.",
+            "",
+            "## Progressive Startup",
+            "",
+            "Before coding, documentation, debugging, review, refactor, commit, or analysis:",
+            "",
+            "1. Use Antigravity native skill discovery from `.agents/skills/`.",
+            "2. Select skills by slash command or by matching the `description` in each `SKILL.md`.",
+            "3. Read only the selected `SKILL.md` and its directly referenced files.",
+            "4. Do not read `.ai/README.md`, `.ai/registry/*`, or all `.ai/rules/*` during normal startup.",
+            "5. Read `.ai/` files only when the selected skill or this file directly references them.",
+            "6. Inspect runtime state using safe local checks. Do not install tools or packages automatically.",
+            "7. Execute with bounded source scope and validate only applicable quality gates.",
+            "8. Record tool fallbacks, confidence/readiness impact, and evidence paths.",
+            "",
+            "The one-time bootstrap document is setup-only. Do not load it during normal tasks.",
+            "",
+            "## Non-Negotiable Rules",
+            "",
+            "- `.agents/skills/` is the native Antigravity project skill surface.",
+            "- `.ai/` is canonical source/reference material, not an always-on policy bundle.",
+            "- Keep filesystem access within the active repository.",
+            "- Never expose secrets or store unverified/raw source in memory.",
+            "- Package/tool installation and other high-risk actions require runtime-appropriate approval.",
+            "- Current source and executable evidence override memory and generated documentation.",
+            "- New backend features/APIs/jobs/webhooks/integrations require brainstorm, contract, acceptance criteria, and tests before production code.",
+            "- Respond to the Vietnamese-speaking user in Vietnamese unless another language is requested.",
+            "",
+            "## .NET Parity Migration Guardrails",
+            "",
+            "When the task is .NET Framework or legacy .NET migration to .NET 8+:",
+            "",
+            "- Treat the work as 1:1 parity migration, not modernization.",
+            "- Baseline legacy behavior before production code conversion.",
+            "- Generate unit/contract tests from the legacy baseline before using migrated output.",
+            "- Convert one endpoint, view, job, integration, or business flow at a time.",
+            "- Do not change request/response contracts, status codes, content types, JSON casing, data types, object structure, cookies, session, redirects, views, static assets, side effects, or business rules.",
+            "- Do not fix latent legacy bugs during the parity phase; record them in `15_DEFERRED_ISSUES_REPORT.md`.",
+            "- Do not mechanically map `Request.Params` by HTTP method or mechanically convert `Json(responseString)` to `Content(responseString, \"application/json\")`.",
+            "- Use `PASS`, `FAIL`, `BLOCKED`, `PARTIAL`, and `DEFERRED`; missing baseline/evidence means `BLOCKED`, not guessed output.",
+            "",
+            "## Runtime Fallbacks",
+            "",
+            "- Missing native skill: inspect `.ai/registry/triggers.yml` only as a routing fallback.",
+            "- Missing Memory: use `docs/PROJECT_CONTEXT.md`, `docs/FINDINGS.md`, and `docs/DECISIONS.md`; record the limitation and do not claim a memory write.",
+            "- Missing CodeGraph on localized work: use `rg`, IDE/LSP references, and narrow source slices; downgrade confidence/readiness.",
+            "- Missing required workflow evidence: stop that workflow rather than fabricate output.",
+            "",
+            "## Completion Contract",
+            "",
+            "Before completion, report changed files, validations run, fallbacks/limitations, and readiness. Run `ai-agent-adapter-sync --check` when framework or adapter sources changed.",
+        ]
+    )
+
+
 def full_bundle(tool: str, repo: Path) -> str:
     return "\n\n".join(
         [
@@ -264,7 +348,7 @@ def source_commit(repo: Path) -> str | None:
     return completed.stdout.strip() if completed.returncode == 0 else None
 
 
-def manifest_content(repo: Path, agent: str, materialized: bool) -> str:
+def manifest_content(repo: Path, agent: str, materialized: bool, profile: str, deep_rules: bool) -> str:
     sources = []
     for relative_path in source_files(repo, agent):
         digest = hashlib.sha256((repo / relative_path).read_bytes()).hexdigest()
@@ -273,6 +357,8 @@ def manifest_content(repo: Path, agent: str, materialized: bool) -> str:
         "schema_version": 1,
         "agent": agent,
         "mode": "materialized" if materialized else "pointer",
+        "profile": profile,
+        "deep_rules": deep_rules,
         "generator": {"name": GENERATOR_NAME, "version": GENERATOR_VERSION},
         "framework_version": FRAMEWORK_VERSION,
         "source_commit": source_commit(repo),
@@ -302,9 +388,18 @@ def source_skill_dirs(repo: Path) -> list[Path]:
     return sorted(path.parent for path in skills_dir.glob("*/SKILL.md"))
 
 
-def target_skill_files(repo: Path, agent: str) -> list[tuple[Path, str]]:
+def skill_target_dirs(agent: str, profile: str) -> list[str]:
+    target_dirs = list(VERIFIED_SKILL_TARGET_DIRS.get(agent, []))
+    if profile in {"portable", "legacy-all"}:
+        for target_dir in PORTABLE_SKILL_TARGET_DIRS.get(agent, []):
+            if target_dir not in target_dirs:
+                target_dirs.append(target_dir)
+    return target_dirs
+
+
+def target_skill_files(repo: Path, agent: str, profile: str) -> list[tuple[Path, str]]:
     targets: list[tuple[Path, str]] = []
-    target_dirs = SKILL_TARGET_DIRS.get(agent, [])
+    target_dirs = skill_target_dirs(agent, profile)
     for skill_dir in source_skill_dirs(repo):
         source_skill = skill_dir / "SKILL.md"
         content = insert_marker_after_frontmatter(read_text(source_skill))
@@ -350,7 +445,7 @@ def copilot_instruction(body: str, apply_to: str) -> str:
     )
 
 
-def target_files(repo: Path, agent: str, materialized: bool) -> list[tuple[Path, str]]:
+def target_files(repo: Path, agent: str, materialized: bool, profile: str, deep_rules: bool) -> list[tuple[Path, str]]:
     compact = compact_header(agent)
     bundle = full_bundle(agent, repo)
     deep_content = bundle if materialized else compact
@@ -373,17 +468,23 @@ def target_files(repo: Path, agent: str, materialized: bool) -> list[tuple[Path,
         ],
         "claude": [
             ("CLAUDE.md", compact),
-            (".claude/rules/00-ai-framework.md", claude_rule(deep_content)),
         ],
         "cline": [
             (".clinerules/00-ai-framework.md", deep_content),
         ],
         "antigravity": [
             ("GEMINI.md", compact),
-            (".agent/rules/00-ai-framework.md", deep_content),
-            (".agents/AGENTS.md", compact),
         ],
     }
+    if agent == "claude" and (deep_rules or profile in {"portable", "legacy-all"}):
+        targets[agent].append((".claude/rules/00-ai-framework.md", claude_rule(deep_content)))
+    if agent == "antigravity" and profile in {"portable", "legacy-all"}:
+        targets[agent].extend(
+            [
+                (".agent/rules/00-ai-framework.md", deep_content),
+                (".agents/AGENTS.md", compact),
+            ]
+        )
     if agent == "cursor" and materialized:
         targets[agent].append(
             (
@@ -396,9 +497,17 @@ def target_files(repo: Path, agent: str, materialized: bool) -> list[tuple[Path,
         for _, content in resolved:
             validate_pointer_content(content)
     resolved.append(
-        (repo / MANIFEST_PATHS[agent], manifest_content(repo, agent, materialized))
+        (repo / MANIFEST_PATHS[agent], manifest_content(repo, agent, materialized, profile, deep_rules))
     )
     return resolved
+
+
+def profile_obsolete_paths(agent: str, profile: str, deep_rules: bool) -> list[str]:
+    if profile != "isolated":
+        return []
+    if agent == "claude" and deep_rules:
+        return []
+    return PROFILE_FALLBACK_PATHS.get(agent, [])
 
 
 def remove_obsolete_pointer_files(repo: Path, agent: str, dry_run: bool) -> list[str]:
@@ -412,6 +521,20 @@ def remove_obsolete_pointer_files(repo: Path, agent: str, dry_run: bool) -> list
         else:
             path.unlink()
             results.append(f"REMOVED generated legacy file: {path}")
+    return results
+
+
+def remove_profile_fallback_files(repo: Path, agent: str, profile: str, deep_rules: bool, dry_run: bool) -> list[str]:
+    results = []
+    for relative_path in profile_obsolete_paths(agent, profile, deep_rules):
+        path = repo / relative_path
+        if not path.exists() or not existing_generated(path):
+            continue
+        if dry_run:
+            results.append(f"DRY-RUN would remove generated fallback file: {path}")
+        else:
+            path.unlink()
+            results.append(f"REMOVED generated fallback file: {path}")
     return results
 
 
@@ -461,6 +584,20 @@ def parse_args() -> argparse.Namespace:
         help="Embed the full .ai source bundle for restricted runtimes. Pointer-only is the default.",
     )
     parser.add_argument(
+        "--profile",
+        choices=SUPPORTED_PROFILES,
+        default=DEFAULT_PROFILE,
+        help=(
+            "Output profile. isolated generates only verified native surfaces; "
+            "portable adds fallback surfaces; legacy-all keeps broad historical output."
+        ),
+    )
+    parser.add_argument(
+        "--with-deep-rules",
+        action="store_true",
+        help="Generate path-scoped deep/reference rules when the selected agent supports them.",
+    )
+    parser.add_argument(
         "--check",
         action="store_true",
         help="Report generated output or source-manifest drift without writing files.",
@@ -485,12 +622,12 @@ def main() -> int:
 
     for agent in agents:
         print(f"Agent adapter: {agent}")
-        generated_targets = target_files(repo, agent, args.materialized)
+        generated_targets = target_files(repo, agent, args.materialized, args.profile, args.with_deep_rules)
         if not args.no_skills:
-            generated_targets.extend(target_skill_files(repo, agent))
+            generated_targets.extend(target_skill_files(repo, agent, args.profile))
 
         if not args.materialized:
-            for relative_path in POINTER_OBSOLETE_PATHS.get(agent, []):
+            for relative_path in POINTER_OBSOLETE_PATHS.get(agent, []) + profile_obsolete_paths(agent, args.profile, args.with_deep_rules):
                 obsolete = repo / relative_path
                 if not obsolete.exists():
                     continue
@@ -502,6 +639,8 @@ def main() -> int:
                     exit_code = 1
             if not args.check:
                 for result in remove_obsolete_pointer_files(repo, agent, args.dry_run):
+                    print(f"- {result}")
+                for result in remove_profile_fallback_files(repo, agent, args.profile, args.with_deep_rules, args.dry_run):
                     print(f"- {result}")
 
         for path, content in generated_targets:

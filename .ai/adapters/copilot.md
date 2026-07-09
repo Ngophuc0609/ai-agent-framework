@@ -10,7 +10,7 @@ Adapter này mô tả cách dùng framework `.ai/` với GitHub Copilot Chat, Co
 - Use generated path-specific instructions from `.github/instructions/ai-framework.instructions.md` when present.
 - Treat `.ai/registry/` as the source of truth for skill and workflow routing.
 - Apply `.ai/rules/15-agent-runtime-tool-policy.md` before workspace edits, terminal suggestions, pull request comments, or coding-agent actions.
-- For Copilot coding agents that support `AGENTS.md`, also follow the repository root `AGENTS.md`.
+- In isolated Copilot sync, do not require a root `AGENTS.md`; use Copilot's `.github` instruction and skill surfaces. Treat root `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` as alternative/fallback instruction surfaces only when they were intentionally generated.
 - Inspect runtime state without installing packages; use repository-document fallbacks and record limitations when optional tools are missing.
 - Keep secrets out of generated instructions, chat responses, docs, memory, and pull request comments.
 - Respond to the Vietnamese-speaking user in Vietnamese unless another language is requested.

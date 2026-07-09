@@ -53,6 +53,7 @@ Tool bootstrap commands live in `.ai/registry/tool-bootstrap.json` and are used 
 Optional tool candidates for deep documentation, source evidence, large-repository analysis, and runtime verification live in `.ai/registry/tool-candidates.json`; these are selected by workflows when available and are not installed automatically by default.
 Normal task startup checks runtime state but does not install packages. Use `ai-agent-sync --install-tools --yes` only as an explicit bootstrap/maintenance action with runtime-appropriate approval.
 Native agent instruction files can be generated from `.ai/` with `ai-agent-adapter-sync`; see `docs/AI_AGENT_ADAPTER_SYNC.md`.
+Agent-targeted native sync uses the `isolated` profile by default. A shortcut such as `ai-agent-sync agy` should generate only the selected agent's verified native surfaces and must not create duplicate fallback skill/rule directories unless `portable` or `legacy-all` profile output is explicitly requested. See `.ai/rules/17-agent-targeted-sync-rules.md`.
 
 ## Add A New Skillflow
 
@@ -91,6 +92,7 @@ For multi-agent orchestration:
 - Read `.ai/BOOTSTRAP_ONCE.md` only for first-time setup, smoke testing, or an explicit bootstrap request.
 - Apply CodeGraph according to task risk; localized work may continue with a documented fallback.
 - Apply `.ai/rules/15-agent-runtime-tool-policy.md` before shell commands, native agent tool calls, delegated agent actions, or source-code-handover runs.
+- Apply `.ai/rules/17-agent-targeted-sync-rules.md` before changing native adapter generation, agent shortcuts, or sync output profiles.
 - Retrieve memory before editing or documenting a module.
 - Treat current source code as the source of truth when memory conflicts with code.
 - Do not store secrets in memory, docs, vectors, or handoff files.

@@ -6,10 +6,12 @@ Adapter này mô tả cách dùng framework `.ai/` với Google Antigravity IDE/
 
 ## Runtime Instructions
 
-- Use generated workspace instructions from `GEMINI.md`, `.agent/rules/00-ai-framework.md`, and `.agents/AGENTS.md` when present.
+- Use generated workspace instructions from `GEMINI.md` as the isolated default entrypoint.
+- Use generated project skills from `.agents/skills/<skill>/SKILL.md`; Antigravity CLI latest project isolation mode discovers repo-scoped skills from this directory.
 - Treat `.ai/registry/` as the source of truth for skill and workflow routing.
 - Apply `.ai/rules/15-agent-runtime-tool-policy.md` before terminal commands, workspace edits, browser/MCP calls, or delegated agent actions.
-- For Antigravity environments that support mounted `AGENTS.md`, follow the repository root `AGENTS.md` as the cross-tool fallback.
+- Treat `.agent/rules/00-ai-framework.md` and `.agents/AGENTS.md` as portable rule fallbacks only when the sync profile explicitly generated them.
+- If `.agents/AGENTS.md` exists, follow it only when it exists as the selected profile's fallback surface.
 - Inspect runtime state without installing packages; use documented fallbacks unless the selected workflow requires the missing evidence.
 - Keep filesystem and external tool access scoped to the active workspace.
 - Do not expose secrets in generated instructions, memory, artifacts, or chat responses.
@@ -36,3 +38,4 @@ When running `source-code-handover` or `make-new-dev-docs` in Antigravity:
 - Keep `Claude Opus 4.6 Thinking` and `Claude Sonnet 4.6 Thinking` out of Antigravity routing unless a future explicit user decision changes the policy.
 - For `source-code-handover`, Agents 1-5 should prioritize complete physical inventory; Agents 6-8 should do deeper source/symbol/build/runtime verification; Agent 9 writes only from frozen evidence; Agent 10 audits independently.
 - If Antigravity lacks a native tool required by `.ai/registry/tool-candidates.json`, record the tool limitation and use local fallback commands when available.
+- Antigravity project skills are generated under `.agents/skills/` with Agent Skills-compatible `SKILL.md` frontmatter. Keep additional rule entrypoints minimal and opt-in to avoid duplicate policy loading.

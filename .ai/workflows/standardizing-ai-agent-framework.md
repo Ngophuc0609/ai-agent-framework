@@ -28,6 +28,7 @@ Registered in:
 - `.ai/rules/06-quality-gates.md`
 - `.ai/rules/11-skillflow-extension-rules.md`
 - `.ai/rules/12-memory-policy-rules.md`
+- `.ai/rules/17-agent-targeted-sync-rules.md`
 - `bin/ai-agent-sync`
 - `bin/ai-agent-adapter-sync`
 
@@ -61,27 +62,31 @@ Never copy secret values into documentation, findings, memory, logs, status file
 1. Resolve the workflow from `.ai/registry/workflows.yml`. Expected key: `standardizing-ai-agent-framework`. If missing, record a blocking finding and continue in fallback mode.
 2. Resolve the requested target agent set.
 3. Inspect current `.ai` registry, rule, skill, workflow, and adapter structure.
-4. Compare target behavior with official agent documentation.
+4. Compare target behavior with official agent documentation or user-provided canonical runtime notes.
 5. Classify each target path as verified native format or portable fallback.
-6. Update source `.ai` files, registry entries, and sync scripts.
-7. Generate adapters in a temporary repository for at least one representative agent.
-8. Run final validation (syntax, registry consistency, generated file placement, secret scan).
-9. Respond in Vietnamese with changed files, official sources, validation, and fallback notes.
+6. Apply an agent-targeted sync profile:
+   - `isolated` for one selected agent and normal user repos.
+   - `portable` only when the target intentionally supports fallback Agent Skills or cross-tool instructions.
+   - `legacy-all` only for compatibility testing of the historical broad output.
+7. Update source `.ai` files, registry entries, and sync scripts.
+8. Generate adapters in a temporary repository for at least one representative agent.
+9. Run final validation (syntax, registry consistency, generated file placement, secret scan).
+10. Respond in Vietnamese with changed files, official sources, validation, and fallback notes.
 
 ## Agent Output Matrix
 
-| Agent | Always-on entry | Deep/reference rules | Native skills |
+| Agent | Isolated always-on entry | Optional deep/reference rules | Default native skills |
 |---|---|---|---|
 | Codex | `AGENTS.md` | `.ai/` source files | `.agents/skills/<skill>/SKILL.md` |
 | Cline | `.clinerules/00-ai-framework.md` | `.ai/` source files | `.cline/skills/<skill>/SKILL.md` |
 | GitHub Copilot | `.github/copilot-instructions.md` | `.github/instructions/ai-framework.instructions.md` | `.github/skills/<skill>/SKILL.md` |
-| Claude Code | `CLAUDE.md` | `.claude/rules/00-ai-framework.md` | `.claude/skills/<skill>/SKILL.md` |
-| Cursor | `.cursor/rules/00-ai-framework.mdc` | `.cursor/rules/99-ai-framework-bundle.mdc` | `.agents/skills/<skill>/SKILL.md` portable fallback |
-| Antigravity | `GEMINI.md`, `.agents/AGENTS.md` | `.agent/rules/00-ai-framework.md` | `.agents/skills/<skill>/SKILL.md` portable fallback |
+| Claude Code | `CLAUDE.md` | `.claude/rules/00-ai-framework.md` only with deep rules/profile opt-in | `.claude/skills/<skill>/SKILL.md` |
+| Cursor | `.cursor/rules/00-ai-framework.mdc` | `.cursor/rules/99-ai-framework-bundle.mdc` only with materialized opt-in | None by default; `.agents/skills` is portable fallback |
+| Antigravity | `GEMINI.md` | `.agent/rules/00-ai-framework.md` only in portable/legacy profiles | `.agents/skills/<skill>/SKILL.md`; `.agents/AGENTS.md` is fallback-only |
 
 ## Quality Gates
 
-- [ ] Official docs or local canonical notes were consulted.
+- [ ] Official docs or user-provided canonical runtime notes were consulted.
 - [ ] Registry consistency was checked.
 - [ ] `ai-agent-adapter-sync --dry-run` or temp-repo generation was exercised.
 - [ ] `python3 -m py_compile` passed for changed Python scripts.

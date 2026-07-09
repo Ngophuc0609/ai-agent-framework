@@ -30,6 +30,24 @@ Check generated files and manifest checksums without writing:
 ai-agent-adapter-sync --check
 ```
 
+Generate only verified native surfaces for a selected agent. This `isolated` profile is the default and is the safest choice for normal repositories:
+
+```bash
+ai-agent-adapter-sync --agent antigravity --profile isolated
+```
+
+Generate portable fallback surfaces only when the target repo intentionally supports multiple agent hosts or fallback Agent Skills:
+
+```bash
+ai-agent-adapter-sync --agent antigravity --profile portable
+```
+
+Reproduce the broad historical output for compatibility testing:
+
+```bash
+ai-agent-adapter-sync --profile legacy-all
+```
+
 Generate a full embedded bundle only for a restricted runtime that cannot read repository files:
 
 ```bash
@@ -48,7 +66,7 @@ Overwrite non-generated files only when you intentionally want to replace user-a
 ai-agent-adapter-sync --force
 ```
 
-## Generated Files
+## Generated Files In Default `isolated` Profile
 
 | Agent | Generated path |
 |---|---|
@@ -57,34 +75,37 @@ ai-agent-adapter-sync --force
 | Cross-tool / Codex | `.agents/skills/<skill>/SKILL.md` |
 | Cursor | `.cursor/rules/00-ai-framework.mdc` |
 | Cursor | `.cursor/rules/00-ai-framework.manifest.json` |
-| Cursor | `.agents/skills/<skill>/SKILL.md` |
 | GitHub Copilot | `.github/copilot-instructions.md` |
 | GitHub Copilot | `.github/instructions/ai-framework.instructions.md` |
 | GitHub Copilot | `.github/instructions/00-ai-framework.manifest.json` |
 | GitHub Copilot | `.github/skills/<skill>/SKILL.md` |
 | Claude Code | `CLAUDE.md` |
-| Claude Code | `.claude/rules/00-ai-framework.md` |
-| Claude Code | `.claude/rules/00-ai-framework.manifest.json` |
+| Claude Code | `.claude/00-ai-framework.manifest.json` |
 | Claude Code | `.claude/skills/<skill>/SKILL.md` |
 | Cline | `.clinerules/00-ai-framework.md` |
 | Cline | `.clinerules/00-ai-framework.manifest.json` |
 | Cline | `.cline/skills/<skill>/SKILL.md` |
 | Google Antigravity | `GEMINI.md` |
-| Google Antigravity | `.agent/rules/00-ai-framework.md` |
-| Google Antigravity | `.agent/rules/00-ai-framework.manifest.json` |
-| Google Antigravity / managed agent | `.agents/AGENTS.md` |
-| Google Antigravity / portable skills | `.agents/skills/<skill>/SKILL.md` |
+| Google Antigravity | `GEMINI.ai-framework.manifest.json` |
+| Google Antigravity | `.agents/skills/<skill>/SKILL.md` |
+
+Optional outputs:
+
+- `--with-deep-rules` adds path-scoped deep/reference rules where supported, such as `.claude/rules/00-ai-framework.md`.
+- `--profile portable` or `--profile legacy-all` adds fallback rule surfaces such as Antigravity `.agent/rules/00-ai-framework.md` and `.agents/AGENTS.md`.
 
 ## Design
 
 - `.ai/` remains the source of truth.
 - Native files are generated, not hand-maintained.
+- The default `isolated` profile avoids generating duplicate native/fallback surfaces for one selected agent.
+- `portable` and `legacy-all` are opt-in profiles for repositories that intentionally support multiple agent hosts.
 - Pointer files define non-negotiable rules, progressive routing, a rule-loading matrix, runtime fallbacks, and the completion contract without copying framework sources.
 - Default pointer output is guarded at 250 lines and 12000 bytes and must not contain `Materialized .ai Rule Bundle`.
 - Each adapter manifest records framework version, generator version, mode, source commit, source paths, and SHA-256 checksums.
 - `--check` reports missing, stale, or obsolete generated outputs without writing.
 - `--materialized` embeds framework sources only for restricted runtimes that cannot read repository files.
-- Native Agent Skills are generated from `.ai/skills/*/SKILL.md` into the target agent's skill directory.
+- Native Agent Skills are generated from `.ai/skills/*/SKILL.md` only into verified native skill directories by default.
 - Existing user-authored files are not overwritten unless `--force` is passed.
 
 ## Runtime Tool Policy
@@ -97,10 +118,10 @@ Adapter-specific optimization profiles are maintained in `.ai/adapters/*.md`:
 |---|---|
 | Codex | Deterministic shell validation, source edits, git diff review, commit/push delivery, sequential fallback for required agents. |
 | Cline | Strict `execute_command` schema, bounded commands, source-code-handover run initialization with one safe script call. |
-| Cursor | Workspace navigation, scoped Composer/Agent edits, symbol search, portable `.agents/skills` fallback. |
+| Cursor | Workspace navigation, scoped Composer/Agent edits, symbol search, `.cursor/rules/*.mdc` as the isolated surface. |
 | Claude | Deep reasoning, cross-layer synthesis, critique, sub-agent use only when the runtime exposes it. |
 | GitHub Copilot | PR/code review, CI/GitHub evidence, small scoped edits, no unverified build/test claims. |
-| Antigravity | Gemini-only model routing for source handover, cost-aware discovery, evidence-first multi-agent documentation. |
+| Antigravity | `GEMINI.md` isolated entrypoint, native `.agents/skills`, Gemini-only model routing for source handover, cost-aware discovery, evidence-first multi-agent documentation. |
 
 Optional tool candidates for deeper workflows live in `.ai/registry/tool-candidates.json`. Keep mandatory bootstrap tools in `.ai/registry/tool-bootstrap.json`; do not auto-install cloud or production-facing tools by default.
 
@@ -158,6 +179,14 @@ ai-agent-sync agy
 ```
 
 Agent shortcuts sync `.ai` and generate pointer adapters. Tool installation is a separate explicit bootstrap/maintenance action and must follow runtime approval policy.
+
+By default, shortcuts use isolated native adapter output:
+
+- `ai-agent-sync agy` creates `GEMINI.md`, the manifest, and native `.agents/skills`; fallback `.agent/rules` and `.agents/AGENTS.md` require `--adapter-profile portable` or `--adapter-profile legacy-all`.
+- `ai-agent-sync cursor` creates `.cursor/rules/00-ai-framework.mdc` and the manifest; portable `.agents/skills` requires `--adapter-profile portable` or `--adapter-profile legacy-all`.
+- `ai-agent-sync claude` creates `CLAUDE.md`, `.claude/skills`, and the manifest; `.claude/rules` requires `--with-adapter-deep-rules` or a portable/legacy profile.
+
+For Antigravity, `.ai/` is still synced as canonical source/reference material because generated skills can directly reference `.ai/rules`, workflows, or templates. `GEMINI.md` runs in isolated native mode and must not eagerly load `.ai/README.md`, registries, or all rules during normal startup.
 
 For Cline, the shortcut creates the officially discovered workspace locations:
 

@@ -20,4 +20,5 @@ Adapter này mô tả cách dùng framework `.ai/` khi chạy bằng Cursor.
 - Prefer `rg --files`, symbol search, and IDE references over broad recursive scans.
 - For large documentation workflows, write artifacts under `.ai/runs/...` first and publish only after validation passes.
 - If the Cursor environment cannot run a required terminal/tool action, record the limitation and produce an explicit manual command instead of pretending verification happened.
-- Use `.agents/skills` as a Cursor-supported project skill surface; keep each `SKILL.md` compatible with the Agent Skills standard.
+- Use `.cursor/rules/*.mdc` as the isolated native Cursor surface. Treat `.agents/skills` as a portable fallback only when the sync profile explicitly requests it.
+- Keep Cursor always-on rules short; use `.ai/registry/triggers.yml` and selected `.ai/skills/*/SKILL.md` for task-specific behavior.

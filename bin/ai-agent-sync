@@ -391,6 +391,8 @@ def run_adapter_sync(
     adapter_agents: list[str] | None,
     force: bool,
     dry_run: bool,
+    profile: str | None,
+    with_deep_rules: bool,
 ) -> int:
     script_path = resolve_path(__file__)
     adapter_script = script_path.parent / "ai-agent-adapter-sync"
@@ -401,6 +403,10 @@ def run_adapter_sync(
     command = [str(adapter_script), str(repo_path)]
     for agent in adapter_agents or []:
         command.extend(["--agent", agent])
+    if profile:
+        command.extend(["--profile", profile])
+    if with_deep_rules:
+        command.append("--with-deep-rules")
     if force:
         command.append("--force")
     if dry_run:
@@ -717,6 +723,19 @@ def parse_args() -> argparse.Namespace:
         help="Allow generated adapter files to overwrite existing user-authored instruction files.",
     )
     parser.add_argument(
+        "--adapter-profile",
+        choices=["isolated", "portable", "legacy-all"],
+        help=(
+            "Native adapter output profile. isolated avoids duplicate fallback surfaces; "
+            "portable adds fallback surfaces; legacy-all keeps broad historical output."
+        ),
+    )
+    parser.add_argument(
+        "--with-adapter-deep-rules",
+        action="store_true",
+        help="Generate optional path-scoped deep/reference native rule files for selected adapters.",
+    )
+    parser.add_argument(
         "--install-global",
         action="store_true",
         help=(
@@ -742,6 +761,8 @@ def main() -> int:
         args.repo = "."
         args.generate_adapters = True
         args.adapter_agent = [shortcut_agent]
+        if not args.adapter_profile:
+            args.adapter_profile = "isolated"
 
     source_ai = resolve_path(args.source)
     repo_path = resolve_path(args.repo)
@@ -771,7 +792,14 @@ def main() -> int:
             dry_run=args.dry_run,
         )
         if args.generate_adapters:
-            adapter_exit = run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, args.dry_run)
+            adapter_exit = run_adapter_sync(
+                repo_path,
+                args.adapter_agent,
+                args.force_adapters,
+                args.dry_run,
+                args.adapter_profile,
+                args.with_adapter_deep_rules,
+            )
             exit_code = exit_code or adapter_exit
         return exit_code
 
@@ -779,7 +807,14 @@ def main() -> int:
         print(f"Source and target are the same .ai directory: {source_ai}")
         print("Nothing to sync.")
         if args.generate_adapters:
-            return run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, args.dry_run)
+            return run_adapter_sync(
+                repo_path,
+                args.adapter_agent,
+                args.force_adapters,
+                args.dry_run,
+                args.adapter_profile,
+                args.with_adapter_deep_rules,
+            )
         return 0
 
     mode = "merge" if args.no_delete else "mirror"
@@ -809,14 +844,28 @@ def main() -> int:
             )
             if args.generate_adapters:
                 if target_ai.exists():
-                    adapter_exit = run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, True)
+                    adapter_exit = run_adapter_sync(
+                        repo_path,
+                        args.adapter_agent,
+                        args.force_adapters,
+                        True,
+                        args.adapter_profile,
+                        args.with_adapter_deep_rules,
+                    )
                     exit_code = exit_code or adapter_exit
                 else:
                     print("Would run adapter sync after .ai is synced.")
             return exit_code
         if args.generate_adapters:
             if target_ai.exists():
-                return run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, True)
+                return run_adapter_sync(
+                    repo_path,
+                    args.adapter_agent,
+                    args.force_adapters,
+                    True,
+                    args.adapter_profile,
+                    args.with_adapter_deep_rules,
+                )
             print("Would run adapter sync after .ai is synced.")
             return 0
         return 0
@@ -838,7 +887,14 @@ def main() -> int:
                 dry_run=args.dry_run,
             )
         if args.generate_adapters:
-            adapter_exit = run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, args.dry_run)
+            adapter_exit = run_adapter_sync(
+                repo_path,
+                args.adapter_agent,
+                args.force_adapters,
+                args.dry_run,
+                args.adapter_profile,
+                args.with_adapter_deep_rules,
+            )
             exit_code = exit_code or adapter_exit
         return exit_code
 
@@ -859,7 +915,14 @@ def main() -> int:
             dry_run=args.dry_run,
         )
     if args.generate_adapters:
-        adapter_exit = run_adapter_sync(repo_path, args.adapter_agent, args.force_adapters, args.dry_run)
+        adapter_exit = run_adapter_sync(
+            repo_path,
+            args.adapter_agent,
+            args.force_adapters,
+            args.dry_run,
+            args.adapter_profile,
+            args.with_adapter_deep_rules,
+        )
         exit_code = exit_code or adapter_exit
     return exit_code
 

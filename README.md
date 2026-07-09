@@ -93,6 +93,21 @@ ai-agent-sync agy
 ai-agent-sync cursor
 ```
 
+Các shortcut theo agent hiện dùng profile `isolated` mặc định để giảm nạp trùng rule/skill:
+
+- `ai-agent-sync agy`: sinh `GEMINI.md` + manifest + native skills tại `.agents/skills`; không sinh thêm `.agent/rules` hoặc `.agents/AGENTS.md` nếu không yêu cầu.
+- `ai-agent-sync cursor`: chỉ sinh `.cursor/rules/00-ai-framework.mdc` + manifest, không sinh portable `.agents/skills` nếu không yêu cầu.
+- `ai-agent-sync claude`: sinh `CLAUDE.md` + `.claude/skills`, còn `.claude/rules` chỉ bật khi dùng deep rules.
+
+Riêng Antigravity: lệnh vẫn đồng bộ `.ai/` làm nguồn/reference cho rule, workflow, template và dependency của skill. `GEMINI.md` được sinh theo native isolated mode nên không bắt `agy` đọc toàn bộ `.ai` ở mỗi task; luồng chính là dùng `.agents/skills`.
+
+Khi thật sự muốn repo hỗ trợ nhiều host/fallback cùng lúc, dùng:
+
+```bash
+ai-agent-sync agy --adapter-profile portable
+ai-agent-sync --generate-adapters --adapter-profile legacy-all
+```
+
 ## Quy trình skill pack migration .NET 1:1 parity
 
 Khi dùng các skill `.NET Framework -> .NET 8+`, mặc định phải chạy theo parity, không phải modernization:

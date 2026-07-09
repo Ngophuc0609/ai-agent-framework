@@ -28,6 +28,16 @@ ai-agent-sync agy
 
 `agy`, `ag`, `anti`, `antigravity`, `aantigravity`, and `gemini` all target Google Antigravity. `clause` is accepted as an alias for `claude`.
 
+Agent shortcuts use isolated adapter output by default. They still sync `.ai` as the canonical source, but they do not generate duplicate portable/fallback surfaces unless you opt in with `--adapter-profile portable` or `--adapter-profile legacy-all`.
+
+For `ai-agent-sync agy`, the expected default output is:
+
+- `.ai/`: canonical source/reference files for rules, workflows, templates, and skill dependencies.
+- `.agents/skills/`: Antigravity latest CLI native project skills.
+- `GEMINI.md`: compact Antigravity entrypoint that uses native skills and does not eagerly load `.ai`.
+
+This means the presence of `.ai` is not an instruction for Antigravity to load the whole framework on every request.
+
 If you need to sync into a repository path whose folder name is the same as an agent shortcut, pass an explicit path such as `./cline` or `/path/to/cline`.
 
 ## Required Pre-Task MCP Memory Init
@@ -142,6 +152,8 @@ ai-agent-sync /path/to/target-repo --install-tools maintaining-existing-apis --t
 - `--tool <id>` limits check/install to a specific tool. It can be repeated.
 - `--generate-adapters` runs `ai-agent-adapter-sync` after `.ai` sync and any explicitly requested tool operation, including native Agent Skills unless `ai-agent-adapter-sync --no-skills` is run separately.
 - `--adapter-agent <id>` limits generated native instruction files to one agent target. It can be repeated.
+- `--adapter-profile isolated|portable|legacy-all` controls native output breadth. `isolated` avoids duplicate fallback surfaces and is the shortcut default.
+- `--with-adapter-deep-rules` adds optional path-scoped deep/reference native rules for agents that support them.
 - `--force-adapters` lets generated adapter files overwrite existing user-authored instruction files.
 
 ## Tool Install Configuration

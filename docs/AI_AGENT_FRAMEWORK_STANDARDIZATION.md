@@ -12,9 +12,9 @@ Tài liệu này là baseline để chuẩn hóa `.ai` thành một nguồn sự
 | Agent Skills standard | Agent Skills specification and VS Code Agent Skills docs | `SKILL.md` plus optional `scripts/`, `references/`, `assets/` |
 | Cline rules and skills | Cline customization docs for Cline Rules and Skills | `.clinerules/00-ai-framework.md`, `.cline/skills/<skill>/SKILL.md` |
 | GitHub Copilot instructions and skills | GitHub Copilot repository instructions and skills docs | `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `.github/skills` |
-| Claude Code memory/rules | Claude Code memory docs | `CLAUDE.md`, `.claude/rules`, `.claude/skills` |
-| Cursor rules | Cursor rules docs | `.cursor/rules/*.mdc`, with `.agents/skills` as portable skill fallback |
-| Antigravity/Gemini-style agents | Gemini/Agent-style instruction conventions where available | `GEMINI.md`, `.agent/rules`, `.agents/skills` portable fallback |
+| Claude Code memory/rules | Claude Code memory docs | `CLAUDE.md`, `.claude/skills`; `.claude/rules` only when deep rules are requested |
+| Cursor rules | Cursor rules docs | `.cursor/rules/*.mdc`; `.agents/skills` only as portable/legacy fallback |
+| Antigravity latest CLI (`agy`) | Current Antigravity runtime note supplied for this framework | `GEMINI.md`, `.agents/skills`; `.agent/rules` and `.agents/AGENTS.md` only as portable/legacy fallback |
 
 ## Current Structure Assessment
 
@@ -31,10 +31,11 @@ Tài liệu này là baseline để chuẩn hóa `.ai` thành một nguồn sự
 - Keep pointer adapters under 250 lines and 12000 bytes; do not copy registry/rule sources into default outputs.
 - Reserve full materialization for explicit `--materialized` compatibility mode.
 - Detect drift with generated manifests and `--check`.
-- Generate native skill directories from `.ai/skills/*/SKILL.md`.
+- Generate native skill directories from `.ai/skills/*/SKILL.md` only for verified native skill surfaces in the default `isolated` profile.
 - Mark generated files with `generated-by: ai-agent-adapter-sync`.
 - Skip existing user-authored native files unless `--force` is provided.
-- Treat `.agents/skills` as the portable fallback when a tool does not publish a verified native skill directory.
+- Treat `.agents/skills` as portable fallback for Cursor but native project skills for Antigravity and Codex/generic Agent Skills.
+- Use `--adapter-profile portable` or `--adapter-profile legacy-all` only when the target repo intentionally supports fallback/multi-host loading.
 
 ## Native Output Matrix
 
@@ -43,9 +44,9 @@ Tài liệu này là baseline để chuẩn hóa `.ai` thành một nguồn sự
 | Codex | `ai-agent-sync codex` | `AGENTS.md` | `.agents/skills/<skill>/SKILL.md` |
 | Cline | `ai-agent-sync cline` | `.clinerules/00-ai-framework.md` | `.cline/skills/<skill>/SKILL.md` |
 | Copilot | `ai-agent-sync copilot` | `.github/copilot-instructions.md`, `.github/instructions/ai-framework.instructions.md` | `.github/skills/<skill>/SKILL.md` |
-| Claude | `ai-agent-sync claude` | `CLAUDE.md`, `.claude/rules/00-ai-framework.md` | `.claude/skills/<skill>/SKILL.md` |
-| Cursor | `ai-agent-sync cursor` | `.cursor/rules/00-ai-framework.mdc`, `.cursor/rules/00-ai-framework.manifest.json` | `.agents/skills/<skill>/SKILL.md` |
-| Antigravity | `ai-agent-sync agy` | `GEMINI.md`, `.agent/rules/00-ai-framework.md`, `.agents/AGENTS.md` | `.agents/skills/<skill>/SKILL.md` |
+| Claude | `ai-agent-sync claude` | `CLAUDE.md`, `.claude/00-ai-framework.manifest.json` | `.claude/skills/<skill>/SKILL.md` |
+| Cursor | `ai-agent-sync cursor` | `.cursor/rules/00-ai-framework.mdc`, `.cursor/rules/00-ai-framework.manifest.json` | None by default |
+| Antigravity | `ai-agent-sync agy` | `GEMINI.md`, `GEMINI.ai-framework.manifest.json` | `.agents/skills/<skill>/SKILL.md` |
 
 ## Maintenance Flow
 
@@ -57,5 +58,5 @@ Tài liệu này là baseline để chuẩn hóa `.ai` thành một nguồn sự
 
 ## Known Fallbacks
 
-- Cursor supports `.agents/skills` as a project skill directory.
-- Antigravity skills are mapped to portable `.agents/skills` because the framework targets Gemini/agent-style conventions and portable Agent Skills compatibility.
+- Cursor portable skills require `--adapter-profile portable` or `legacy-all`; default isolated sync does not generate `.agents/skills` for Cursor.
+- Antigravity project skills are generated under `.agents/skills` by default. `.agent/rules` and `.agents/AGENTS.md` remain opt-in fallback rule surfaces.
