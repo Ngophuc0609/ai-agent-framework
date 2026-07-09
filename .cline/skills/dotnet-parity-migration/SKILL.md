@@ -38,17 +38,23 @@ Upgrade the internal .NET runtime or framework while preserving every externally
 
 This is not a feature project and not a refactor project.
 
+The migration must be baseline-first and test-first. Production migration code must not be treated as complete until tests derived from the legacy behavior pass against the .NET 8+ implementation.
+
 ## Required Execution Flow
 
 1. Identify the app type: ASP.NET MVC, Web API, WebForms, WCF, Worker, Console, Desktop, or mixed.
-2. Build an inventory of endpoints, views, routes, config, auth, session, cookies, database usage, external APIs, static files, and side effects.
-3. Build or inspect a Golden Master baseline before code changes.
-4. Identify compatibility risks: request binding, JSON, model binding, auth, session, crypto, view rendering, file paths, database behavior, and external APIs.
-5. Design the smallest compatibility adapter plan.
-6. Port the smallest compatible slice.
-7. Run build, tests, and contract regression.
-8. Compare the new output to the legacy baseline.
-9. Report `PASS`, `FAIL`, `BLOCKED`, or `PARTIAL` per endpoint or view.
+2. Build a baseline document set that preserves the current legacy state: architecture, routing, configuration, authentication, session/cookies, request/response contracts, business rules, database and external side effects, views/static assets, and known risks.
+3. Build or inspect Golden Master evidence before migration code changes. P0/P1 APIs require request input, response output, field names, data types, object shapes, status codes, headers, cookies, and side effects.
+4. Create or update the .NET 8+ unit/integration/snapshot test project before production migration code. Tests must be derived from legacy source and runtime evidence, not invented desired behavior.
+5. For each API or business capability, write tests that verify 1:1 behavior from request parameters through business logic to response body and side effects.
+6. Scaffold the corresponding .NET 8+ files needed for the target slice only after baseline and test assets exist.
+7. Identify compatibility risks: request binding, JSON, model binding, auth, session, crypto, view rendering, file paths, database behavior, and external APIs.
+8. Design the smallest compatibility adapter plan.
+9. Convert one API or business capability at a time, preserving legacy behavior exactly.
+10. Run build, tests, and contract regression.
+11. Compare the new output to the legacy baseline.
+12. If a latent bug, cleanup opportunity, or optimization is detected, document it in a report and do not fix it during parity migration unless the user explicitly approves a breaking or behavior-changing change.
+13. Report `PASS`, `FAIL`, `BLOCKED`, or `PARTIAL` per endpoint or view.
 
 ## Compatibility Adapters To Prefer
 
@@ -66,6 +72,8 @@ This is not a feature project and not a refactor project.
 - Do not guess legacy behavior when evidence is missing.
 - Do not add or remove business rules.
 - Do not modernize contracts during the parity phase.
+- Do not implement migration production code before baseline-derived tests exist, except for explicitly approved scaffolding that contains no business behavior.
+- Do not fix latent legacy bugs, validation gaps, naming issues, or performance problems during parity migration. Record them in the risk/improvement report.
 - Do not replace legacy `HTTP 200 + Success=false` with `400`, `401`, or `500` unless the baseline proves that behavior.
 - Do not replace escaped JSON string responses with raw JSON object responses unless the Golden Master proves legacy returned raw JSON.
 - Do not mechanically replace `Request.Params` with only `Request.Form` or only `Request.Query`.
@@ -79,6 +87,7 @@ Target:
 Legacy evidence:
 Baseline status:
 Risk areas:
+Test assets:
 Change plan:
 Files changed:
 Verification:

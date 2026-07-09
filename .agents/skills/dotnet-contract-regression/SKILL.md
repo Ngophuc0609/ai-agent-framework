@@ -58,6 +58,10 @@ Every difference must be classified:
 
 A task is done only when all P0/P1 items are `MATCH` or `DYNAMIC_MATCH`, with no unresolved `MIGRATION_BUG`.
 
+If any P0/P1 item is `BLOCKED`, the regression result must be `BLOCKED` or `PARTIAL`, never `PASS`.
+
+If baseline-derived tests were not created or were not run, the migrated slice is not complete.
+
 ## Report Format
 
 ```text
@@ -65,6 +69,7 @@ Regression Result: PASS / FAIL / BLOCKED
 Endpoint/View:
 Legacy baseline path:
 New output path:
+Baseline-derived tests:
 Matches:
 Differences:
 Bug classification:

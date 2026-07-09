@@ -27,15 +27,19 @@ Skill này dùng khi sửa code để port sang .NET 8+ nhưng vẫn giữ behav
 
 Make the smallest source changes necessary to run on .NET 8+ while preserving legacy behavior.
 
-Do not use this skill until the relevant legacy baseline exists or the workflow is explicitly blocked on missing baseline evidence.
+Do not use this skill for production migration code until the relevant legacy baseline and baseline-derived tests exist.
+
+If the workflow is blocked on missing baseline evidence or missing tests, this skill may only create migration plans, scaffold files with no business behavior, risk reports, or test assets. Do not convert business logic until the user supplies evidence or explicitly approves a documented exception.
 
 ## Required Pre-Edit Checks
 
 1. Read the relevant baseline and Golden Master cases.
-2. Confirm the target endpoint, view, job, class, or integration boundary.
-3. Identify all public contract surfaces affected by the change.
-4. List compatibility risks and planned adapters.
-5. Add or update focused regression tests where feasible.
+2. Read the baseline-derived unit/integration/snapshot tests for the target slice.
+3. Confirm the target endpoint, view, job, class, or integration boundary.
+4. Identify all public contract surfaces affected by the change.
+5. Verify tests cover request inputs, business outcome, response status, response headers, content type, field names, data types, object shape, null/date/enum/numeric behavior, cookies, session, and side effects when applicable.
+6. List compatibility risks and planned adapters.
+7. Add or update missing focused regression tests before production behavior code.
 
 ## Preferred Patterns
 
@@ -49,6 +53,8 @@ Determine endpoint behavior from Golden Master:
 
 - If legacy returned a raw JSON object, return an equivalent raw JSON object.
 - If legacy returned an escaped JSON string, return an equivalent escaped JSON string.
+
+Do not choose raw object versus escaped string from framework defaults, DTO shape, or preference. If Golden Master evidence is missing, mark the slice `BLOCKED`.
 
 ### FormsAuthentication
 
@@ -72,12 +78,15 @@ Move settings to appsettings or environment configuration when needed, but prese
 
 ## Review Before Completion
 
+- Baseline-derived tests existed before production behavior conversion.
+- Request input and response output match legacy field names, data types, object shape, status, headers, cookies, and dynamic rules.
 - No business logic refactor.
 - No DTO rename or casing drift.
 - No serializer default drift.
 - No new validation.
 - No auth behavior drift.
 - No view path or static path drift.
+- Latent bugs, cleanup opportunities, and optimizations were documented separately instead of fixed during parity migration.
 - No secret leakage.
 - Build, tests, and contract regression were run or explicitly blocked.
 
@@ -86,6 +95,7 @@ Move settings to appsettings or environment configuration when needed, but prese
 ```text
 Files changed:
 Legacy behavior preserved:
+Baseline-derived tests:
 Compatibility adapters used:
 Risks:
 Tests run:

@@ -161,6 +161,44 @@ def same_path(left: Path, right: Path) -> bool:
         return left == right
 
 
+def framework_root() -> Path:
+    return resolve_path(__file__).parent.parent
+
+
+def install_global_commands(bin_target_dir: Path, dry_run: bool) -> int:
+    framework_bin = framework_root() / "bin"
+    commands = ["ai-agent-sync", "ai-agent-adapter-sync"]
+    missing = [command for command in commands if not (framework_bin / command).is_file()]
+    if missing:
+        print(f"Missing framework command(s): {', '.join(missing)}", file=sys.stderr)
+        return 2
+
+    print(f"Framework bin: {framework_bin}")
+    print(f"Global bin target: {bin_target_dir}")
+    if dry_run:
+        for command in commands:
+            print(f"Would link: {bin_target_dir / command} -> {framework_bin / command}")
+        return 0
+
+    bin_target_dir.mkdir(parents=True, exist_ok=True)
+    for command in commands:
+        source = framework_bin / command
+        link = bin_target_dir / command
+        if link.exists() or link.is_symlink():
+            if link.is_dir() and not link.is_symlink():
+                print(f"Cannot replace directory: {link}", file=sys.stderr)
+                return 2
+            link.unlink()
+        link.symlink_to(source)
+        print(f"Linked: {link} -> {source}")
+
+    print("Global command setup complete.")
+    if str(bin_target_dir) not in os.environ.get("PATH", "").split(os.pathsep):
+        print(f"Note: {bin_target_dir} is not currently in PATH.")
+        print(f"Add this line to your shell profile if needed: export PATH=\"$PATH:{bin_target_dir}\"")
+    return 0
+
+
 def copy_tree_merge(source: Path, target: Path) -> None:
     for item in source.iterdir():
         destination = target / item.name
@@ -576,8 +614,7 @@ def check_and_install_tools(
 
 
 def parse_args() -> argparse.Namespace:
-    script_path = resolve_path(__file__)
-    default_source = script_path.parent.parent / ".ai"
+    default_source = framework_root() / ".ai"
 
     parser = argparse.ArgumentParser(
         description="Sync the shared .ai agent framework into a repository.",
@@ -679,11 +716,27 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Allow generated adapter files to overwrite existing user-authored instruction files.",
     )
+    parser.add_argument(
+        "--install-global",
+        action="store_true",
+        help=(
+            "Create global symlinks for ai-agent-sync and ai-agent-adapter-sync. "
+            "Defaults to ~/.local/bin, or use --global-bin-dir."
+        ),
+    )
+    parser.add_argument(
+        "--global-bin-dir",
+        default=str(Path.home() / ".local" / "bin"),
+        help="Directory used by --install-global. Defaults to ~/.local/bin.",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.install_global:
+        return install_global_commands(resolve_path(args.global_bin_dir), args.dry_run)
+
     shortcut_agent = adapter_agent_alias(args.repo)
     if shortcut_agent:
         args.repo = "."

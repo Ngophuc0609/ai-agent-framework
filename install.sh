@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-REPO_DIR=$(pwd)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$SCRIPT_DIR"
 BIN_DIR="$REPO_DIR/bin"
 BASHRC="$HOME/.bashrc"
 ZSHRC="$HOME/.zshrc"

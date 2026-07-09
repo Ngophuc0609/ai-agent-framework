@@ -13,23 +13,25 @@
 | Expected redirect | |
 | Expected cookies | |
 | Dynamic fields | |
+| Verification level | RUNTIME_VERIFIED / TEST_VERIFIED / BLOCKED |
+| Evidence source path | |
+| Missing evidence | |
+
+Do not invent request or response JSON. If runtime capture or checked-in legacy fixture evidence is missing, leave the payload block empty, mark `Verification level` as `BLOCKED`, and record the missing evidence.
 
 ## Request Headers
 
 ```json
-{}
 ```
 
 ## Request Body
 
 ```json
-{}
 ```
 
 ## Expected Response Body
 
 ```json
-{}
 ```
 
 ## Dynamic Field Rules

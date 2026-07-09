@@ -244,11 +244,31 @@ Use this file as the source for Codex/Cline/Cursor/Claude MCP configuration when
 
 ## Global Command Setup
 
+Preferred setup:
+
+```bash
+bin/ai-agent-sync --install-global
+```
+
+This creates symlinks for both commands:
+
+```text
+~/.local/bin/ai-agent-sync
+~/.local/bin/ai-agent-adapter-sync
+```
+
+Use a custom bin directory when needed:
+
+```bash
+bin/ai-agent-sync --install-global --global-bin-dir /usr/local/bin
+```
+
 Create a symlink from this repo's script to a directory in `PATH`:
 
 ```bash
 mkdir -p ~/.local/bin
 ln -sf /home/pc1503/Desktop/Workspace/work/ai-agent-framework/bin/ai-agent-sync ~/.local/bin/ai-agent-sync
+ln -sf /home/pc1503/Desktop/Workspace/work/ai-agent-framework/bin/ai-agent-adapter-sync ~/.local/bin/ai-agent-adapter-sync
 ```
 
 Make sure `~/.local/bin` is in `PATH`.

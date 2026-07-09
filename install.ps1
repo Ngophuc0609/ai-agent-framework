@@ -1,4 +1,5 @@
-$BinDir = Join-Path $PWD "bin"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$BinDir = Join-Path $ScriptDir "bin"
 $UserPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 
 if ($UserPath -notlike "*$BinDir*") {

@@ -19,7 +19,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "method", "legacyUrl", "verificationLevel"],
+        "required": ["id", "method", "legacyUrl", "verificationLevel", "analysisStatus", "evidence"],
         "properties": {
           "id": { "type": "string" },
           "method": { "type": "string" },
@@ -28,10 +28,45 @@
           "action": { "type": "string" },
           "authRequired": { "type": "boolean" },
           "request": { "type": "object" },
-          "response": { "type": "object" },
+          "response": {
+            "type": "object",
+            "properties": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["path", "type", "source", "evidence"],
+                  "properties": {
+                    "path": { "type": "string" },
+                    "type": { "type": "string" },
+                    "required": { "type": "boolean" },
+                    "nullable": { "type": "boolean" },
+                    "source": { "type": "string" },
+                    "branchCondition": { "type": "string" },
+                    "evidence": { "type": "string" },
+                    "notes": { "type": "string" }
+                  }
+                }
+              },
+              "unresolvedPaths": { "type": "array", "items": { "type": "string" } }
+            }
+          },
           "sideEffects": { "type": "object" },
           "verificationLevel": {
             "enum": ["DISCOVERED", "CODE_VERIFIED", "RUNTIME_VERIFIED", "TEST_VERIFIED", "UNKNOWN"]
+          },
+          "analysisStatus": { "enum": ["PARTIAL", "COMPLETE", "BLOCKED"] },
+          "evidence": {
+            "type": "object",
+            "required": ["staticSources", "manualSourceTrace", "sequenceDiagram", "runtimeCaptures", "testAssets", "missingEvidence"],
+            "properties": {
+              "staticSources": { "type": "array", "items": { "type": "string" } },
+              "manualSourceTrace": { "type": "array", "items": { "type": "string" } },
+              "sequenceDiagram": { "type": "string" },
+              "runtimeCaptures": { "type": "array", "items": { "type": "string" } },
+              "testAssets": { "type": "array", "items": { "type": "string" } },
+              "missingEvidence": { "type": "array", "items": { "type": "string" } }
+            }
           },
           "sourceReferences": { "type": "array" },
           "migrationRisks": { "type": "array" }

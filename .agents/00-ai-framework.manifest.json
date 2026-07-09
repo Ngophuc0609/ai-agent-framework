@@ -7,7 +7,7 @@
   },
   "mode": "pointer",
   "schema_version": 1,
-  "source_commit": "4e60b56f52f0704ed114cbffe18c6f9f5a27abcb",
+  "source_commit": "3d9c9ffbdb4328ccd4c5214e1d852c0be217d905",
   "sources": [
     {
       "path": ".ai/README.md",

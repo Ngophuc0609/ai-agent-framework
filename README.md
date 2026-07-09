@@ -8,7 +8,28 @@
 
 Dưới đây là các cách thiết lập:
 
-### Cách 1: Cài đặt tự động bằng script 1-click (Nhanh nhất - Đa nền tảng)
+### Cách 1: Cài đặt global command bằng chính `ai-agent-sync`
+Tại thư mục gốc của repository framework:
+
+```bash
+bin/ai-agent-sync --install-global
+```
+
+Lệnh này tạo symlink cho cả `ai-agent-sync` và `ai-agent-adapter-sync` vào `~/.local/bin`. Sau đó bạn có thể đứng ở bất kỳ repo nào và chạy:
+
+```bash
+ai-agent-sync --generate-adapters --no-tools
+ai-agent-sync cline
+ai-agent-sync cursor
+```
+
+Nếu `~/.local/bin` chưa nằm trong `PATH`, thêm dòng này vào `~/.bashrc` hoặc `~/.zshrc`:
+
+```bash
+export PATH="$PATH:$HOME/.local/bin"
+```
+
+### Cách 2: Cài đặt tự động bằng script 1-click
 Tại thư mục gốc của repository, bạn chỉ cần chạy lệnh tương ứng với hệ điều hành:
 
 **Dành cho Ubuntu / Linux / macOS (hoặc WSL):**
@@ -23,7 +44,7 @@ source ~/.bashrc  # (Hoặc source ~/.zshrc)
 ```
 *(Lưu ý trên Windows: Sau khi cài đặt xong bằng PowerShell, hãy tắt và mở lại cửa sổ Terminal để biến môi trường PATH có tác dụng. Nếu PowerShell báo lỗi execution policy, hãy chạy bằng quyền Admin hoặc thêm cờ `-ExecutionPolicy Bypass`).*
 
-### Cách 2: Thêm vào biến môi trường PATH thủ công
+### Cách 3: Thêm vào biến môi trường PATH thủ công
 Cách này giúp shell của bạn luôn nhận diện các file thực thi trong thư mục `bin` của repo này.
 
 1. Mở file cấu hình shell của bạn (thường là `~/.bashrc` cho Bash hoặc `~/.zshrc` cho Zsh):
@@ -39,7 +60,7 @@ Cách này giúp shell của bạn luôn nhận diện các file thực thi tron
    source ~/.bashrc  # (Hoặc source ~/.zshrc tuỳ loại shell bạn dùng)
    ```
 
-### Cách 2: Tạo Symlink vào `~/.local/bin` (Không cần quyền root)
+### Cách 4: Tạo Symlink vào `~/.local/bin` thủ công (Không cần quyền root)
 Nếu bạn không muốn sửa PATH nhưng thư mục `~/.local/bin` đã có sẵn trong PATH:
 
 ```bash
@@ -48,7 +69,7 @@ ln -s /home/pc1503/Desktop/Workspace/work/ai-agent-framework/bin/ai-agent-sync ~
 ln -s /home/pc1503/Desktop/Workspace/work/ai-agent-framework/bin/ai-agent-adapter-sync ~/.local/bin/ai-agent-adapter-sync
 ```
 
-### Cách 3: Tạo Symlink hệ thống (Cần quyền sudo)
+### Cách 5: Tạo Symlink hệ thống (Cần quyền sudo)
 Cách này tạo liên kết tới thư mục `/usr/local/bin` để dùng chung cho mọi user:
 
 ```bash

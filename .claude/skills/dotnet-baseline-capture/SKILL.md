@@ -29,6 +29,8 @@ Create a trustworthy, evidence-backed baseline for legacy behavior before migrat
 
 Do not edit production code while running this skill. Do not call write endpoints against production systems.
 
+Endpoint discovery tools are only a starting point. After tools identify endpoints, the agent must manually inspect each selected endpoint's source code path and write a detailed baseline. Do not stop at generated empty templates or endpoint lists.
+
 ## Required Artifacts
 
 Generate or update the applicable artifacts under the migration output namespace chosen by the repo or workflow:
@@ -59,6 +61,10 @@ For every endpoint, capture:
 - Query, form, body, route, header, and cookie parameters.
 - Response status and content-type.
 - Response body shape.
+- Response schema with concrete field names, nested object/array shapes, nullable behavior, and data types.
+- Response construction trace, including the exact code path that builds anonymous objects, dynamic objects, DTOs, dictionaries, `DataTable`, `JObject`, serialized strings, or proxy payloads.
+- Business sequence diagram for the endpoint or capability.
+- Business rule summary for every decision branch that affects the response or side effects.
 - JSON casing, null, date, enum, and numeric behavior.
 - Response headers.
 - Set-Cookie behavior.
@@ -67,6 +73,49 @@ For every endpoint, capture:
 - Database, external API, and file side effects.
 - React/view/third-party consumer when detected.
 - Verification level: `DISCOVERED`, `CODE_VERIFIED`, `RUNTIME_VERIFIED`, `TEST_VERIFIED`, or `UNKNOWN`.
+- Analysis status: `COMPLETE`, `PARTIAL`, or `BLOCKED`.
+
+## Manual Source Trace Requirement
+
+Do not fill baseline artifacts by copying a blank template and populating only route/controller names from scanning tools.
+
+For every P0/P1 endpoint, complete this source trace before writing the endpoint contract:
+
+1. Open the controller/action source file and inspect the action body line by line.
+2. Follow every call that contributes to request parsing, business decisions, response construction, status codes, headers, cookies, session, database writes, external calls, file operations, and redirects.
+3. Resolve `new { ... }`, `dynamic`, `object`, `var`, dictionaries, `DataTable`, `JObject`, serialized strings, and wrapper responses such as `new { status = 200, data = ... }` to concrete response fields.
+4. When `data` or another field is assigned from a service/repository/helper, inspect that method and continue tracing until the concrete DTO, anonymous object fields, database projection, or serializer payload is known.
+5. If a response branch has multiple shapes, document every branch separately with its condition.
+6. Write a sequence diagram that shows the request entering the controller, service/helper calls, database/external/file interactions, response construction, and returned payload.
+7. Record evidence paths with file names and line references for controller, service, repository, DTO/model, config, and serializer behavior.
+
+Do not describe unresolved payloads as only `object`, `dynamic`, `anonymous object`, `var`, `data`, or `mixed`. If concrete fields cannot be proven, mark the endpoint `analysisStatus: BLOCKED` for that response branch and list the missing evidence.
+
+## Response Schema Detail
+
+For every response body, document:
+
+- Top-level fields in exact order when order is observable or serializer-dependent.
+- Nested object fields.
+- Array item type and item object fields.
+- Field data type as observed or proven from source: `string`, `number`, `integer`, `boolean`, `object`, `array`, `null`, date/time string format, enum representation, or legacy serialized string.
+- Nullable/missing/empty behavior.
+- Field source: literal value, request parameter, database column/projection, DTO property, computed business rule, config value, session value, external API value, or dynamic runtime value.
+- Branch condition for each alternative schema.
+
+If runtime payload exists, it is the preferred evidence for exact serialized output. If only static source evidence exists, record `verificationLevel: CODE_VERIFIED` and clearly mark serializer/runtime-dependent fields as requiring runtime confirmation.
+
+## Verification Level Definitions
+
+Use these definitions strictly. Do not promote an endpoint beyond the evidence that was actually inspected.
+
+- `DISCOVERED`: The endpoint was found from routes, controllers, views, client calls, configuration, or documentation, but its behavior has not been validated.
+- `CODE_VERIFIED`: Controllers, models, routing logic, serializers, filters, and directly referenced source were statically analyzed. Static scripts and source-derived catalogs can reach only this level.
+- `RUNTIME_VERIFIED`: Actual HTTP request and response evidence from a running legacy application was inspected, such as proxy exports, traffic dumps, server-side capture files, or browser/network captures.
+- `TEST_VERIFIED`: Golden Master tests were executed against the legacy system or against checked-in captured fixtures that were produced from the running legacy system.
+- `UNKNOWN`: Required evidence is missing or contradictory.
+
+Inference from C# models, controller signatures, route tables, serializer defaults, or generated static catalogs is strictly prohibited as a basis for `RUNTIME_VERIFIED`.
 
 ## Golden Master Capture
 
@@ -85,6 +134,31 @@ side-effects.md
 notes.md
 ```
 
+## Handling Missing Evidence
+
+When Golden Master request or response files are missing, fail closed.
+
+- If `request.json`, `response-body.json`, `response-body.txt`, proxy exports, browser captures, or equivalent runtime files are missing, do not infer, mock, synthesize, or generate them from C# models.
+- Do not create sample response bodies from controller return types, DTO classes, comments, Swagger, or static extractor scripts.
+- Mark the endpoint `verificationLevel: CODE_VERIFIED` when static source evidence exists, otherwise use `DISCOVERED` or `UNKNOWN`.
+- Mark `analysisStatus: PARTIAL` when useful static evidence exists but runtime evidence is incomplete.
+- Mark `analysisStatus: BLOCKED` when P0/P1 runtime evidence is required and cannot be obtained in the current runtime.
+- Record the missing evidence in `notes.md`, the risk register, and any run status or tool limitation artifact used by the workflow.
+- Prompt the user with concrete unblock options instead of filling the gap with generated data.
+
+Use this user prompt shape when blocked on runtime evidence:
+
+```text
+Runtime evidence is missing for <endpoint>. I can only mark it CODE_VERIFIED from source.
+
+To unblock RUNTIME_VERIFIED or TEST_VERIFIED baseline capture, provide one of:
+1. Fiddler, Postman, browser DevTools, or proxy exports containing request and response payloads.
+2. Permission to use the template `.ai/templates/dotnet-parity-migration/LegacyTrafficDumper.cs` in the legacy app to dump local/staging traffic.
+3. Golden Master tests or checked-in fixtures generated from the running legacy application.
+```
+
+If the user chooses the traffic dumper option, copy or adapt the template into the legacy application only with user approval and only for local or staging capture. Never install it in production and never log secrets without redaction.
+
 ## Dynamic Fields
 
 Do not hard-code tokens, timestamps, OTPs, GUIDs, random IDs, generated links, or environment-specific hostnames. Mark them in `dynamic-fields.json` with validation rules.
@@ -95,6 +169,8 @@ Do not mark baseline `COMPLETE` when:
 
 - Endpoint counts differ between the catalog and `legacy-baseline.json`.
 - Any P0 endpoint lacks request or response evidence.
+- Any P0/P1 endpoint response schema is documented only as `object`, `dynamic`, `anonymous object`, `var`, or unresolved `data`.
+- Any P0/P1 endpoint lacks manual source trace evidence and a business sequence diagram.
 - Crypto or deep-link behavior has no test vector when used.
 - Auth, session, or cookie behavior is unknown.
 - Proxy JSON object/string behavior is unknown.
